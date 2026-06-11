@@ -1,8 +1,11 @@
 import { getServerSession } from 'next-auth';
 import { updateBookProgress } from '@/lib/googleDrive';
+import authOptions from '@/lib/auth';
 
 export async function POST(request: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
+  console.log('POST /api/library/progress session exists:', Boolean(session));
+  console.log('POST /api/library/progress session.accessToken:', session?.accessToken);
 
   if (!session?.accessToken) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
