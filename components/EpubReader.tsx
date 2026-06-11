@@ -208,7 +208,7 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
       <div className="h-[5rem]" />
       <div className="h-[5rem]" />
       <div className="relative min-h-[calc(100vh-10rem)]">
-        <div ref={containerRef} className="h-full w-full" />
+        <div ref={containerRef} className="h-[calc(100vh-10rem)] w-full" />
         {!isReady && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-950/80">
             <p className="text-white">Rendering EPUB...</p>
