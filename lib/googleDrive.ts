@@ -8,6 +8,11 @@ const FIXED_FOLDERS: Record<Exclude<LibrarySource, 'Local Books'>, string> = {
   'IT PD Ebooks': '13bvVMhL0iGxOfFS9nOBk7eGhh6708kbp',
   'Book Club': '1FxuWDsjoRK9DUxdCoPefxea0eqR6EblU',
   Unsorted: '0B9UqG6BQI95fb0xsOElucWx3LUE',
+  'Avance KBs': '1VXFuTGxm489hBUeEuFT6I5NWVlfJzAdm',
+  'ITIL PDFs': '1v9IfBvQpIlimDsRvVul3Fzcxeq5Ml3yt',
+  ITIL: '161BcIPlUqoqUKa5rE-Roniy6qiSnm9XZ',
+  'ITIL PRINCE COBIT': '1bpLjo9ZIcGdx2R7uuw0qBPv5Vz2UWUyy',
+  'IEC 27001': '1X70Y14d15t3nqw5AxZ9V3XGGBUmRvTdZ',
 };
 
 /**

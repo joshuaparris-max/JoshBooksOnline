@@ -3,7 +3,16 @@
  * Used throughout the app to ensure consistent Book metadata shape
  */
 
-export type LibrarySource = 'IT PD Ebooks' | 'Book Club' | 'Unsorted' | 'Local Books';
+export type LibrarySource =
+  | 'IT PD Ebooks'
+  | 'Book Club'
+  | 'Unsorted'
+  | 'Avance KBs'
+  | 'ITIL PDFs'
+  | 'ITIL'
+  | 'ITIL PRINCE COBIT'
+  | 'IEC 27001'
+  | 'Local Books';
 
 export type BookFormat = 'pdf' | 'epub';
 
