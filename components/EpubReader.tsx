@@ -84,6 +84,7 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
       width: '100%',
       height: '100%',
       flow: 'paginated',
+      allowScriptedContent: true,
     });
     renditionRef.current = rendition;
 
@@ -209,6 +210,22 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
       <div className="h-[5rem]" />
       <div className="relative min-h-[calc(100vh-10rem)]">
         <div ref={containerRef} className="h-[calc(100vh-10rem)] w-full" />
+        <button
+          type="button"
+          onClick={() => renditionRef.current?.prev()}
+          className="fixed left-4 top-1/2 z-40 -translate-y-1/2 rounded-full bg-slate-900/70 p-4 text-2xl text-white shadow-xl shadow-black/30 backdrop-blur transition hover:bg-slate-900"
+          aria-label="Previous page"
+        >
+          ‹
+        </button>
+        <button
+          type="button"
+          onClick={() => renditionRef.current?.next()}
+          className="fixed right-4 top-1/2 z-40 -translate-y-1/2 rounded-full bg-slate-900/70 p-4 text-2xl text-white shadow-xl shadow-black/30 backdrop-blur transition hover:bg-slate-900"
+          aria-label="Next page"
+        >
+          ›
+        </button>
         {!isReady && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-950/80">
             <p className="text-white">Rendering EPUB...</p>
