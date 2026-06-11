@@ -1,36 +1,135 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BookShelf — Personal Ebook Reader
 
-## Getting Started
+A single-user ebook reader web app for PDFs and EPUBs stored in Google Drive. Features a library view like Calibre and reading views powered by pdf.js and epubjs, with reading progress synced back to Drive via appProperties.
 
-First, run the development server:
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Auth**: NextAuth v4 with Google OAuth
+- **Rendering**: pdfjs-dist (PDF), epubjs (EPUB)
+- **Deployment**: Vercel (server features required)
+
+## Google Cloud Setup
+
+Before running the app locally, you must set up OAuth credentials in Google Cloud Console. **This is a required manual step.**
+
+### 1. Create a Google Cloud Project
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Click the project selector dropdown at the top
+3. Click **NEW PROJECT**
+4. Name: `BookShelf`
+5. Click **CREATE**
+6. Wait for the project to be created, then select it
+
+### 2. Enable the Google Drive API
+
+1. In the left sidebar, go to **APIs & Services** → **Library**
+2. Search for **Google Drive API**
+3. Click on it and press **ENABLE**
+
+### 3. Configure OAuth Consent Screen
+
+1. In the left sidebar, go to **APIs & Services** → **OAuth consent screen**
+2. Choose **External** user type and click **CREATE**
+3. Fill the form:
+   - **App name**: `BookShelf`
+   - **User support email**: Your email
+   - Scroll to bottom, **Developer contact information**: Your email
+4. Click **SAVE AND CONTINUE**
+5. On **Scopes** step, click **ADD OR REMOVE SCOPES**
+6. Search for and add: `https://www.googleapis.com/auth/drive`
+7. Click **UPDATE** and **SAVE AND CONTINUE**
+8. On **Test users** step, click **ADD USERS**
+9. Add your email address as a test user
+10. Click **SAVE AND CONTINUE**, then **BACK TO DASHBOARD**
+
+### 4. Create OAuth Credentials
+
+1. In the left sidebar, go to **APIs & Services** → **Credentials**
+2. Click **+ CREATE CREDENTIALS** → **OAuth client ID**
+3. Choose **Web application**
+4. Under **Authorized redirect URIs**, add both:
+   - `http://localhost:3000/api/auth/callback/google`
+   - `https://<YOUR_VERCEL_URL>/api/auth/callback/google`
+   
+   (You can add the Vercel URL later once you deploy; start with localhost)
+5. Click **CREATE**
+6. Copy the **Client ID** and **Client Secret** and save them somewhere safe
+
+### 5. Important: Testing Mode Token Expiry
+
+Because your app is in Google Cloud's **Testing** status (not production), OAuth refresh tokens expire **every 7 days**. This is an accepted tradeoff for a personal app:
+- **Solution**: Simply sign in again after 7 days (takes 10 seconds)
+- **Why**: Publishing to production requires additional Google verification we don't need for personal use
+
+## Local Setup
+
+### 1. Set Environment Variables
+
+Copy `.env.local.example` to `.env.local`:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local` and fill in:
+
+```
+GOOGLE_CLIENT_ID=<your_client_id_from_step_4>
+GOOGLE_CLIENT_SECRET=<your_client_secret_from_step_4>
+NEXTAUTH_SECRET=<generate_a_random_string>
+NEXTAUTH_URL=http://localhost:3000
+```
+
+To generate `NEXTAUTH_SECRET`, run:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Run Dev Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) and click **Sign in with Google**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+app/
+  api/
+    auth/[...nextauth]/    # NextAuth routes
+    library/               # GET /api/library (list books)
+    library/progress/      # POST /api/library/progress (save progress)
+  page.tsx                 # Sign-in landing page
+  layout.tsx               # Root layout with AuthProvider
+  providers.tsx            # Client SessionProvider wrapper
+lib/
+  googleDrive.ts          # Drive helper functions
+types/
+  books.ts                # Shared BookEntry types
+middleware.ts             # Protect /library and /reader routes
+```
 
-## Learn More
+## Acceptance Criteria — Phase 1
 
-To learn more about Next.js, take a look at the following resources:
+✅ `npm run build` passes with no TypeScript errors
+✅ Sign in with Google works
+✅ GET `/api/library` returns real files from Drive folders
+✅ POST `/api/library/progress` writes appProperties visible in Drive
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Next Phase
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Phase 2 (PowerShell sync script) will upload local books from `C:\dev\Books` to the "Local Books" folder in Drive.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
