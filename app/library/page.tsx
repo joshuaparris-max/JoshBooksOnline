@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import type { BookEntry } from '@/types/books';
@@ -168,52 +169,58 @@ export default function LibraryPage() {
         ) : (
           <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {filteredBooks.map((book) => (
-              <article key={book.id} className="group rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-xl shadow-black/10 transition hover:border-slate-500/40">
-                <div className="flex items-center gap-4">
-                  <div
-                    className="flex h-20 w-20 items-center justify-center rounded-3xl text-2xl font-semibold text-white"
-                    style={{ backgroundColor: getColorFromTitle(book.name) }}
-                  >
-                    {getInitials(book.name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-xl font-semibold text-white">{book.name}</h2>
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 ${SOURCE_BADGES[book.source] ?? 'bg-slate-500 text-white'}`}>
-                        {book.source}
-                      </span>
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 ${FORMAT_BADGES[book.format] ?? 'bg-slate-500 text-white'}`}>
-                        {book.format.toUpperCase()}
-                      </span>
+              <Link
+                key={book.id}
+                href={`/reader/${book.id}`}
+                className="group rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70 hover:shadow-black/20 hover:-translate-y-0.5 transform cursor-pointer"
+              >
+                <article className="h-full">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="flex h-20 w-20 items-center justify-center rounded-3xl text-2xl font-semibold text-white"
+                      style={{ backgroundColor: getColorFromTitle(book.name) }}
+                    >
+                      {getInitials(book.name)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="truncate text-xl font-semibold text-white">{book.name}</h2>
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 ${SOURCE_BADGES[book.source] ?? 'bg-slate-500 text-white'}`}>
+                          {book.source}
+                        </span>
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 ${FORMAT_BADGES[book.format] ?? 'bg-slate-500 text-white'}`}>
+                          {book.format.toUpperCase()}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="mt-6 space-y-4 text-slate-300">
-                  <div className="grid gap-2 text-sm">
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span>Size</span>
-                      <span>{formatBytes(book.size)}</span>
+                  <div className="mt-6 space-y-4 text-slate-300">
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex items-center justify-between text-slate-400">
+                        <span>Size</span>
+                        <span>{formatBytes(book.size)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-400">
+                        <span>Modified</span>
+                        <span>{formatTime(book.modifiedTime)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-400">
+                        <span>Last opened</span>
+                        <span>{book.lastOpened ? formatTime(book.lastOpened) : 'Never'}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span>Modified</span>
-                      <span>{formatTime(book.modifiedTime)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span>Last opened</span>
-                      <span>{book.lastOpened ? formatTime(book.lastOpened) : 'Never'}</span>
+                    <div>
+                      <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-slate-500">
+                        <span>Progress</span>
+                        <span>{Math.round(book.readingProgress)}%</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                        <div className="h-2 rounded-full bg-sky-500 transition-all" style={{ width: `${Math.max(0, Math.min(100, book.readingProgress))}%` }} />
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-slate-500">
-                      <span>Progress</span>
-                      <span>{Math.round(book.readingProgress)}%</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                      <div className="h-2 rounded-full bg-sky-500 transition-all" style={{ width: `${Math.max(0, Math.min(100, book.readingProgress))}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </article>
+                </article>
+              </Link>
             ))}
           </section>
         )}
