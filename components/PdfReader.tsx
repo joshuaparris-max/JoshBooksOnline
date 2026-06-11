@@ -21,6 +21,7 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [renderedPages, setRenderedPages] = useState<Set<number>>(new Set());
   const saveTimeout = useRef<number | null>(null);
+  const inFlightPages = useRef<Set<number>>(new Set());
 
   const pages = useMemo(() => Array.from({ length: numPages }, (_, i) => i + 1), [numPages]);
 
@@ -55,7 +56,10 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
     if (!pdf) return;
 
     const renderPage = async (pageNumber: number) => {
+      if (pageNumber < 1 || pageNumber > (pdf as PDFDocumentProxy).numPages) return;
       if (renderedPages.has(pageNumber)) return;
+      if (inFlightPages.current.has(pageNumber)) return;
+      inFlightPages.current.add(pageNumber);
       try {
         const page = await pdf.getPage(pageNumber);
         const viewport = page.getViewport({ scale: 1.5 });
@@ -74,6 +78,8 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
         setRenderedPages((prev) => new Set(prev).add(pageNumber));
       } catch (error) {
         console.error('PDF page render failed', error);
+      } finally {
+        inFlightPages.current.delete(pageNumber);
       }
     };
 

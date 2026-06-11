@@ -38,6 +38,7 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
   const containerRef = useRef<HTMLDivElement | null>(null);
   const bookRef = useRef<any>(null);
   const renditionRef = useRef<any>(null);
+  const onProgressRef = useRef(onProgress);
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark' | 'sepia'>('light');
   const [fontSize, setFontSize] = useState<number>(1);
   const [showToolbar, setShowToolbar] = useState(true);
@@ -67,6 +68,10 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
   useEffect(() => {
     window.localStorage.setItem('bookshelf-reader-fontSize', String(fontSize));
   }, [fontSize]);
+
+  useEffect(() => {
+    onProgressRef.current = onProgress;
+  }, [onProgress]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -109,7 +114,7 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
       }
 
       saveTimeout.current = window.setTimeout(() => {
-        onProgress(Math.round(progress), cfi).catch((error) => {
+        onProgressRef.current(Math.round(progress), cfi).catch((error) => {
           console.error('Failed saving EPUB progress', error);
         });
       }, 2000);
@@ -134,7 +139,16 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
       rendition.destroy();
       book.destroy();
     };
-  }, [arrayBuffer, location, currentTheme, fontSize, onProgress]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [arrayBuffer, location]);
+
+  useEffect(() => {
+    renditionRef.current?.themes.select(currentTheme);
+  }, [currentTheme]);
+
+  useEffect(() => {
+    renditionRef.current?.themes.fontSize(fontSizes[fontSize]);
+  }, [fontSize]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
