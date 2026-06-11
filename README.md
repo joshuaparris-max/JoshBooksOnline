@@ -13,16 +13,15 @@ A single-user ebook reader web app for PDFs and EPUBs stored in Google Drive. Fe
 
 ## Google Cloud Setup
 
-Before running the app locally, you must set up OAuth credentials in Google Cloud Console. **This is a required manual step.**
+This app uses an **Internal** Google Workspace OAuth app in the `cornerstone.edu.au` organization.
 
-### 1. Create a Google Cloud Project
+### 1. Confirm the GCP project
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Click the project selector dropdown at the top
-3. Click **NEW PROJECT**
-4. Name: `BookShelf`
-5. Click **CREATE**
-6. Wait for the project to be created, then select it
+- Project ID: `bookshelf-499102`
+- Google Drive API: enabled
+- OAuth consent screen: **Internal**
+- OAuth Client ID: `369014421608-mvokv1jp2avd998jsps7vcv1f1pvjitj.apps.googleusercontent.com`
+- Authorized redirect URI (dev): `http://localhost:3000/api/auth/callback/google`
 
 ### 2. Enable the Google Drive API
 
@@ -33,37 +32,36 @@ Before running the app locally, you must set up OAuth credentials in Google Clou
 ### 3. Configure OAuth Consent Screen
 
 1. In the left sidebar, go to **APIs & Services** → **OAuth consent screen**
-2. Choose **External** user type and click **CREATE**
-3. Fill the form:
-   - **App name**: `BookShelf`
-   - **User support email**: Your email
-   - Scroll to bottom, **Developer contact information**: Your email
-4. Click **SAVE AND CONTINUE**
-5. On **Scopes** step, click **ADD OR REMOVE SCOPES**
-6. Search for and add: `https://www.googleapis.com/auth/drive`
-7. Click **UPDATE** and **SAVE AND CONTINUE**
-8. On **Test users** step, click **ADD USERS**
-9. Add your email address as a test user
-10. Click **SAVE AND CONTINUE**, then **BACK TO DASHBOARD**
+2. Confirm the app type is **Internal**
+3. Confirm the app has the scope:
+   - `https://www.googleapis.com/auth/drive`
+4. Make sure the signing-in account is your Workspace account (`joshua.parris@cornerstone.edu.au`)
 
-### 4. Create OAuth Credentials
+### 4. Create or verify OAuth Credentials
 
 1. In the left sidebar, go to **APIs & Services** → **Credentials**
-2. Click **+ CREATE CREDENTIALS** → **OAuth client ID**
-3. Choose **Web application**
-4. Under **Authorized redirect URIs**, add both:
+2. Ensure the OAuth Client ID exists for the internal app
+3. If needed, create **OAuth client ID** → **Web application**
+4. Add authorized redirect URI:
    - `http://localhost:3000/api/auth/callback/google`
-   - `https://<YOUR_VERCEL_URL>/api/auth/callback/google`
-   
-   (You can add the Vercel URL later once you deploy; start with localhost)
-5. Click **CREATE**
-6. Copy the **Client ID** and **Client Secret** and save them somewhere safe
+5. Save the **Client ID** and **Client Secret** securely
 
-### 5. Important: Testing Mode Token Expiry
+### 5. Internal Workspace notes
 
-Because your app is in Google Cloud's **Testing** status (not production), OAuth refresh tokens expire **every 7 days**. This is an accepted tradeoff for a personal app:
-- **Solution**: Simply sign in again after 7 days (takes 10 seconds)
-- **Why**: Publishing to production requires additional Google verification we don't need for personal use
+- No external test users are required for an internal app
+- No unverified app warning should appear for Workspace users in the same org
+- OAuth refresh tokens do not expire every 7 days in this configuration
+
+### Troubleshooting
+
+If sign-in succeeds but Drive API calls return **"access blocked by administrator"**, fix this in Admin Console:
+
+1. Go to [admin.google.com](https://admin.google.com/)
+2. Navigate to **Security** → **API Controls**
+3. Open **App Access Control**
+4. Mark the Client ID as **trusted**
+
+## Local Setup
 
 ## Local Setup
 
