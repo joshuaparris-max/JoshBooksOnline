@@ -7,7 +7,6 @@ import type { BookEntry, LibrarySource, BookFormat } from '@/types/books';
 const FIXED_FOLDERS: Record<Exclude<LibrarySource, 'Local Books'>, string> = {
   'IT PD Ebooks': '13bvVMhL0iGxOfFS9nOBk7eGhh6708kbp',
   'Book Club': '1FxuWDsjoRK9DUxdCoPefxea0eqR6EblU',
-  Unsorted: '0B9UqG6BQI95fb0xsOElucWx3LUE',
 };
 
 /**

@@ -7,7 +7,6 @@ import type { BookEntry } from '@/types/books';
 const SOURCE_BADGES: Record<string, string> = {
   'IT PD Ebooks': 'bg-amber-500 text-slate-950',
   'Book Club': 'bg-indigo-500 text-white',
-  Unsorted: 'bg-slate-500 text-white',
   'Local Books': 'bg-emerald-500 text-slate-950',
 };
 

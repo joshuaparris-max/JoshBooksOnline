@@ -3,7 +3,7 @@
  * Used throughout the app to ensure consistent Book metadata shape
  */
 
-export type LibrarySource = 'IT PD Ebooks' | 'Book Club' | 'Unsorted' | 'Local Books';
+export type LibrarySource = 'IT PD Ebooks' | 'Book Club' | 'Local Books';
 
 export type BookFormat = 'pdf' | 'epub';
 
