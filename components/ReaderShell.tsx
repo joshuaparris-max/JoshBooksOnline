@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 
 export interface ReaderShellProps {
-  fileId: string;
+  fileId?: string;
   EpubReader: React.ComponentType<any>;
   PdfReader: React.ComponentType<any>;
 }
@@ -27,7 +27,7 @@ export default function ReaderShell({ fileId, EpubReader, PdfReader }: ReaderShe
   const accessToken = session?.accessToken;
 
   useEffect(() => {
-    if (status === 'loading') return;
+    if (status === 'loading' || !fileId) return;
     if (!accessToken) {
       setError('Authentication is required to load this book.');
       setLoading(false);
@@ -67,7 +67,7 @@ export default function ReaderShell({ fileId, EpubReader, PdfReader }: ReaderShe
   }, [accessToken, fileId, status]);
 
   useEffect(() => {
-    if (!metadata || !accessToken) return;
+    if (!metadata || !accessToken || !fileId) return;
     const fetchBinary = async () => {
       try {
         const binaryResponse = await fetch(
@@ -99,6 +99,17 @@ export default function ReaderShell({ fileId, EpubReader, PdfReader }: ReaderShe
   }, [accessToken, fileId, metadata]);
 
   const initialLocation = useMemo(() => metadata?.appProperties?.lastLocation ?? '', [metadata]);
+
+  if (!fileId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-6">
+        <div className="max-w-xl rounded-3xl border border-yellow-500/20 bg-slate-900/90 p-8 text-center">
+          <h1 className="text-2xl font-semibold text-yellow-300">Invalid book selected</h1>
+          <p className="mt-4 text-slate-300">This book could not be opened because no file identifier was provided.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (status === 'loading' || loading) {
     return (
