@@ -24,3 +24,27 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Rendered Word (.docx) content from mammoth */
+.docx-content {
+  line-height: 1.7;
+}
+.docx-content h1,
+.docx-content h2,
+.docx-content h3 {
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 1.2em 0 0.6em;
+}
+.docx-content h1 { font-size: 1.6em; }
+.docx-content h2 { font-size: 1.35em; }
+.docx-content h3 { font-size: 1.15em; }
+.docx-content p { margin: 0 0 1em; }
+.docx-content ul,
+.docx-content ol { margin: 0 0 1em 1.5em; list-style: revert; }
+.docx-content li { margin: 0.25em 0; }
+.docx-content a { color: #2563eb; text-decoration: underline; }
+.docx-content table { border-collapse: collapse; margin: 1em 0; }
+.docx-content td,
+.docx-content th { border: 1px solid #cbd5e1; padding: 0.4em 0.6em; }
+.docx-content img { max-width: 100%; height: auto; }

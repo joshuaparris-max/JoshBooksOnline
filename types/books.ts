@@ -14,7 +14,7 @@ export type LibrarySource =
   | 'IEC 27001'
   | 'Local Books';
 
-export type BookFormat = 'pdf' | 'epub';
+export type BookFormat = 'pdf' | 'epub' | 'txt' | 'docx';
 
 export interface BookEntry {
   /** Google Drive file ID */

@@ -27,12 +27,32 @@ export function getOAuthClient(accessToken: string) {
   return auth;
 }
 
+const TXT_MIME = 'text/plain';
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+/**
+ * MIME types of the formats this reader supports
+ */
+export const SUPPORTED_MIME_TYPES = [
+  'application/pdf',
+  'application/epub+zip',
+  TXT_MIME,
+  DOCX_MIME,
+] as const;
+
+/**
+ * Drive query fragment matching any supported book MIME type
+ */
+const SUPPORTED_MIME_QUERY = SUPPORTED_MIME_TYPES.map((m) => `mimeType = '${m}'`).join(' or ');
+
 /**
  * Extract book format from MIME type
  */
-function getMimeTypeFormat(mimeType: string): BookFormat | null {
+export function getMimeTypeFormat(mimeType: string): BookFormat | null {
   if (mimeType === 'application/pdf') return 'pdf';
   if (mimeType === 'application/epub+zip') return 'epub';
+  if (mimeType === TXT_MIME) return 'txt';
+  if (mimeType === DOCX_MIME) return 'docx';
   return null;
 }
 
@@ -66,7 +86,7 @@ export async function listFilesInFolder(
 
   do {
     const response = await drive.files.list({
-      q: `'${folderId}' in parents and trashed = false and (mimeType = 'application/pdf' or mimeType = 'application/epub+zip')`,
+      q: `'${folderId}' in parents and trashed = false and (${SUPPORTED_MIME_QUERY})`,
       fields:
         'nextPageToken, files(id, name, mimeType, size, modifiedTime, thumbnailLink, appProperties)',
       pageSize: 100,
@@ -283,7 +303,7 @@ export async function listFilesInFolderRecursive(
 
   do {
     const response = await drive.files.list({
-      q: `'${folderId}' in parents and trashed = false and (mimeType = 'application/pdf' or mimeType = 'application/epub+zip' or mimeType = 'application/vnd.google-apps.folder')`,
+      q: `'${folderId}' in parents and trashed = false and (${SUPPORTED_MIME_QUERY} or mimeType = 'application/vnd.google-apps.folder')`,
       fields:
         'nextPageToken, files(id, name, mimeType, size, modifiedTime, thumbnailLink, appProperties)',
       pageSize: 100,

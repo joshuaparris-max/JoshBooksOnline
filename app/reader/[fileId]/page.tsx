@@ -21,6 +21,24 @@ const PdfReader = dynamic(() => import('@/components/PdfReader'), {
   ),
 });
 
+const TxtReader = dynamic(() => import('@/components/TxtReader'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+      Loading text reader…
+    </div>
+  ),
+});
+
+const DocxReader = dynamic(() => import('@/components/DocxReader'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+      Loading Word reader…
+    </div>
+  ),
+});
+
 const ReaderShell = dynamic(() => import('@/components/ReaderShell'), {
   ssr: false,
   loading: () => (
@@ -37,5 +55,13 @@ export default function ReaderPage() {
   // Temporary debug log to verify route param resolution in-browser
   console.log('Resolved fileId:', fileId);
 
-  return <ReaderShell fileId={fileId} EpubReader={EpubReader} PdfReader={PdfReader} />;
+  return (
+    <ReaderShell
+      fileId={fileId}
+      EpubReader={EpubReader}
+      PdfReader={PdfReader}
+      TxtReader={TxtReader}
+      DocxReader={DocxReader}
+    />
+  );
 }

@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { NextRequest, NextResponse } from 'next/server';
 import authOptions from '@/lib/auth';
-import { listFilesInFolderRecursive, getFileMetadata, addFileToUnsorted } from '@/lib/googleDrive';
+import { listFilesInFolderRecursive, getFileMetadata, addFileToUnsorted, getMimeTypeFormat } from '@/lib/googleDrive';
 import type { BookEntry } from '@/types/books';
 
 /**
@@ -81,8 +81,8 @@ export async function POST(request: NextRequest) {
           }
 
           // Determine if it's a supported format
-          const supportedFormats = ['application/pdf', 'application/epub+zip'];
-          if (!supportedFormats.includes(metadata.mimeType)) {
+          const format = getMimeTypeFormat(metadata.mimeType);
+          if (!format) {
             errors.push({
               itemName: item.name,
               reason: `Unsupported file format: ${metadata.mimeType}`,
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
             size: metadata.size,
             modifiedTime: metadata.modifiedTime,
             source: 'Unsorted',
-            format: metadata.mimeType === 'application/pdf' ? 'pdf' : 'epub',
+            format,
             readingProgress: 0,
             lastLocation: '',
           };

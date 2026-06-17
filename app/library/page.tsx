@@ -21,6 +21,8 @@ const SOURCE_BADGES: Record<string, string> = {
 const FORMAT_BADGES: Record<string, string> = {
   pdf: 'bg-red-600 text-white',
   epub: 'bg-teal-600 text-white',
+  txt: 'bg-slate-600 text-white',
+  docx: 'bg-blue-600 text-white',
 };
 
 function getInitials(title: string) {
