@@ -91,9 +91,11 @@ export async function POST(request: NextRequest) {
           }
 
           // Create BookEntry for this file
+          // Use the name from the Picker (item.name) as it's the correct filename
+          // Don't use metadata.name in case the Drive API returns unexpected data
           const bookEntry: BookEntry = {
             id: metadata.id,
-            name: metadata.name,
+            name: item.name,
             mimeType: metadata.mimeType,
             size: metadata.size,
             modifiedTime: metadata.modifiedTime,
