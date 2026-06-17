@@ -227,6 +227,46 @@ export async function getFileMetadata(
 }
 
 /**
+ * Add an imported file to the Unsorted folder by making Unsorted a parent
+ * This ensures the file appears in the library listing without moving it
+ */
+export async function addFileToUnsorted(
+  accessToken: string,
+  fileId: string
+): Promise<boolean> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+
+  try {
+    // Get current parents
+    const fileInfo = await drive.files.get({
+      fileId,
+      fields: 'parents',
+    });
+
+    const currentParents = (fileInfo.data.parents || []).join(',');
+    const unsortedFolderId = FIXED_FOLDERS['Unsorted'];
+
+    // Check if already in Unsorted
+    if (currentParents.includes(unsortedFolderId)) {
+      return true;
+    }
+
+    // Add Unsorted as a parent (file can have multiple parents in Drive)
+    await drive.files.update({
+      fileId,
+      addParents: unsortedFolderId,
+      fields: 'id, parents',
+    });
+
+    return true;
+  } catch (error) {
+    console.error(`Failed to add file ${fileId} to Unsorted folder:`, error);
+    return false;
+  }
+}
+
+/**
  * List files in a folder (recursively if folder is selected)
  * Handles both individual files and folders from the Picker
  */

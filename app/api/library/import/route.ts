@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { NextRequest, NextResponse } from 'next/server';
 import authOptions from '@/lib/auth';
-import { listFilesInFolderRecursive, getFileMetadata } from '@/lib/googleDrive';
+import { listFilesInFolderRecursive, getFileMetadata, addFileToUnsorted } from '@/lib/googleDrive';
 import type { BookEntry } from '@/types/books';
 
 /**
@@ -104,6 +104,9 @@ export async function POST(request: NextRequest) {
             readingProgress: 0,
             lastLocation: '',
           };
+
+          // Add the file to the Unsorted folder so it appears in library listings
+          await addFileToUnsorted(session.accessToken, metadata.id);
 
           importedFiles.push(bookEntry);
         }
