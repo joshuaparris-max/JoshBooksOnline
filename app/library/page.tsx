@@ -178,6 +178,125 @@ function Cover({ book, className }: { book: BookEntry; className: string }) {
   );
 }
 
+/**
+ * Table column definitions. `title` is always shown; the rest can be toggled
+ * via the column editor. `sortField` (when set) makes the header clickable.
+ */
+const TABLE_COLUMNS: {
+  key: string;
+  label: string;
+  sortField?: SortField;
+  align?: 'left' | 'right';
+  locked?: boolean;
+  cell: (book: BookEntry) => React.ReactNode;
+}[] = [
+  {
+    key: 'title',
+    label: 'Title',
+    sortField: 'title',
+    locked: true,
+    cell: (book) => (
+      <>
+        <Link href={`/reader/${book.id}`} className="font-medium text-white hover:text-sky-300">
+          {displayTitle(book)}
+        </Link>
+        {book.series && (
+          <div className="text-xs text-slate-500">
+            {book.series}
+            {book.seriesIndex !== undefined ? ` #${book.seriesIndex}` : ''}
+          </div>
+        )}
+      </>
+    ),
+  },
+  {
+    key: 'author',
+    label: 'Author',
+    sortField: 'author',
+    cell: (book) => <span className="text-slate-300">{displayAuthors(book) || '—'}</span>,
+  },
+  {
+    key: 'published',
+    label: 'Published',
+    sortField: 'published',
+    cell: (book) => <span className="text-slate-400">{book.publishedDate ?? '—'}</span>,
+  },
+  {
+    key: 'publisher',
+    label: 'Publisher',
+    cell: (book) => <span className="text-slate-400">{book.publisher ?? '—'}</span>,
+  },
+  {
+    key: 'series',
+    label: 'Series',
+    sortField: 'series',
+    cell: (book) => (
+      <span className="text-slate-400">
+        {book.series ? `${book.series}${book.seriesIndex !== undefined ? ` #${book.seriesIndex}` : ''}` : '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'pages',
+    label: 'Pages',
+    align: 'right',
+    cell: (book) => <span className="text-slate-400">{book.pageCount ?? '—'}</span>,
+  },
+  {
+    key: 'language',
+    label: 'Lang',
+    cell: (book) => <span className="text-slate-400">{book.language?.toUpperCase() ?? '—'}</span>,
+  },
+  {
+    key: 'format',
+    label: 'Format',
+    sortField: 'format',
+    cell: (book) => (
+      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${FORMAT_BADGES[book.format] ?? 'bg-slate-500 text-white'}`}>
+        {book.format.toUpperCase()}
+      </span>
+    ),
+  },
+  {
+    key: 'source',
+    label: 'Source',
+    sortField: 'source',
+    cell: (book) => (
+      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${SOURCE_BADGES[book.source] ?? 'bg-slate-500 text-white'}`}>
+        {book.source}
+      </span>
+    ),
+  },
+  {
+    key: 'size',
+    label: 'Size',
+    sortField: 'size',
+    align: 'right',
+    cell: (book) => <span className="text-slate-400">{formatBytes(book.size)}</span>,
+  },
+  {
+    key: 'progress',
+    label: 'Progress',
+    sortField: 'progress',
+    align: 'right',
+    cell: (book) => <span className="text-slate-300">{Math.round(book.readingProgress)}%</span>,
+  },
+  {
+    key: 'added',
+    label: 'Added',
+    sortField: 'added',
+    cell: (book) => <span className="text-slate-400">{formatDateShort(book.modifiedTime)}</span>,
+  },
+  {
+    key: 'lastOpened',
+    label: 'Last opened',
+    sortField: 'lastOpened',
+    cell: (book) => <span className="text-slate-400">{book.lastOpened ? formatDateShort(book.lastOpened) : '—'}</span>,
+  },
+];
+
+const DEFAULT_COLUMNS = ['title', 'author', 'published', 'format', 'source', 'size', 'progress', 'added'];
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function LibraryPage() {
@@ -188,6 +307,8 @@ export default function LibraryPage() {
   const [sortField, setSortField] = useState<SortField>('title');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(DEFAULT_COLUMNS);
+  const [showColumnEditor, setShowColumnEditor] = useState(false);
   const [enrich, setEnrich] = useState<{ running: boolean; done: number; total: number; message: string }>({
     running: false,
     done: 0,
@@ -208,6 +329,17 @@ export default function LibraryPage() {
     if (storedView === 'grid' || storedView === 'table') setViewMode(storedView);
     if (storedField && SORT_OPTIONS.some((o) => o.value === storedField)) setSortField(storedField);
     if (storedDir === 'asc' || storedDir === 'desc') setSortDir(storedDir);
+
+    const storedColumns = window.localStorage.getItem('joshbooks-columns');
+    if (storedColumns) {
+      try {
+        const parsed = JSON.parse(storedColumns) as string[];
+        const valid = parsed.filter((key) => TABLE_COLUMNS.some((c) => c.key === key));
+        if (valid.length > 0) setVisibleColumns(valid.includes('title') ? valid : ['title', ...valid]);
+      } catch {
+        // ignore malformed stored value
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -219,6 +351,9 @@ export default function LibraryPage() {
   useEffect(() => {
     window.localStorage.setItem('joshbooks-sort-dir', sortDir);
   }, [sortDir]);
+  useEffect(() => {
+    window.localStorage.setItem('joshbooks-columns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
 
   const refreshLibrary = async () => {
     setLoading(true);
@@ -357,6 +492,13 @@ export default function LibraryPage() {
 
   const sortArrow = (field: SortField) => (sortField === field ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '');
 
+  const toggleColumn = (key: string) => {
+    setVisibleColumns((cols) => (cols.includes(key) ? cols.filter((c) => c !== key) : [...cols, key]));
+  };
+
+  // Render columns in the canonical TABLE_COLUMNS order, keeping only visible ones.
+  const activeColumns = TABLE_COLUMNS.filter((col) => col.locked || visibleColumns.includes(col.key));
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 p-6 sm:p-10">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -453,6 +595,49 @@ export default function LibraryPage() {
                   Table
                 </button>
               </div>
+
+              {viewMode === 'table' && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowColumnEditor((v) => !v)}
+                    className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 transition hover:bg-slate-800"
+                  >
+                    Columns ▾
+                  </button>
+                  {showColumnEditor && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setShowColumnEditor(false)} />
+                      <div className="absolute right-0 z-40 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-900 p-2 shadow-xl shadow-black/40">
+                        <p className="px-2 py-1 text-xs uppercase tracking-wider text-slate-500">Visible columns</p>
+                        {TABLE_COLUMNS.map((col) => (
+                          <label
+                            key={col.key}
+                            className={`flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm ${col.locked ? 'text-slate-500' : 'cursor-pointer text-slate-200 hover:bg-slate-800'}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={col.locked || visibleColumns.includes(col.key)}
+                              disabled={col.locked}
+                              onChange={() => toggleColumn(col.key)}
+                              className="h-4 w-4 accent-sky-500"
+                            />
+                            {col.label}
+                            {col.locked && <span className="ml-auto text-xs text-slate-600">always</span>}
+                          </label>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setVisibleColumns(DEFAULT_COLUMNS)}
+                          className="mt-1 w-full rounded-xl px-2 py-1.5 text-left text-xs text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
+                        >
+                          Reset to default
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-400">
                 {books ? sortedBooks.length : '...'} books
@@ -584,58 +769,22 @@ export default function LibraryPage() {
           </section>
         ) : (
           <section className="overflow-x-auto rounded-3xl border border-white/10 bg-slate-900/80 shadow-xl shadow-black/10">
-            <table className="w-full min-w-[820px] text-left text-sm">
+            <table className="w-full text-left text-sm">
               <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-400">
                 <tr>
                   <th className="px-4 py-3 font-medium">Cover</th>
-                  <th
-                    className="cursor-pointer select-none px-4 py-3 font-medium hover:text-white"
-                    onClick={() => toggleSort('title')}
-                  >
-                    Title{sortArrow('title')}
-                  </th>
-                  <th
-                    className="cursor-pointer select-none px-4 py-3 font-medium hover:text-white"
-                    onClick={() => toggleSort('author')}
-                  >
-                    Author{sortArrow('author')}
-                  </th>
-                  <th
-                    className="cursor-pointer select-none px-4 py-3 font-medium hover:text-white"
-                    onClick={() => toggleSort('published')}
-                  >
-                    Published{sortArrow('published')}
-                  </th>
-                  <th
-                    className="cursor-pointer select-none px-4 py-3 font-medium hover:text-white"
-                    onClick={() => toggleSort('format')}
-                  >
-                    Format{sortArrow('format')}
-                  </th>
-                  <th
-                    className="cursor-pointer select-none px-4 py-3 font-medium hover:text-white"
-                    onClick={() => toggleSort('source')}
-                  >
-                    Source{sortArrow('source')}
-                  </th>
-                  <th
-                    className="cursor-pointer select-none px-4 py-3 text-right font-medium hover:text-white"
-                    onClick={() => toggleSort('size')}
-                  >
-                    Size{sortArrow('size')}
-                  </th>
-                  <th
-                    className="cursor-pointer select-none px-4 py-3 text-right font-medium hover:text-white"
-                    onClick={() => toggleSort('progress')}
-                  >
-                    Progress{sortArrow('progress')}
-                  </th>
-                  <th
-                    className="cursor-pointer select-none px-4 py-3 font-medium hover:text-white"
-                    onClick={() => toggleSort('added')}
-                  >
-                    Added{sortArrow('added')}
-                  </th>
+                  {activeColumns.map((col) => (
+                    <th
+                      key={col.key}
+                      onClick={col.sortField ? () => toggleSort(col.sortField!) : undefined}
+                      className={`px-4 py-3 font-medium ${col.align === 'right' ? 'text-right' : ''} ${
+                        col.sortField ? 'cursor-pointer select-none hover:text-white' : ''
+                      }`}
+                    >
+                      {col.label}
+                      {col.sortField ? sortArrow(col.sortField) : ''}
+                    </th>
+                  ))}
                   <th className="px-4 py-3 font-medium" />
                 </tr>
               </thead>
@@ -647,32 +796,11 @@ export default function LibraryPage() {
                         <Cover book={book} className="h-14 w-10 overflow-hidden rounded-md text-xs" />
                       </Link>
                     </td>
-                    <td className="px-4 py-3">
-                      <Link href={`/reader/${book.id}`} className="font-medium text-white hover:text-sky-300">
-                        {displayTitle(book)}
-                      </Link>
-                      {book.series && (
-                        <div className="text-xs text-slate-500">
-                          {book.series}
-                          {book.seriesIndex !== undefined ? ` #${book.seriesIndex}` : ''}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-slate-300">{displayAuthors(book) || '—'}</td>
-                    <td className="px-4 py-3 text-slate-400">{book.publishedDate ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${FORMAT_BADGES[book.format] ?? 'bg-slate-500 text-white'}`}>
-                        {book.format.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${SOURCE_BADGES[book.source] ?? 'bg-slate-500 text-white'}`}>
-                        {book.source}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-400">{formatBytes(book.size)}</td>
-                    <td className="px-4 py-3 text-right text-slate-300">{Math.round(book.readingProgress)}%</td>
-                    <td className="px-4 py-3 text-slate-400">{formatDateShort(book.modifiedTime)}</td>
+                    {activeColumns.map((col) => (
+                      <td key={col.key} className={`px-4 py-3 ${col.align === 'right' ? 'text-right' : ''}`}>
+                        {col.cell(book)}
+                      </td>
+                    ))}
                     <td className="px-4 py-3 text-right">
                       <button
                         type="button"
