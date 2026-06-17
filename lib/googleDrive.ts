@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import type { BookEntry, LibrarySource, BookFormat } from '@/types/books';
+import type { BookEntry, BookMetadata, LibrarySource, BookFormat, MetadataSource } from '@/types/books';
 
 /**
  * Google Drive folder IDs for the three fixed library sources
@@ -57,15 +57,57 @@ export function getMimeTypeFormat(mimeType: string): BookFormat | null {
 }
 
 /**
+ * Reconstruct a cover image URL from the compact ids we persist
+ * (Drive's 124-byte property limit makes storing full URLs unreliable).
+ */
+function reconstructCoverUrl(props?: Record<string, string>): string | undefined {
+  if (props?.m_gbid) {
+    return `https://books.google.com/books/content?id=${props.m_gbid}&printsec=frontcover&img=1&zoom=1`;
+  }
+  if (props?.m_olcid) {
+    return `https://covers.openlibrary.org/b/id/${props.m_olcid}-M.jpg`;
+  }
+  return undefined;
+}
+
+/**
+ * Build the online-metadata fields of a BookEntry from stored appProperties.
+ * Returns an empty object when the book has not been enriched.
+ */
+function parseBookMetadata(props?: Record<string, string>): Partial<BookEntry> {
+  if (!props?.m_src) return {};
+
+  const seriesIndex = props.m_seriesIdx ? Number(props.m_seriesIdx) : undefined;
+  const pageCount = props.m_pages ? Number(props.m_pages) : undefined;
+
+  return {
+    title: props.m_title || undefined,
+    authors: props.m_authors ? props.m_authors.split('; ').filter(Boolean) : undefined,
+    publishedDate: props.m_published || undefined,
+    publisher: props.m_publisher || undefined,
+    description: props.m_desc || undefined,
+    categories: props.m_categories ? props.m_categories.split('; ').filter(Boolean) : undefined,
+    series: props.m_series || undefined,
+    seriesIndex: Number.isFinite(seriesIndex) ? seriesIndex : undefined,
+    pageCount: Number.isFinite(pageCount) ? pageCount : undefined,
+    language: props.m_lang || undefined,
+    isbn: props.m_isbn || undefined,
+    coverUrl: reconstructCoverUrl(props),
+    metadataSource: props.m_src as MetadataSource,
+  };
+}
+
+/**
  * Parse app properties safely, defaulting to sensible values
  */
 function parseAppProperties(appProperties?: Record<string, string>) {
   return {
-    readingProgress: appProperties?.progressPercentage 
-      ? parseInt(appProperties.progressPercentage, 10) 
+    readingProgress: appProperties?.progressPercentage
+      ? parseInt(appProperties.progressPercentage, 10)
       : 0,
     lastLocation: appProperties?.lastLocation ?? '',
     lastOpened: appProperties?.lastOpened,
+    metadata: parseBookMetadata(appProperties),
   };
 }
 
@@ -114,6 +156,7 @@ export async function listFilesInFolder(
         readingProgress: appProps.readingProgress,
         lastLocation: appProps.lastLocation,
         lastOpened: appProps.lastOpened,
+        ...appProps.metadata,
       });
     }
 
@@ -209,6 +252,64 @@ export async function updateBookProgress(
         lastOpened: new Date().toISOString(),
       },
     },
+  });
+}
+
+/**
+ * Truncate a property value so that key + value stays within Drive's 124-byte
+ * (UTF-8) per-property limit. Returns the value clipped on a UTF-8 boundary.
+ */
+function truncateForProperty(key: string, value: string): string {
+  const budget = 124 - Buffer.byteLength(key, 'utf8');
+  if (budget <= 0) return '';
+  let out = value;
+  while (Buffer.byteLength(out, 'utf8') > budget) {
+    out = out.slice(0, -1);
+  }
+  return out;
+}
+
+/**
+ * Persist online metadata to a file's appProperties.
+ * Uses a partial update (Drive merges appProperties), so existing reading
+ * progress keys are preserved. Large URLs are stored as compact ids; the
+ * description is stored as a short preview.
+ */
+export async function updateBookMetadata(
+  accessToken: string,
+  fileId: string,
+  metadata: BookMetadata
+): Promise<void> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+
+  // Build the raw m_* map, then drop empty values and clip each to 124 bytes.
+  const raw: Record<string, string | undefined> = {
+    m_title: metadata.title,
+    m_authors: metadata.authors?.join('; '),
+    m_published: metadata.publishedDate,
+    m_publisher: metadata.publisher,
+    m_desc: metadata.description,
+    m_categories: metadata.categories?.join('; '),
+    m_series: metadata.series,
+    m_seriesIdx: metadata.seriesIndex !== undefined ? String(metadata.seriesIndex) : undefined,
+    m_pages: metadata.pageCount !== undefined ? String(metadata.pageCount) : undefined,
+    m_lang: metadata.language,
+    m_isbn: metadata.isbn,
+    m_gbid: metadata.googleBooksId,
+    m_olcid: metadata.openLibraryCoverId,
+    m_src: metadata.metadataSource ?? 'manual',
+  };
+
+  const appProperties: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (value === undefined || value === '') continue;
+    appProperties[key] = truncateForProperty(key, value);
+  }
+
+  await drive.files.update({
+    fileId,
+    requestBody: { appProperties },
   });
 }
 
@@ -338,6 +439,7 @@ export async function listFilesInFolderRecursive(
         readingProgress: appProps.readingProgress,
         lastLocation: appProps.lastLocation,
         lastOpened: appProps.lastOpened,
+        ...appProps.metadata,
       });
     }
 

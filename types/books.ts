@@ -16,6 +16,34 @@ export type LibrarySource =
 
 export type BookFormat = 'pdf' | 'epub' | 'txt' | 'docx';
 
+export type MetadataSource = 'google-books' | 'open-library' | 'manual';
+
+/**
+ * Book metadata fetched from an online source (Google Books / Open Library)
+ * and persisted to Drive appProperties. All fields optional — a book may be
+ * partially matched or not enriched at all.
+ */
+export interface BookMetadata {
+  title?: string;
+  authors?: string[];
+  publishedDate?: string;
+  publisher?: string;
+  description?: string;
+  categories?: string[];
+  series?: string;
+  seriesIndex?: number;
+  pageCount?: number;
+  language?: string;
+  isbn?: string;
+  /** Reconstructed cover image URL (from a Google Books volume id or Open Library cover id) */
+  coverUrl?: string;
+  /** Google Books volume id — stored so the cover URL can be reconstructed */
+  googleBooksId?: string;
+  /** Open Library cover id — stored so the cover URL can be reconstructed */
+  openLibraryCoverId?: string;
+  metadataSource?: MetadataSource;
+}
+
 export interface BookEntry {
   /** Google Drive file ID */
   id: string;
@@ -53,4 +81,21 @@ export interface BookEntry {
 
   /** ISO 8601 timestamp of when user last opened this book (from appProperties.lastOpened) */
   lastOpened?: string;
+
+  // --- Online metadata (from Google Books / Open Library, persisted in appProperties) ---
+  title?: string;
+  authors?: string[];
+  publishedDate?: string;
+  publisher?: string;
+  description?: string;
+  categories?: string[];
+  series?: string;
+  seriesIndex?: number;
+  pageCount?: number;
+  language?: string;
+  isbn?: string;
+  /** Reconstructed cover image URL */
+  coverUrl?: string;
+  /** Which source enriched this book; undefined means not yet enriched */
+  metadataSource?: MetadataSource;
 }
