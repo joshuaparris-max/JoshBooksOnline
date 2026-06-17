@@ -1,15 +1,15 @@
 import { getServerSession } from 'next-auth';
 import { updateBookMetadata } from '@/lib/googleDrive';
-import { enrichBookMetadata } from '@/lib/bookMetadata';
 import authOptions from '@/lib/auth';
+import type { BookMetadata } from '@/types/books';
 
 /**
  * POST /api/library/metadata
- * Enrich a single book's metadata from online sources and persist it to Drive.
+ * Persist a book's metadata to Drive. The caller supplies the exact metadata to
+ * save (an approved online candidate or a hand-edited form) — this endpoint does
+ * NOT fetch anything, so nothing is written without explicit review.
  *
- * Request body: { fileId: string, name: string }
- * Response: { metadata: BookMetadata } on a match, or { metadata: null } when
- *           no online source produced a usable result.
+ * Request body: { fileId: string, metadata: BookMetadata }
  */
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -19,26 +19,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { fileId, name } = await request.json();
+    const { fileId, metadata } = (await request.json()) as {
+      fileId?: string;
+      metadata?: BookMetadata;
+    };
 
-    if (!fileId || !name) {
+    if (!fileId || !metadata) {
       return Response.json(
-        { error: 'Missing required fields: fileId, name' },
+        { error: 'Missing required fields: fileId, metadata' },
         { status: 400 }
       );
     }
 
-    const metadata = await enrichBookMetadata(name);
-
-    if (!metadata) {
-      return Response.json({ metadata: null });
-    }
-
     await updateBookMetadata(session.accessToken, fileId, metadata);
 
-    return Response.json({ metadata });
+    return Response.json({ ok: true, metadata });
   } catch (error) {
-    console.error('Failed to enrich metadata:', error);
-    return Response.json({ error: 'Failed to enrich metadata' }, { status: 500 });
+    console.error('Failed to save metadata:', error);
+    return Response.json({ error: 'Failed to save metadata' }, { status: 500 });
   }
 }

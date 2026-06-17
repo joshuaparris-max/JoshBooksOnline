@@ -56,20 +56,9 @@ function googleCoverUrl(volumeId: string): string {
   return `https://books.google.com/books/content?id=${volumeId}&printsec=frontcover&img=1&zoom=1`;
 }
 
-async function fetchFromGoogleBooks(query: string, isIsbn = false): Promise<BookMetadata | null> {
-  const q = isIsbn ? `isbn:${query}` : query;
-  const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
-  const url =
-    `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=1&country=US` +
-    (apiKey ? `&key=${apiKey}` : '');
-
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) return null;
-
-  const data = (await response.json()) as { items?: GoogleBooksVolume[] };
-  const volume = data.items?.[0];
-  const info = volume?.volumeInfo;
-  if (!volume || !info?.title) return null;
+function normaliseGoogleVolume(volume: GoogleBooksVolume): BookMetadata | null {
+  const info = volume.volumeInfo;
+  if (!info?.title) return null;
 
   const isbn =
     info.industryIdentifiers?.find((i) => i.type === 'ISBN_13')?.identifier ??
@@ -93,6 +82,20 @@ async function fetchFromGoogleBooks(query: string, isIsbn = false): Promise<Book
   };
 }
 
+async function fetchFromGoogleBooks(query: string, isIsbn = false, max = 5): Promise<BookMetadata[]> {
+  const q = isIsbn ? `isbn:${query}` : query;
+  const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+  const url =
+    `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=${max}&country=US` +
+    (apiKey ? `&key=${apiKey}` : '');
+
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) return [];
+
+  const data = (await response.json()) as { items?: GoogleBooksVolume[] };
+  return (data.items ?? []).map(normaliseGoogleVolume).filter((m): m is BookMetadata => m !== null);
+}
+
 interface OpenLibraryDoc {
   title?: string;
   author_name?: string[];
@@ -104,17 +107,8 @@ interface OpenLibraryDoc {
   isbn?: string[];
 }
 
-async function fetchFromOpenLibrary(query: string, isIsbn = false): Promise<BookMetadata | null> {
-  const param = isIsbn ? `isbn=${encodeURIComponent(query)}` : `q=${encodeURIComponent(query)}`;
-  const url = `https://openlibrary.org/search.json?${param}&limit=1&fields=title,author_name,first_publish_year,publisher,language,number_of_pages_median,cover_i,isbn`;
-
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) return null;
-
-  const data = (await response.json()) as { docs?: OpenLibraryDoc[] };
-  const doc = data.docs?.[0];
-  if (!doc?.title) return null;
-
+function normaliseOpenLibraryDoc(doc: OpenLibraryDoc): BookMetadata | null {
+  if (!doc.title) return null;
   return {
     title: doc.title,
     authors: doc.author_name,
@@ -129,27 +123,61 @@ async function fetchFromOpenLibrary(query: string, isIsbn = false): Promise<Book
   };
 }
 
-/**
- * Enrich a book by its filename: Google Books first, fall back to Open Library.
- * Returns null when neither source produces a usable match.
- */
-export async function enrichBookMetadata(name: string): Promise<BookMetadata | null> {
-  const isbn = detectIsbn(name);
-  const query = cleanFilenameToQuery(name);
+async function fetchFromOpenLibrary(query: string, isIsbn = false, max = 5): Promise<BookMetadata[]> {
+  const param = isIsbn ? `isbn=${encodeURIComponent(query)}` : `q=${encodeURIComponent(query)}`;
+  const url = `https://openlibrary.org/search.json?${param}&limit=${max}&fields=title,author_name,first_publish_year,publisher,language,number_of_pages_median,cover_i,isbn`;
 
-  // Prefer an ISBN lookup when we can find one in the filename
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) return [];
+
+  const data = (await response.json()) as { docs?: OpenLibraryDoc[] };
+  return (data.docs ?? []).map(normaliseOpenLibraryDoc).filter((m): m is BookMetadata => m !== null);
+}
+
+function dedupeCandidates(candidates: BookMetadata[]): BookMetadata[] {
+  const seen = new Set<string>();
+  const out: BookMetadata[] = [];
+  for (const c of candidates) {
+    const key = `${c.title?.toLowerCase()}|${c.authors?.[0]?.toLowerCase() ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(c);
+  }
+  return out;
+}
+
+/**
+ * Search both sources for candidate matches (Google Books first, then Open
+ * Library). Returns an ordered, de-duplicated list for the user to review.
+ * `explicitQuery` overrides the filename-derived query (used by manual search).
+ */
+export async function searchBookCandidates(
+  name: string,
+  explicitQuery?: string
+): Promise<BookMetadata[]> {
+  const query = (explicitQuery ?? cleanFilenameToQuery(name)).trim();
+  const isbn = !explicitQuery ? detectIsbn(name) : null;
+
+  const results: BookMetadata[] = [];
+
   if (isbn) {
-    const byIsbn =
-      (await fetchFromGoogleBooks(isbn, true).catch(() => null)) ??
-      (await fetchFromOpenLibrary(isbn, true).catch(() => null));
-    if (byIsbn) return byIsbn;
+    results.push(...(await fetchFromGoogleBooks(isbn, true, 3).catch(() => [])));
+    results.push(...(await fetchFromOpenLibrary(isbn, true, 3).catch(() => [])));
   }
 
-  if (!query) return null;
+  if (query) {
+    results.push(...(await fetchFromGoogleBooks(query, false, 5).catch(() => [])));
+    results.push(...(await fetchFromOpenLibrary(query, false, 5).catch(() => [])));
+  }
 
-  const fromGoogle = await fetchFromGoogleBooks(query).catch(() => null);
-  if (fromGoogle) return fromGoogle;
+  return dedupeCandidates(results).slice(0, 10);
+}
 
-  const fromOpenLibrary = await fetchFromOpenLibrary(query).catch(() => null);
-  return fromOpenLibrary;
+/**
+ * Best-effort single match for a filename (the top candidate), used to stage a
+ * suggestion for review. Returns null when nothing is found.
+ */
+export async function enrichBookMetadata(name: string): Promise<BookMetadata | null> {
+  const candidates = await searchBookCandidates(name);
+  return candidates[0] ?? null;
 }

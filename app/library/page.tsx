@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { DrivePicker } from '@/components/DrivePicker';
-import type { BookEntry } from '@/types/books';
+import MetadataEditor from '@/components/MetadataEditor';
+import type { BookEntry, BookMetadata } from '@/types/books';
 
 const SOURCE_BADGES: Record<string, string> = {
   'IT PD Ebooks': 'bg-amber-500 text-slate-950',
@@ -63,6 +64,25 @@ function displayTitle(book: BookEntry) {
 
 function displayAuthors(book: BookEntry) {
   return book.authors && book.authors.length > 0 ? book.authors.join(', ') : '';
+}
+
+/** Pull the metadata fields out of a BookEntry (for pre-filling the editor). */
+function extractMetadata(book: BookEntry): BookMetadata {
+  return {
+    title: book.title,
+    authors: book.authors,
+    publishedDate: book.publishedDate,
+    publisher: book.publisher,
+    description: book.description,
+    categories: book.categories,
+    series: book.series,
+    seriesIndex: book.seriesIndex,
+    pageCount: book.pageCount,
+    language: book.language,
+    isbn: book.isbn,
+    coverUrl: book.coverUrl,
+    metadataSource: book.metadataSource,
+  };
 }
 
 function getInitials(title: string) {
@@ -315,7 +335,10 @@ export default function LibraryPage() {
     total: 0,
     message: '',
   });
-  const [refetchingId, setRefetchingId] = useState<string | null>(null);
+  // Fetched-but-unsaved suggestions awaiting the user's review, keyed by file id.
+  const [pending, setPending] = useState<Record<string, BookMetadata>>({});
+  const [editingBook, setEditingBook] = useState<BookEntry | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [importStatus, setImportStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({
     type: 'idle',
     message: '',
@@ -404,20 +427,19 @@ export default function LibraryPage() {
     refreshLibrary();
   }, []);
 
-  /** Enrich a single book and patch it into state. Returns true on a match. */
-  const enrichOne = async (book: BookEntry): Promise<boolean> => {
+  /** Fetch the top online suggestion for a book and stage it (no write). Returns true if found. */
+  const stageOne = async (book: BookEntry): Promise<boolean> => {
     try {
-      const response = await fetch('/api/library/metadata', {
+      const response = await fetch('/api/library/metadata/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId: book.id, name: book.name }),
+        body: JSON.stringify({ name: book.name }),
       });
       if (!response.ok) return false;
-      const data = (await response.json()) as { metadata: Partial<BookEntry> | null };
-      if (data.metadata) {
-        setBooks((prev) =>
-          prev ? prev.map((b) => (b.id === book.id ? { ...b, ...data.metadata } : b)) : prev
-        );
+      const data = (await response.json()) as { candidates: BookMetadata[] };
+      const top = data.candidates?.[0];
+      if (top) {
+        setPending((prev) => ({ ...prev, [book.id]: top }));
         return true;
       }
       return false;
@@ -426,38 +448,62 @@ export default function LibraryPage() {
     }
   };
 
+  /** Bulk: stage suggestions for every un-enriched, not-yet-staged book for review. */
   const fetchAllMetadata = async () => {
     if (!books) return;
-    const targets = books.filter((b) => !b.metadataSource);
+    const targets = books.filter((b) => !b.metadataSource && !pending[b.id]);
     if (targets.length === 0) {
-      setEnrich({ running: false, done: 0, total: 0, message: 'All books already have metadata.' });
+      setEnrich({ running: false, done: 0, total: 0, message: 'Nothing new to fetch.' });
       setTimeout(() => setEnrich((s) => ({ ...s, message: '' })), 4000);
       return;
     }
 
-    setEnrich({ running: true, done: 0, total: targets.length, message: `Enriching 0/${targets.length}…` });
+    setEnrich({ running: true, done: 0, total: targets.length, message: `Fetching 0/${targets.length}…` });
     let done = 0;
     let matched = 0;
     for (const book of targets) {
-      const ok = await enrichOne(book);
+      const ok = await stageOne(book);
       if (ok) matched += 1;
       done += 1;
-      setEnrich((s) => ({ ...s, done, message: `Enriching ${done}/${targets.length}…` }));
+      setEnrich((s) => ({ ...s, done, message: `Fetching ${done}/${targets.length}…` }));
       await sleep(300); // be gentle with the public APIs
     }
     setEnrich({
       running: false,
       done,
       total: targets.length,
-      message: `Done — matched ${matched} of ${targets.length} book${targets.length !== 1 ? 's' : ''}.`,
+      message: `Fetched ${matched} suggestion${matched !== 1 ? 's' : ''} — review and approve each below.`,
     });
-    setTimeout(() => setEnrich((s) => ({ ...s, message: '' })), 6000);
+    setTimeout(() => setEnrich((s) => ({ ...s, message: '' })), 8000);
   };
 
-  const refetchOne = async (book: BookEntry) => {
-    setRefetchingId(book.id);
-    await enrichOne(book);
-    setRefetchingId(null);
+  /** Persist explicit metadata (an approved suggestion or an edited form) to Drive. */
+  const saveMetadata = async (fileId: string, metadata: BookMetadata) => {
+    setSavingId(fileId);
+    try {
+      const response = await fetch('/api/library/metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId, metadata }),
+      });
+      if (!response.ok) throw new Error('save failed');
+      setBooks((prev) => (prev ? prev.map((b) => (b.id === fileId ? { ...b, ...metadata } : b)) : prev));
+      setPending((prev) => {
+        const next = { ...prev };
+        delete next[fileId];
+        return next;
+      });
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const discardPending = (fileId: string) => {
+    setPending((prev) => {
+      const next = { ...prev };
+      delete next[fileId];
+      return next;
+    });
   };
 
   const sortedBooks = useMemo(() => {
@@ -479,7 +525,8 @@ export default function LibraryPage() {
     return filtered.sort((a, b) => compareBooks(a, b, sortField, sortDir));
   }, [books, search, sortField, sortDir]);
 
-  const unenrichedCount = books ? books.filter((b) => !b.metadataSource).length : 0;
+  const pendingCount = Object.keys(pending).length;
+  const fetchTargetCount = books ? books.filter((b) => !b.metadataSource && !pending[b.id]).length : 0;
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -519,12 +566,13 @@ export default function LibraryPage() {
               <button
                 type="button"
                 onClick={fetchAllMetadata}
-                disabled={enrich.running || !books || unenrichedCount === 0}
+                disabled={enrich.running || !books || fetchTargetCount === 0}
+                title="Fetches online suggestions for review — nothing is saved until you approve each one"
                 className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
               >
                 {enrich.running
                   ? `Fetching… ${enrich.done}/${enrich.total}`
-                  : `Fetch metadata${unenrichedCount ? ` (${unenrichedCount})` : ''}`}
+                  : `Fetch suggestions${fetchTargetCount ? ` (${fetchTargetCount})` : ''}`}
               </button>
               <button
                 type="button"
@@ -751,18 +799,48 @@ export default function LibraryPage() {
                       />
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => refetchOne(book)}
-                    disabled={refetchingId === book.id}
-                    className="w-full rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10 disabled:opacity-50"
-                  >
-                    {refetchingId === book.id
-                      ? 'Fetching…'
-                      : book.metadataSource
-                      ? 'Re-fetch metadata'
-                      : 'Fetch metadata'}
-                  </button>
+                  {pending[book.id] ? (
+                    <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">Suggested — review</p>
+                      <p className="mt-1 truncate text-sm font-medium text-white">{pending[book.id].title}</p>
+                      <p className="truncate text-xs text-slate-300">
+                        {pending[book.id].authors?.join(', ') || 'Unknown author'}
+                        {pending[book.id].publishedDate ? ` · ${pending[book.id].publishedDate}` : ''}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => saveMetadata(book.id, pending[book.id])}
+                          disabled={savingId === book.id}
+                          className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                        >
+                          {savingId === book.id ? 'Saving…' : 'Approve'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingBook(book)}
+                          className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/10"
+                        >
+                          Edit…
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => discardPending(book.id)}
+                          className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                        >
+                          Discard
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setEditingBook(book)}
+                      className="w-full rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                    >
+                      Edit metadata
+                    </button>
+                  )}
                 </div>
               </article>
             ))}
@@ -789,31 +867,65 @@ export default function LibraryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {sortedBooks.map((book) => (
-                  <tr key={book.id} className="transition hover:bg-slate-800/60">
-                    <td className="px-4 py-3">
-                      <Link href={`/reader/${book.id}`}>
-                        <Cover book={book} className="h-14 w-10 overflow-hidden rounded-md text-xs" />
-                      </Link>
-                    </td>
-                    {activeColumns.map((col) => (
-                      <td key={col.key} className={`px-4 py-3 ${col.align === 'right' ? 'text-right' : ''}`}>
-                        {col.cell(book)}
+                {sortedBooks.map((book) => {
+                  const suggestion = pending[book.id];
+                  return (
+                    <tr
+                      key={book.id}
+                      className={`transition hover:bg-slate-800/60 ${suggestion ? 'bg-amber-500/5' : ''}`}
+                    >
+                      <td className="px-4 py-3">
+                        <Link href={`/reader/${book.id}`}>
+                          <Cover book={book} className="h-14 w-10 overflow-hidden rounded-md text-xs" />
+                        </Link>
                       </td>
-                    ))}
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => refetchOne(book)}
-                        disabled={refetchingId === book.id}
-                        className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10 disabled:opacity-50"
-                        title={book.metadataSource ? 'Re-fetch metadata' : 'Fetch metadata'}
-                      >
-                        {refetchingId === book.id ? '…' : book.metadataSource ? '↻' : 'Fetch'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      {activeColumns.map((col) => (
+                        <td key={col.key} className={`px-4 py-3 ${col.align === 'right' ? 'text-right' : ''}`}>
+                          {col.cell(book)}
+                          {col.key === 'title' && suggestion && (
+                            <div className="mt-1 text-xs text-amber-300">
+                              Suggested: {suggestion.title}
+                              {suggestion.authors?.[0] ? ` — ${suggestion.authors[0]}` : ''}
+                            </div>
+                          )}
+                        </td>
+                      ))}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          {suggestion && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => saveMetadata(book.id, suggestion)}
+                                disabled={savingId === book.id}
+                                title="Approve suggestion"
+                                className="rounded-full bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                              >
+                                ✓
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => discardPending(book.id)}
+                                title="Discard suggestion"
+                                className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-slate-300 transition hover:bg-white/10"
+                              >
+                                ✕
+                              </button>
+                            </>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setEditingBook(book)}
+                            title="Edit metadata"
+                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </section>
@@ -863,6 +975,15 @@ export default function LibraryPage() {
           </div>
         </section>
       </div>
+
+      {editingBook && (
+        <MetadataEditor
+          book={editingBook}
+          initial={pending[editingBook.id] ?? extractMetadata(editingBook)}
+          onClose={() => setEditingBook(null)}
+          onSave={(metadata) => saveMetadata(editingBook.id, metadata)}
+        />
+      )}
     </main>
   );
 }

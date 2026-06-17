@@ -67,6 +67,9 @@ function reconstructCoverUrl(props?: Record<string, string>): string | undefined
   if (props?.m_olcid) {
     return `https://covers.openlibrary.org/b/id/${props.m_olcid}-M.jpg`;
   }
+  if (props?.m_cover) {
+    return props.m_cover;
+  }
   return undefined;
 }
 
@@ -283,7 +286,21 @@ export async function updateBookMetadata(
   const auth = getOAuthClient(accessToken);
   const drive = google.drive({ version: 'v3', auth });
 
-  // Build the raw m_* map, then drop empty values and clip each to 124 bytes.
+  // Resolve the cover into one of three storage forms (compact ids preferred,
+  // raw URL only as a fallback for manually-entered covers that fit).
+  let gbid = metadata.googleBooksId;
+  let olcid = metadata.openLibraryCoverId;
+  let coverRaw: string | undefined;
+  if (!gbid && !olcid && metadata.coverUrl) {
+    const gbMatch = metadata.coverUrl.match(/books\.google\.[^/]+\/books\/content\?id=([^&]+)/);
+    const olMatch = metadata.coverUrl.match(/covers\.openlibrary\.org\/b\/id\/(\d+)/);
+    if (gbMatch) gbid = gbMatch[1];
+    else if (olMatch) olcid = olMatch[1];
+    else if (Buffer.byteLength(`m_cover${metadata.coverUrl}`, 'utf8') <= 124) coverRaw = metadata.coverUrl;
+  }
+
+  // Build the full m_* map. Empty/undefined values become null so Drive DELETES
+  // that property — this lets manual edits clear a field rather than leave a stale value.
   const raw: Record<string, string | undefined> = {
     m_title: metadata.title,
     m_authors: metadata.authors?.join('; '),
@@ -296,20 +313,21 @@ export async function updateBookMetadata(
     m_pages: metadata.pageCount !== undefined ? String(metadata.pageCount) : undefined,
     m_lang: metadata.language,
     m_isbn: metadata.isbn,
-    m_gbid: metadata.googleBooksId,
-    m_olcid: metadata.openLibraryCoverId,
+    m_gbid: gbid,
+    m_olcid: olcid,
+    m_cover: coverRaw,
     m_src: metadata.metadataSource ?? 'manual',
   };
 
-  const appProperties: Record<string, string> = {};
+  const appProperties: Record<string, string | null> = {};
   for (const [key, value] of Object.entries(raw)) {
-    if (value === undefined || value === '') continue;
-    appProperties[key] = truncateForProperty(key, value);
+    appProperties[key] = value === undefined || value === '' ? null : truncateForProperty(key, value);
   }
 
   await drive.files.update({
     fileId,
-    requestBody: { appProperties },
+    // appProperties accepts null values to delete keys; the typed client omits null from its type.
+    requestBody: { appProperties: appProperties as unknown as Record<string, string> },
   });
 }
 
