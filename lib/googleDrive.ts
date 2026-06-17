@@ -191,3 +191,98 @@ export async function updateBookProgress(
     },
   });
 }
+
+/**
+ * Get metadata for a specific file by its ID
+ * Used for importing files selected from the Google Picker
+ */
+export async function getFileMetadata(
+  accessToken: string,
+  fileId: string
+): Promise<{ id: string; name: string; mimeType: string; size: number; modifiedTime: string } | null> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+
+  try {
+    const response = await drive.files.get({
+      fileId,
+      fields: 'id, name, mimeType, size, modifiedTime',
+    });
+
+    if (!response.data) {
+      return null;
+    }
+
+    return {
+      id: response.data.id!,
+      name: response.data.name!,
+      mimeType: response.data.mimeType!,
+      size: response.data.size ? parseInt(response.data.size as string, 10) : 0,
+      modifiedTime: response.data.modifiedTime!,
+    };
+  } catch (error) {
+    console.error(`Failed to get metadata for file ${fileId}:`, error);
+    return null;
+  }
+}
+
+/**
+ * List files in a folder (recursively if folder is selected)
+ * Handles both individual files and folders from the Picker
+ */
+export async function listFilesInFolderRecursive(
+  accessToken: string,
+  folderId: string,
+  source: LibrarySource = 'Unsorted'
+): Promise<BookEntry[]> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+
+  const books: BookEntry[] = [];
+  let pageToken: string | null | undefined;
+
+  do {
+    const response = await drive.files.list({
+      q: `'${folderId}' in parents and trashed = false and (mimeType = 'application/pdf' or mimeType = 'application/epub+zip' or mimeType = 'application/vnd.google-apps.folder')`,
+      fields:
+        'nextPageToken, files(id, name, mimeType, size, modifiedTime, thumbnailLink, appProperties)',
+      pageSize: 100,
+      pageToken: pageToken ?? undefined,
+    });
+
+    const files = response.data.files || [];
+    for (const file of files) {
+      // If it's a folder, recursively list files within it
+      if (file.mimeType === 'application/vnd.google-apps.folder') {
+        const nestedBooks = await listFilesInFolderRecursive(accessToken, file.id!, source);
+        books.push(...nestedBooks);
+        continue;
+      }
+
+      const format = getMimeTypeFormat(file.mimeType!);
+      if (!format) continue; // Skip unsupported formats
+
+      const appProps = parseAppProperties(
+        file.appProperties as Record<string, string> | undefined
+      );
+
+      books.push({
+        id: file.id!,
+        name: file.name!,
+        mimeType: file.mimeType!,
+        size: file.size ? parseInt(file.size as string, 10) : 0,
+        modifiedTime: file.modifiedTime!,
+        thumbnailLink: file.thumbnailLink ?? undefined,
+        source,
+        format,
+        readingProgress: appProps.readingProgress,
+        lastLocation: appProps.lastLocation,
+        lastOpened: appProps.lastOpened,
+      });
+    }
+
+    pageToken = response.data.nextPageToken;
+  } while (pageToken);
+
+  return books;
+}

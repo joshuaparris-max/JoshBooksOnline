@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { signOut } from 'next-auth/react';
+import { DrivePicker } from '@/components/DrivePicker';
 import type { BookEntry } from '@/types/books';
 
 const SOURCE_BADGES: Record<string, string> = {
@@ -59,6 +60,10 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [importStatus, setImportStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({
+    type: 'idle',
+    message: '',
+  });
 
   const refreshLibrary = async () => {
     setLoading(true);
@@ -81,6 +86,28 @@ export default function LibraryPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleImportStart = () => {
+    setImportStatus({ type: 'loading', message: 'Importing files...' });
+  };
+
+  const handleImportComplete = (count: number) => {
+    setImportStatus({
+      type: 'success',
+      message: `Successfully imported ${count} file${count !== 1 ? 's' : ''}.`,
+    });
+    setTimeout(() => {
+      setImportStatus({ type: 'idle', message: '' });
+      refreshLibrary();
+    }, 2000);
+  };
+
+  const handleImportError = (errorMessage: string) => {
+    setImportStatus({ type: 'error', message: errorMessage });
+    setTimeout(() => {
+      setImportStatus({ type: 'idle', message: '' });
+    }, 5000);
   };
 
   useEffect(() => {
@@ -114,6 +141,11 @@ export default function LibraryPage() {
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <DrivePicker
+                onImportStart={handleImportStart}
+                onImportComplete={handleImportComplete}
+                onImportError={handleImportError}
+              />
               <button
                 type="button"
                 onClick={refreshLibrary}
@@ -143,6 +175,18 @@ export default function LibraryPage() {
             </div>
           </div>
         </section>
+
+        {importStatus.type !== 'idle' && (
+          <section className={`rounded-3xl border p-6 ${
+            importStatus.type === 'success'
+              ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-100'
+              : importStatus.type === 'error'
+              ? 'border-rose-500/30 bg-rose-500/5 text-rose-100'
+              : 'border-sky-500/30 bg-sky-500/5 text-sky-100'
+          }`}>
+            <p className="font-medium">{importStatus.message}</p>
+          </section>
+        )}
 
         {loading ? (
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
