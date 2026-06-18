@@ -133,6 +133,7 @@ BIBLE_BOOKS.forEach((book, index) => BIBLE_BOOK_ALIASES.set(book.toLowerCase(), 
 BIBLE_BOOK_ALIASES.set('psalm', 19);
 BIBLE_BOOK_ALIASES.set('song of solomon', 22);
 BIBLE_BOOK_ALIASES.set('songs', 22);
+BIBLE_BOOK_ALIASES.set('2 corinthains', 47); // common misspelling in filenames
 
 /** Detect Bible-book audio files (e.g. "19 19 Psalms"); returns the book ordinal or null. */
 function getBibleBookOrder(filename: string): number | null {
