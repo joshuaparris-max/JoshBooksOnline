@@ -1,10 +1,18 @@
 import { google } from 'googleapis';
-import type { BookEntry, BookMetadata, LibrarySource, BookFormat, MetadataSource } from '@/types/books';
+import type {
+  BookEntry,
+  BookMetadata,
+  LibrarySource,
+  BookFormat,
+  MetadataSource,
+  AudiobookEntry,
+  AudioTrack,
+} from '@/types/books';
 
 /**
  * Google Drive folder IDs for the three fixed library sources
  */
-const FIXED_FOLDERS: Record<Exclude<LibrarySource, 'Local Books'>, string> = {
+const FIXED_FOLDERS: Record<string, string> = {
   'IT PD Ebooks': '13bvVMhL0iGxOfFS9nOBk7eGhh6708kbp',
   'Book Club': '1FxuWDsjoRK9DUxdCoPefxea0eqR6EblU',
   Unsorted: '0B9UqG6BQI95fb0xsOElucWx3LUE',
@@ -14,6 +22,53 @@ const FIXED_FOLDERS: Record<Exclude<LibrarySource, 'Local Books'>, string> = {
   'ITIL PRINCE COBIT': '1bpLjo9ZIcGdx2R7uuw0qBPv5Vz2UWUyy',
   'IEC 27001': '1X70Y14d15t3nqw5AxZ9V3XGGBUmRvTdZ',
 };
+
+/**
+ * Permanent ebook collection folders, listed recursively. These are scanned for
+ * pdf/epub/txt/docx files (audio files inside them are ignored here).
+ */
+const EBOOK_FOLDERS: Record<string, string> = {
+  'Fiction – Classics': '1nJAAlrhzyVdQp4d36WUJ2MjQziqe9O6l',
+  'Fiction – General': '1MD7HO7lZzDApANdYjD6j0b989aST7p4K',
+  Nonfiction: '1o2tU1SKcvcuToRxQ-yILZuxWrMvmvH-W',
+  'Epub & PDF': '1Ot_Z2si9vnKAGoz_jjwCU056h6zkYypP',
+};
+
+/**
+ * Permanent audiobook collection folders. Their immediate children become
+ * audiobooks (a sub-folder = a multi-track audiobook; a loose audio file = a
+ * single-track audiobook).
+ */
+const AUDIOBOOK_FOLDERS: Record<string, string> = {
+  Audiobooks: '1NRY6dXCpILRzfG4yYTpisGqLnqx2ECEQ',
+  Outlander: '1SBqmfghmj5gqxWRnCrxbHP65I23ohlcQ',
+};
+
+const AUDIO_MIME_TYPES = new Set([
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/m4a',
+  'audio/m4b',
+  'audio/aac',
+  'audio/ogg',
+  'audio/wav',
+  'audio/x-wav',
+  'audio/flac',
+]);
+
+const FOLDER_MIME = 'application/vnd.google-apps.folder';
+
+function isAudioMime(mimeType?: string | null): boolean {
+  if (!mimeType) return false;
+  return AUDIO_MIME_TYPES.has(mimeType) || mimeType.startsWith('audio/');
+}
+
+/** Natural sort so "Track 2" comes before "Track 10". */
+function naturalCompare(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+}
 
 /**
  * Create an OAuth2 client with the given access token
@@ -217,6 +272,23 @@ export async function getAllLibraryFiles(accessToken: string): Promise<BookEntry
     }
   }
 
+  // Fetch recursively from the permanent ebook collection folders
+  await Promise.all(
+    Object.entries(EBOOK_FOLDERS).map(async ([source, folderId]) => {
+      try {
+        const books = await listFilesInFolderRecursive(accessToken, folderId, source as LibrarySource);
+        for (const book of books) {
+          if (!seenIds.has(book.id)) {
+            allBooks.push(book);
+            seenIds.add(book.id);
+          }
+        }
+      } catch (error) {
+        console.error(`Failed to fetch from ${source}:`, error);
+      }
+    })
+  );
+
   // Try to fetch from Local Books if it exists
   try {
     const localBooksId = await findLocalBooksFolderId(accessToken);
@@ -234,6 +306,176 @@ export async function getAllLibraryFiles(accessToken: string): Promise<BookEntry
   }
 
   return allBooks;
+}
+
+/** Parse audiobook metadata + resume position from a folder/file's appProperties. */
+function parseAudiobookProps(props?: Record<string, string>): Partial<AudiobookEntry> {
+  const meta = parseBookMetadata(props);
+  const track = props?.m_audio_track ? Number(props.m_audio_track) : undefined;
+  const pos = props?.m_audio_pos ? Number(props.m_audio_pos) : undefined;
+  return {
+    authors: meta.authors,
+    publishedDate: meta.publishedDate,
+    description: meta.description,
+    coverUrl: meta.coverUrl,
+    metadataSource: meta.metadataSource,
+    audioTrack: Number.isFinite(track) ? track : undefined,
+    audioPosition: Number.isFinite(pos) ? pos : undefined,
+    linkedTextId: props?.m_link_text || undefined,
+  };
+}
+
+/**
+ * List audiobooks: the immediate children of the permanent audiobook folders.
+ * A child folder becomes a multi-track audiobook; a loose audio file becomes a
+ * single-track audiobook. Track lists are NOT loaded here (see getAudiobookTracks).
+ */
+export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry[]> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+
+  const audiobooks: AudiobookEntry[] = [];
+  const seen = new Set<string>();
+
+  await Promise.all(
+    Object.entries(AUDIOBOOK_FOLDERS).map(async ([source, rootId]) => {
+      let pageToken: string | null | undefined;
+      try {
+        do {
+          const response = await drive.files.list({
+            q: `'${rootId}' in parents and trashed = false`,
+            fields: 'nextPageToken, files(id, name, mimeType, appProperties)',
+            pageSize: 200,
+            pageToken: pageToken ?? undefined,
+          });
+
+          for (const file of response.data.files || []) {
+            const props = file.appProperties as Record<string, string> | undefined;
+            if (props?.m_hidden === '1') continue;
+            const isFolder = file.mimeType === FOLDER_MIME;
+            const isAudio = isAudioMime(file.mimeType);
+            if (!isFolder && !isAudio) continue; // skip stray non-audio files
+            if (seen.has(file.id!)) continue;
+            seen.add(file.id!);
+
+            audiobooks.push({
+              id: file.id!,
+              title: isFolder ? file.name! : file.name!.replace(/\.[^.]+$/, ''),
+              source: source as LibrarySource,
+              isFolder,
+              ...parseAudiobookProps(props),
+            });
+          }
+
+          pageToken = response.data.nextPageToken;
+        } while (pageToken);
+      } catch (error) {
+        console.error(`Failed to list audiobooks in ${source}:`, error);
+      }
+    })
+  );
+
+  audiobooks.sort((a, b) => naturalCompare(a.title, b.title));
+  return audiobooks;
+}
+
+/**
+ * Recursively gather the audio tracks for one audiobook. For a folder id this
+ * walks all nested folders (e.g. per-disc subfolders); for a single audio file
+ * it returns just that file.
+ */
+export async function getAudiobookTracks(
+  accessToken: string,
+  id: string,
+  isFolder: boolean
+): Promise<AudioTrack[]> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+
+  if (!isFolder) {
+    const file = await drive.files.get({ fileId: id, fields: 'id, name, size' });
+    return [
+      {
+        id: file.data.id!,
+        name: file.data.name!,
+        size: file.data.size ? parseInt(file.data.size as string, 10) : 0,
+      },
+    ];
+  }
+
+  const tracks: AudioTrack[] = [];
+  const subFolders: { id: string; name: string }[] = [];
+  let pageToken: string | null | undefined;
+  do {
+    const response = await drive.files.list({
+      q: `'${id}' in parents and trashed = false`,
+      fields: 'nextPageToken, files(id, name, mimeType, size)',
+      pageSize: 200,
+      pageToken: pageToken ?? undefined,
+    });
+    for (const file of response.data.files || []) {
+      if (file.mimeType === FOLDER_MIME) {
+        subFolders.push({ id: file.id!, name: file.name! });
+      } else if (isAudioMime(file.mimeType)) {
+        tracks.push({
+          id: file.id!,
+          name: file.name!,
+          size: file.size ? parseInt(file.size as string, 10) : 0,
+        });
+      }
+    }
+    pageToken = response.data.nextPageToken;
+  } while (pageToken);
+
+  // Recurse into sub-folders (per-disc), ordered naturally
+  subFolders.sort((a, b) => naturalCompare(a.name, b.name));
+  for (const sub of subFolders) {
+    const nested = await getAudiobookTracks(accessToken, sub.id, true);
+    tracks.push(...nested);
+  }
+
+  // Files directly in this folder, ordered naturally, come before nested ones
+  // only matters when both exist; keep a stable natural order overall.
+  tracks.sort((a, b) => naturalCompare(a.name, b.name));
+  return tracks;
+}
+
+/** Fetch one audiobook's title + metadata + resume position by id. */
+export async function getAudiobookMeta(
+  accessToken: string,
+  id: string
+): Promise<{ title: string; isFolder: boolean } & Partial<AudiobookEntry>> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+  const file = await drive.files.get({ fileId: id, fields: 'id, name, mimeType, appProperties' });
+  const isFolder = file.data.mimeType === FOLDER_MIME;
+  const title = isFolder ? file.data.name! : file.data.name!.replace(/\.[^.]+$/, '');
+  return {
+    title,
+    isFolder,
+    ...parseAudiobookProps(file.data.appProperties as Record<string, string> | undefined),
+  };
+}
+
+/** Save audiobook resume position (track index + seconds) to appProperties. */
+export async function updateAudioProgress(
+  accessToken: string,
+  id: string,
+  track: number,
+  position: number
+): Promise<void> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+  await drive.files.update({
+    fileId: id,
+    requestBody: {
+      appProperties: {
+        m_audio_track: String(Math.max(0, Math.round(track))),
+        m_audio_pos: String(Math.max(0, Math.round(position))),
+        lastOpened: new Date().toISOString(),
+      },
+    },
+  });
 }
 
 /**

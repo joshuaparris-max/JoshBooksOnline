@@ -12,9 +12,52 @@ export type LibrarySource =
   | 'ITIL'
   | 'ITIL PRINCE COBIT'
   | 'IEC 27001'
-  | 'Local Books';
+  | 'Local Books'
+  | 'Audiobooks'
+  | 'Fiction – Classics'
+  | 'Fiction – General'
+  | 'Nonfiction'
+  | 'Epub & PDF'
+  | 'Outlander';
 
 export type BookFormat = 'pdf' | 'epub' | 'txt' | 'docx';
+
+/** A single audio file within an audiobook. */
+export interface AudioTrack {
+  /** Drive file id of the audio track */
+  id: string;
+  name: string;
+  size: number;
+}
+
+/**
+ * An audiobook: either a Drive folder of audio tracks or a single audio file.
+ * Track lists are fetched lazily (see /api/library/audiobook/[id]).
+ */
+export interface AudiobookEntry {
+  /** Drive folder id (multi-track) or file id (single track) */
+  id: string;
+  title: string;
+  source: LibrarySource;
+  /** true when this audiobook is a folder of tracks */
+  isFolder: boolean;
+  /** Tracks, when loaded (the list endpoint omits these for speed) */
+  tracks?: AudioTrack[];
+
+  // Optional online metadata (reuses the m_* appProperties scheme)
+  authors?: string[];
+  publishedDate?: string;
+  description?: string;
+  coverUrl?: string;
+  metadataSource?: MetadataSource;
+
+  // Resume position
+  audioTrack?: number;
+  audioPosition?: number;
+
+  /** Linked text edition (Phase 4) */
+  linkedTextId?: string;
+}
 
 export type MetadataSource = 'google-books' | 'open-library' | 'manual';
 

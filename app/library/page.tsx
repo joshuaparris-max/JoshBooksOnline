@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { DrivePicker } from '@/components/DrivePicker';
 import MetadataEditor from '@/components/MetadataEditor';
-import type { BookEntry, BookMetadata } from '@/types/books';
+import type { BookEntry, BookMetadata, AudiobookEntry } from '@/types/books';
 
 const SOURCE_BADGES: Record<string, string> = {
   'IT PD Ebooks': 'bg-amber-500 text-slate-950',
@@ -341,6 +341,9 @@ export default function LibraryPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<BookEntry | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [tab, setTab] = useState<'ebooks' | 'audiobooks'>('ebooks');
+  const [audiobooks, setAudiobooks] = useState<AudiobookEntry[] | null>(null);
+  const [audiobooksLoading, setAudiobooksLoading] = useState(false);
   const [importStatus, setImportStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({
     type: 'idle',
     message: '',
@@ -402,6 +405,30 @@ export default function LibraryPage() {
       setLoading(false);
     }
   };
+
+  const refreshAudiobooks = async () => {
+    setAudiobooksLoading(true);
+    try {
+      const response = await fetch('/api/library/audiobooks', { cache: 'no-store' });
+      if (!response.ok) {
+        setAudiobooks([]);
+        return;
+      }
+      setAudiobooks((await response.json()) as AudiobookEntry[]);
+    } catch {
+      setAudiobooks([]);
+    } finally {
+      setAudiobooksLoading(false);
+    }
+  };
+
+  // Lazy-load audiobooks the first time the tab is opened
+  useEffect(() => {
+    if (tab === 'audiobooks' && audiobooks === null && !audiobooksLoading) {
+      refreshAudiobooks();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   const handleImportStart = () => {
     setImportStatus({ type: 'loading', message: 'Importing files...' });
@@ -548,6 +575,20 @@ export default function LibraryPage() {
     return filtered.sort((a, b) => compareBooks(a, b, sortField, sortDir));
   }, [books, search, sortField, sortDir]);
 
+  const filteredAudiobooks = useMemo(() => {
+    if (!audiobooks) return [];
+    const query = search.trim().toLowerCase();
+    const list = query
+      ? audiobooks.filter(
+          (a) =>
+            a.title.toLowerCase().includes(query) ||
+            (a.authors?.join(', ').toLowerCase().includes(query) ?? false) ||
+            a.source.toLowerCase().includes(query)
+        )
+      : audiobooks;
+    return list;
+  }, [audiobooks, search]);
+
   const pendingCount = Object.keys(pending).length;
   const fetchTargetCount = books ? books.filter((b) => !b.metadataSource && !pending[b.id]).length : 0;
 
@@ -614,6 +655,46 @@ export default function LibraryPage() {
             </div>
           </div>
 
+          <div className="mt-6 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTab('ebooks')}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'ebooks' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+            >
+              📚 Ebooks
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('audiobooks')}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'audiobooks' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+            >
+              🎧 Audiobooks
+            </button>
+          </div>
+
+          {tab === 'audiobooks' && (
+            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search audiobooks by title or author"
+                className="w-full flex-1 rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
+              />
+              <button
+                type="button"
+                onClick={refreshAudiobooks}
+                className="rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-slate-200 transition hover:bg-slate-800"
+              >
+                Refresh
+              </button>
+              <div className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-3 text-sm text-slate-400">
+                {audiobooks ? filteredAudiobooks.length : '...'} audiobooks
+              </div>
+            </div>
+          )}
+
+          {tab === 'ebooks' && (
           <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center">
             <input
               type="search"
@@ -715,6 +796,7 @@ export default function LibraryPage() {
               </div>
             </div>
           </div>
+          )}
         </section>
 
         {(importStatus.type !== 'idle' || enrich.message) && (
@@ -739,7 +821,7 @@ export default function LibraryPage() {
           </section>
         )}
 
-        {loading ? (
+        {tab === 'ebooks' && (loading ? (
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }, (_, index) => (
               <div key={index} className="animate-pulse rounded-3xl border border-white/10 bg-slate-900/80 p-6">
@@ -969,51 +1051,52 @@ export default function LibraryPage() {
               </tbody>
             </table>
           </section>
-        )}
+        ))}
 
-        <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-xl shadow-black/10 transition">
-          <div className="mb-6 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-semibold text-white">Audiobooks</h2>
-              <p className="mt-2 text-sm text-slate-400">Quick access to audiobook folders in Google Drive.</p>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <a
-              href="https://drive.google.com/drive/folders/1SBqmfghmj5gqxWRnCrxbHP65I23ohlcQ"
-              target="_blank"
-              rel="noreferrer"
-              className="group rounded-3xl border border-white/10 bg-slate-950/80 p-5 transition hover:border-slate-500/40 hover:bg-slate-900"
-            >
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500 text-lg text-white">
-                  🎧
-                </span>
-                <div>
-                  <p className="text-lg font-semibold text-white">Outlander Series</p>
-                  <p className="mt-1 text-sm text-slate-400">Open Drive folder</p>
-                </div>
-              </div>
-            </a>
-
-            <a
-              href="https://drive.google.com/drive/folders/1NRY6dXCpILRzfG4yYTpisGqLnqx2ECEQ"
-              target="_blank"
-              rel="noreferrer"
-              className="group rounded-3xl border border-white/10 bg-slate-950/80 p-5 transition hover:border-slate-500/40 hover:bg-slate-900"
-            >
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500 text-lg text-white">
-                  🎧
-                </span>
-                <div>
-                  <p className="text-lg font-semibold text-white">Other Audiobooks</p>
-                  <p className="mt-1 text-sm text-slate-400">Open Drive folder</p>
-                </div>
-              </div>
-            </a>
-          </div>
-        </section>
+        {tab === 'audiobooks' &&
+          (audiobooksLoading ? (
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }, (_, index) => (
+                <div key={index} className="h-24 animate-pulse rounded-3xl border border-white/10 bg-slate-900/80" />
+              ))}
+            </section>
+          ) : filteredAudiobooks.length === 0 ? (
+            <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-10 text-center text-slate-400">
+              <p className="text-xl font-medium">No audiobooks found.</p>
+              <p className="mt-2">Add audio to your Audiobooks or Outlander Drive folders, then refresh.</p>
+            </section>
+          ) : (
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {filteredAudiobooks.map((book) => (
+                <Link
+                  key={book.id}
+                  href={`/listen/${book.id}`}
+                  className="group flex items-center gap-4 rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70"
+                >
+                  {book.coverUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={book.coverUrl} alt="" className="h-20 w-14 shrink-0 rounded-xl object-cover" />
+                  ) : (
+                    <div className="flex h-20 w-14 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-2xl">
+                      🎧
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h2 className="line-clamp-2 font-semibold text-white">{book.title}</h2>
+                    {book.authors && <p className="truncate text-sm text-slate-400">{book.authors.join(', ')}</p>}
+                    <p className="mt-1 text-xs text-slate-500">
+                      {book.isFolder ? 'Audiobook' : 'Single file'} · {book.source}
+                    </p>
+                    {book.audioPosition !== undefined && book.audioPosition > 0 && (
+                      <span className="mt-2 inline-block rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-300">
+                        Resume
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </section>
+          ))}
       </div>
 
       {editingBook && (
