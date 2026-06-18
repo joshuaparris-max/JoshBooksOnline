@@ -116,8 +116,47 @@ function patternSkeleton(base: string): string {
     .toUpperCase();
 }
 
+const BIBLE_BOOKS = [
+  'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy', 'Joshua', 'Judges', 'Ruth',
+  '1 Samuel', '2 Samuel', '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles', 'Ezra',
+  'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs', 'Ecclesiastes', 'Song of Songs', 'Isaiah',
+  'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah',
+  'Micah', 'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi', 'Matthew', 'Mark',
+  'Luke', 'John', 'Acts', 'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians',
+  'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians', '1 Timothy', '2 Timothy',
+  'Titus', 'Philemon', 'Hebrews', 'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
+  'Jude', 'Revelation',
+] as const;
+
+const BIBLE_BOOK_ALIASES = new Map<string, number>();
+BIBLE_BOOKS.forEach((book, index) => BIBLE_BOOK_ALIASES.set(book.toLowerCase(), index + 1));
+BIBLE_BOOK_ALIASES.set('psalm', 19);
+BIBLE_BOOK_ALIASES.set('song of solomon', 22);
+BIBLE_BOOK_ALIASES.set('songs', 22);
+
+/** Detect Bible-book audio files (e.g. "19 19 Psalms"); returns the book ordinal or null. */
+function getBibleBookOrder(filename: string): number | null {
+  const base = filename
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const leadingNumbers = base.match(/^\d{1,3}(?:\s+\d{1,3})*/)?.[0];
+  if (!leadingNumbers) return null;
+  const ordinals = leadingNumbers.split(/\s+/).map((n) => Number(n));
+  const title = base
+    .replace(/^\d{1,3}(?:\s+\d{1,3})*\s*/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  const ordinal = BIBLE_BOOK_ALIASES.get(title);
+  if (!ordinal || !ordinals.includes(ordinal)) return null;
+  return ordinal;
+}
+
 /** Human-friendly book title derived from a chapter filename. */
 function deriveBookTitle(filename: string): string {
+  if (getBibleBookOrder(filename)) return 'Bible';
   const base = filename.replace(/\.[^.]+$/, '');
   const stripped = stripChapterSuffix(base);
   if (stripped && /[a-z]/i.test(stripped)) {
@@ -130,6 +169,7 @@ function deriveBookTitle(filename: string): string {
 
 /** Normalised grouping key: files of the same book/playlist share this key. */
 function deriveBookKey(filename: string): string {
+  if (getBibleBookOrder(filename)) return 'bible';
   const base = filename.replace(/\.[^.]+$/, '');
   const stripped = stripChapterSuffix(base);
   if (stripped && /[a-z]/i.test(stripped)) {
