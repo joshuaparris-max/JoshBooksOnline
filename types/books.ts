@@ -55,6 +55,8 @@ export interface AudiobookEntry {
   source: LibrarySource;
   /** true when this audiobook is a folder of tracks */
   isFolder: boolean;
+  /** true when loose tracks were manually merged in JoshBooks */
+  isManualGroup?: boolean;
   /** Tracks, when loaded (the list endpoint omits these for speed) */
   tracks?: AudioTrack[];
 

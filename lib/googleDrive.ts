@@ -70,6 +70,83 @@ function naturalCompare(a: string, b: string): number {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 }
 
+const LILITH_CHAPTER_TITLES = new Set(
+  [
+    'The Library',
+    'The Mirror',
+    'The Raven',
+    'Somewhere or Nowhere?',
+    'The Old Church',
+    "The Sexton's Cottage",
+    'The Cemetery',
+    "My Father's Manuscript",
+    'I Repent',
+    'The Bad Burrow',
+    'Friends and Foes',
+    'The Little Ones',
+    'A Crisis',
+    'The Princess',
+    'The Leopardess',
+    'The Vane',
+    'The House of Vane',
+    'The Magic Mirror',
+    'The skeleton House',
+    'The Giant',
+    'Mr. Raven',
+    'The Microcosm',
+    'The Valley of Spores',
+    'The Death of the Shadow',
+    'The Palace of Lilith',
+    'The Mirror of Death',
+    'The Supper',
+    'The Battle',
+    'The Great Letter',
+    'The Woman',
+    'The Sleep',
+    'The Shadow',
+    'The Regained Paradise',
+    "The Women's War",
+    'The Rescue',
+    'The Buried Moon',
+    'The Night of Evil',
+    'The Morning of Grief',
+    'The White Leopardess',
+    'The Sea of Life',
+    'The Restoration',
+    'The New Name',
+    'The House of Death',
+    'The New Dawn',
+    'The Journey Home',
+    'The City',
+    'The Endless Ending',
+  ].map(normaliseTitle)
+);
+
+const CS_LEWIS_COMBINED_AUDIOBOOK_TITLE = 'The Abolition of Man and The Great Divorce';
+
+function normaliseTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function manualAudioGroupKey(props?: Record<string, string>): string | undefined {
+  return props?.m_audio_group ? `manual:${props.m_audio_group}` : undefined;
+}
+
+function audioGroupTitle(file: { name: string; props?: Record<string, string> }): string {
+  return file.props?.m_audio_group_title?.trim() || deriveBookTitle(file.name);
+}
+
+function lilithTitleFromChapterOnlyName(base: string): string | undefined {
+  const match = base.match(/^\s*chapter\s+[ivxlcdm\d]+\s*[:\-_.]\s*(.+?)\s*$/i);
+  if (!match) return undefined;
+  const chapterTitle = match[1]?.trim();
+  if (!chapterTitle) return undefined;
+  return LILITH_CHAPTER_TITLES.has(normaliseTitle(chapterTitle)) ? 'Lilith' : undefined;
+}
+
 /**
  * Strip chapter/track/part/disc markers and trailing numbers from a filename
  * base so that "Sapiens - Chapter 03" and "Sapiens - Chapter 04" reduce to
@@ -201,10 +278,18 @@ function isSingleLetterPart(base: string): boolean {
   return /^[a-z]$/.test(base.trim());
 }
 
+function isActsFile(filename: string): boolean {
+  return /^acts\d*$/i.test(filename.replace(/\.[^.]+$/, '').trim());
+}
+
 /** Human-friendly book title derived from a chapter filename. */
-function deriveBookTitle(filename: string): string {
+export function deriveBookTitle(filename: string): string {
+  if (isActsFile(filename)) return 'Acts';
   if (isBibleFile(filename)) return 'Bible';
   const base = filename.replace(/\.[^.]+$/, '');
+  if (isSingleLetterPart(base)) return CS_LEWIS_COMBINED_AUDIOBOOK_TITLE;
+  const knownChapterBook = lilithTitleFromChapterOnlyName(base);
+  if (knownChapterBook) return knownChapterBook;
   if (isSingleLetterPart(base)) return 'Combined Audiobook (a–z)';
   const stripped = stripChapterSuffix(base);
   if (stripped && /[a-z]/i.test(stripped)) {
@@ -216,9 +301,13 @@ function deriveBookTitle(filename: string): string {
 }
 
 /** Normalised grouping key: files of the same book/playlist share this key. */
-function deriveBookKey(filename: string): string {
+export function deriveBookKey(filename: string): string {
+  if (isActsFile(filename)) return 'acts';
   if (isBibleFile(filename)) return 'bible';
   const base = filename.replace(/\.[^.]+$/, '');
+  if (isSingleLetterPart(base)) return normaliseTitle(CS_LEWIS_COMBINED_AUDIOBOOK_TITLE);
+  const knownChapterBook = lilithTitleFromChapterOnlyName(base);
+  if (knownChapterBook) return normaliseTitle(knownChapterBook);
   if (isSingleLetterPart(base)) return 'pat:lettered';
   const stripped = stripChapterSuffix(base);
   if (stripped && /[a-z]/i.test(stripped)) {
@@ -481,6 +570,7 @@ function parseAudiobookProps(props?: Record<string, string>): Partial<AudiobookE
     audioTrack: Number.isFinite(track) ? track : undefined,
     audioPosition: Number.isFinite(pos) ? pos : undefined,
     linkedTextId: props?.m_link_text || undefined,
+    isManualGroup: Boolean(props?.m_audio_group),
   };
 }
 
@@ -539,7 +629,7 @@ export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry
         // so individual chapter files no longer show up as separate audiobooks.
         const groups = new Map<string, Child[]>();
         for (const file of looseAudio) {
-          const key = deriveBookKey(file.name) || file.id;
+          const key = manualAudioGroupKey(file.props) || deriveBookKey(file.name) || file.id;
           const group = groups.get(key);
           if (group) group.push(file);
           else groups.set(key, [file]);
@@ -551,7 +641,7 @@ export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry
           seen.add(rep.id);
           audiobooks.push({
             id: rep.id,
-            title: deriveBookTitle(rep.name),
+            title: audioGroupTitle(rep),
             source: source as LibrarySource,
             isFolder: false,
             ...parseAudiobookProps(rep.props),
@@ -583,9 +673,10 @@ export async function getAudiobookTracks(
   if (!isFolder) {
     // A loose-file audiobook is represented by its first chapter. Gather all of
     // its sibling chapters (same parent folder + same derived book key) as tracks.
-    const file = await drive.files.get({ fileId: id, fields: 'id, name, size, parents' });
+    const file = await drive.files.get({ fileId: id, fields: 'id, name, size, parents, appProperties' });
     const parent = file.data.parents?.[0];
-    const key = deriveBookKey(file.data.name!);
+    const props = file.data.appProperties as Record<string, string> | undefined;
+    const key = manualAudioGroupKey(props) || deriveBookKey(file.data.name!);
 
     if (!parent) {
       return [
@@ -602,13 +693,15 @@ export async function getAudiobookTracks(
     do {
       const response = await drive.files.list({
         q: `'${parent}' in parents and trashed = false`,
-        fields: 'nextPageToken, files(id, name, mimeType, size)',
+        fields: 'nextPageToken, files(id, name, mimeType, size, appProperties)',
         pageSize: 200,
         pageToken: pageToken ?? undefined,
       });
       for (const f of response.data.files || []) {
         if (!isAudioMime(f.mimeType)) continue;
-        if (deriveBookKey(f.name!) !== key) continue;
+        const siblingProps = f.appProperties as Record<string, string> | undefined;
+        const siblingKey = manualAudioGroupKey(siblingProps) || deriveBookKey(f.name!);
+        if (siblingKey !== key) continue;
         siblings.push({
           id: f.id!,
           name: f.name!,
@@ -676,12 +769,100 @@ export async function getAudiobookMeta(
   const drive = google.drive({ version: 'v3', auth });
   const file = await drive.files.get({ fileId: id, fields: 'id, name, mimeType, appProperties' });
   const isFolder = file.data.mimeType === FOLDER_MIME;
-  const title = isFolder ? file.data.name! : deriveBookTitle(file.data.name!);
+  const props = file.data.appProperties as Record<string, string> | undefined;
+  const title = isFolder ? file.data.name! : audioGroupTitle({ name: file.data.name!, props });
   return {
     title,
     isFolder,
-    ...parseAudiobookProps(file.data.appProperties as Record<string, string> | undefined),
+    ...parseAudiobookProps(props),
   };
+}
+
+function makeManualAudioGroupId(title: string): string {
+  const slug = normaliseTitle(title).replace(/\s+/g, '-').slice(0, 80) || 'audio-group';
+  return `${slug}-${Date.now().toString(36)}`;
+}
+
+/** Merge selected loose-file audiobook entries into one named group. */
+export async function groupAudiobooks(
+  accessToken: string,
+  ids: string[],
+  title: string
+): Promise<void> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+  const cleanTitle = title.trim();
+  if (ids.length < 2 || !cleanTitle) throw new Error('A group needs at least two audiobooks and a title.');
+
+  const trackIds = new Set<string>();
+  for (const id of ids) {
+    const meta = await getAudiobookMeta(accessToken, id);
+    if (meta.isFolder) throw new Error('Only loose audio files can be merged.');
+    const tracks = await getAudiobookTracks(accessToken, id, false);
+    for (const track of tracks) trackIds.add(track.id);
+  }
+
+  if (trackIds.size < 2) throw new Error('A group needs at least two audio files.');
+
+  const groupId = makeManualAudioGroupId(cleanTitle);
+  await Promise.all(
+    [...trackIds].map((fileId) =>
+      drive.files.update({
+        fileId,
+        requestBody: {
+          appProperties: {
+            m_audio_group: groupId,
+            m_audio_group_title: cleanTitle,
+          },
+        },
+        fields: 'id',
+      })
+    )
+  );
+}
+
+/** Remove a manual loose-file audiobook grouping created by groupAudiobooks. */
+export async function ungroupAudiobook(accessToken: string, id: string): Promise<void> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+  const file = await drive.files.get({ fileId: id, fields: 'id, name, parents, appProperties, mimeType' });
+  if (file.data.mimeType === FOLDER_MIME) throw new Error('Drive folders cannot be unmerged.');
+  const props = file.data.appProperties as Record<string, string> | undefined;
+  const groupId = props?.m_audio_group;
+  const parent = file.data.parents?.[0];
+  if (!groupId || !parent) throw new Error('This audiobook is not a manual group.');
+
+  const groupedIds: string[] = [];
+  let pageToken: string | null | undefined;
+  do {
+    const response = await drive.files.list({
+      q: `'${parent}' in parents and trashed = false`,
+      fields: 'nextPageToken, files(id, mimeType, appProperties)',
+      pageSize: 200,
+      pageToken: pageToken ?? undefined,
+    });
+    for (const sibling of response.data.files || []) {
+      if (!isAudioMime(sibling.mimeType)) continue;
+      const siblingProps = sibling.appProperties as Record<string, string> | undefined;
+      if (siblingProps?.m_audio_group === groupId) groupedIds.push(sibling.id!);
+    }
+    pageToken = response.data.nextPageToken;
+  } while (pageToken);
+
+  await Promise.all(
+    groupedIds.map((fileId) =>
+      drive.files.update({
+        fileId,
+        requestBody: {
+          appProperties: {
+            m_audio_group: '',
+            m_audio_group_title: '',
+          },
+        },
+        fields: 'id',
+      })
+    )
+  );
 }
 
 /**

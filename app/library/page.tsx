@@ -414,7 +414,11 @@ const AUDIO_TABLE_COLUMNS: {
   {
     key: 'kind',
     label: 'Type',
-    cell: (a) => <span className="whitespace-nowrap text-slate-400">{a.isFolder ? 'Audiobook' : 'Single file'}</span>,
+    cell: (a) => (
+      <span className="whitespace-nowrap text-slate-400">
+        {a.isFolder ? 'Audiobook' : a.isManualGroup ? 'Merged group' : 'Single file'}
+      </span>
+    ),
   },
   {
     key: 'source',
@@ -472,6 +476,11 @@ export default function LibraryPage() {
   const [showAudioColumnEditor, setShowAudioColumnEditor] = useState(false);
   const [editingAudio, setEditingAudio] = useState<AudiobookEntry | null>(null);
   const [confirmDeleteAudio, setConfirmDeleteAudio] = useState<AudiobookEntry | null>(null);
+  const [selectedAudioIds, setSelectedAudioIds] = useState<Set<string>>(new Set());
+  const [audioGroupStatus, setAudioGroupStatus] = useState<{ loading: boolean; message: string | null }>({
+    loading: false,
+    message: null,
+  });
   // ebookId -> audiobookId links (localStorage authoritative, best-effort Drive sync)
   const [links, setLinks] = useState<Record<string, string>>({});
   const [linkingBook, setLinkingBook] = useState<BookEntry | null>(null);
@@ -961,6 +970,80 @@ export default function LibraryPage() {
     }).catch(() => {});
   };
 
+  const toggleAudioSelection = (id: string) => {
+    setSelectedAudioIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const clearAudioSelection = () => setSelectedAudioIds(new Set());
+
+  const mergeSelectedAudiobooks = async () => {
+    const selected = (audiobooks ?? []).filter((book) => selectedAudioIds.has(book.id));
+    const mergeable = selected.filter((book) => !book.isFolder);
+    if (mergeable.length < 2) {
+      setAudioGroupStatus({ loading: false, message: 'Select at least two single-file audiobooks to merge.' });
+      return;
+    }
+
+    const title = window.prompt('Name this audiobook group', mergeable[0]?.title ?? 'New audiobook group');
+    if (!title?.trim()) return;
+
+    setAudioGroupStatus({ loading: true, message: 'Merging audiobooks...' });
+    try {
+      const response = await fetch('/api/library/audiobooks/group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'merge', ids: mergeable.map((book) => book.id), title: title.trim() }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error ?? 'Unable to merge audiobooks.');
+      }
+      clearAudioSelection();
+      await refreshAudiobooks();
+      setAudioGroupStatus({ loading: false, message: `Merged as "${title.trim()}".` });
+    } catch (error) {
+      setAudioGroupStatus({
+        loading: false,
+        message: error instanceof Error ? error.message : 'Unable to merge audiobooks.',
+      });
+    }
+  };
+
+  const unmergeSelectedAudiobook = async () => {
+    const selected = (audiobooks ?? []).filter((book) => selectedAudioIds.has(book.id));
+    const target = selected[0];
+    if (selected.length !== 1 || !target?.isManualGroup) {
+      setAudioGroupStatus({ loading: false, message: 'Select one merged audiobook to unmerge.' });
+      return;
+    }
+
+    setAudioGroupStatus({ loading: true, message: 'Unmerging audiobook...' });
+    try {
+      const response = await fetch('/api/library/audiobooks/group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'unmerge', id: target.id }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error ?? 'Unable to unmerge audiobook.');
+      }
+      clearAudioSelection();
+      await refreshAudiobooks();
+      setAudioGroupStatus({ loading: false, message: `Unmerged "${target.title}".` });
+    } catch (error) {
+      setAudioGroupStatus({
+        loading: false,
+        message: error instanceof Error ? error.message : 'Unable to unmerge audiobook.',
+      });
+    }
+  };
+
   const sortedBooks = useMemo(() => {
     if (!books) return [];
     const query = search.trim().toLowerCase();
@@ -999,6 +1082,12 @@ export default function LibraryPage() {
       : visible;
     return [...list].sort((a, b) => compareAudiobooks(a, b, audioSortField, audioSortDir));
   }, [audiobooks, search, hiddenIds, audioSortField, audioSortDir, metaOverrides, passesCollection]);
+
+  const selectedAudiobooks = filteredAudiobooks.filter((book) => selectedAudioIds.has(book.id));
+  const selectedMergeableAudiobooks = selectedAudiobooks.filter((book) => !book.isFolder);
+  const canMergeSelectedAudiobooks = selectedMergeableAudiobooks.length >= 2 && !audioGroupStatus.loading;
+  const canUnmergeSelectedAudiobook =
+    selectedAudiobooks.length === 1 && Boolean(selectedAudiobooks[0]?.isManualGroup) && !audioGroupStatus.loading;
 
   const activeAudioColumns = AUDIO_TABLE_COLUMNS.filter(
     (col) => col.locked || visibleAudioColumns.includes(col.key)
@@ -1180,6 +1269,35 @@ export default function LibraryPage() {
                     : `Fetch suggestions${audioFetchTargetCount ? ` (${audioFetchTargetCount})` : ''}`}
                 </button>
 
+                <button
+                  type="button"
+                  onClick={mergeSelectedAudiobooks}
+                  disabled={!canMergeSelectedAudiobooks}
+                  className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+                >
+                  Merge{selectedMergeableAudiobooks.length ? ` (${selectedMergeableAudiobooks.length})` : ''}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={unmergeSelectedAudiobook}
+                  disabled={!canUnmergeSelectedAudiobook}
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:text-slate-500"
+                >
+                  Unmerge
+                </button>
+
+                {selectedAudioIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearAudioSelection}
+                    disabled={audioGroupStatus.loading}
+                    className="rounded-full border border-white/10 bg-slate-950 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    Clear
+                  </button>
+                )}
+
                 <div className="flex items-center gap-2">
                   <label htmlFor="audio-sort" className="text-sm text-slate-400">
                     Sort
@@ -1276,6 +1394,9 @@ export default function LibraryPage() {
                   {audiobooks ? filteredAudiobooks.length : '...'} audiobooks
                 </div>
               </div>
+              {audioGroupStatus.message && (
+                <p className="text-sm text-slate-400">{audioGroupStatus.message}</p>
+              )}
             </div>
           )}
 
@@ -1803,8 +1924,17 @@ export default function LibraryPage() {
                 return (
                   <article
                     key={book.id}
-                    className="flex flex-col rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70"
+                    className="relative flex flex-col rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70"
                   >
+                    <label className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-slate-950/90">
+                      <input
+                        type="checkbox"
+                        checked={selectedAudioIds.has(book.id)}
+                        onChange={() => toggleAudioSelection(book.id)}
+                        className="h-4 w-4 accent-sky-500"
+                        aria-label={`Select ${book.title}`}
+                      />
+                    </label>
                     <Link href={`/listen/${book.id}`} className="flex items-center gap-4">
                       {book.coverUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -1819,7 +1949,7 @@ export default function LibraryPage() {
                         {book.authors && <p className="truncate text-sm text-slate-400">{book.authors.join(', ')}</p>}
                         {book.publishedDate && <p className="text-xs text-slate-500">{book.publishedDate}</p>}
                         <p className="mt-1 text-xs text-slate-500">
-                          {book.isFolder ? 'Audiobook' : 'Single file'} · {book.source}
+                          {book.isFolder ? 'Audiobook' : book.isManualGroup ? 'Merged group' : 'Single file'} · {book.source}
                         </p>
                         {book.audioPosition !== undefined && book.audioPosition > 0 && (
                           <span className="mt-2 inline-block rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-300">
@@ -1909,6 +2039,22 @@ export default function LibraryPage() {
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-400">
                   <tr>
+                    <th className="px-4 py-3 font-medium">
+                      <input
+                        type="checkbox"
+                        checked={
+                          filteredAudiobooks.length > 0 &&
+                          filteredAudiobooks.every((book) => selectedAudioIds.has(book.id))
+                        }
+                        onChange={(event) => {
+                          setSelectedAudioIds(
+                            event.target.checked ? new Set(filteredAudiobooks.map((book) => book.id)) : new Set()
+                          );
+                        }}
+                        className="h-4 w-4 accent-sky-500"
+                        aria-label="Select all audiobooks"
+                      />
+                    </th>
                     <th className="px-4 py-3 font-medium">Cover</th>
                     {activeAudioColumns.map((col) => (
                       <th
@@ -1928,6 +2074,15 @@ export default function LibraryPage() {
                     const suggestion = pending[book.id];
                     return (
                       <tr key={book.id} className={`transition hover:bg-slate-800/60 ${suggestion ? 'bg-amber-500/5' : ''}`}>
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedAudioIds.has(book.id)}
+                            onChange={() => toggleAudioSelection(book.id)}
+                            className="h-4 w-4 accent-sky-500"
+                            aria-label={`Select ${book.title}`}
+                          />
+                        </td>
                         <td className="px-4 py-3">
                           <Link href={`/listen/${book.id}`}>
                             {book.coverUrl ? (

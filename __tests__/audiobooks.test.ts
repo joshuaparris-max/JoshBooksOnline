@@ -1,11 +1,56 @@
 import { describe, it, expect } from '@jest/globals';
 import type { Audiobook } from '@/types/books';
+import { deriveBookKey, deriveBookTitle } from '@/lib/googleDrive';
 
 /**
  * Test suite for audiobook functionality
  */
 
 describe('Audiobooks', () => {
+  describe('Drive Audiobook Grouping', () => {
+    it('should group standalone Lilith chapter files into one audiobook', () => {
+      const filenames = [
+        'Chapter I: The Library.mp3',
+        'Chapter II: The Mirror.mp3',
+        'Chapter III: The Raven.mp3',
+        'Chapter XLVII: The Endless Ending.mp3',
+      ];
+
+      expect(filenames.map(deriveBookTitle)).toEqual(['Lilith', 'Lilith', 'Lilith', 'Lilith']);
+      expect(new Set(filenames.map(deriveBookKey))).toEqual(new Set(['lilith']));
+    });
+
+    it('should keep non-Lilith chapter-only files separate', () => {
+      expect(deriveBookTitle('Chapter I: A Different Book.mp3')).toBe('Chapter I: A Different Book');
+    });
+
+    it('should group bare lowercase letter files as the combined C. S. Lewis audiobook', () => {
+      const filenames = ['a.mp3', 'b.m4b', 'c.wav', 'z.mp3'];
+
+      expect(filenames.map(deriveBookTitle)).toEqual([
+        'The Abolition of Man and The Great Divorce',
+        'The Abolition of Man and The Great Divorce',
+        'The Abolition of Man and The Great Divorce',
+        'The Abolition of Man and The Great Divorce',
+      ]);
+      expect(new Set(filenames.map(deriveBookKey))).toEqual(
+        new Set(['the abolition of man and the great divorce'])
+      );
+    });
+
+    it('should not group uppercase or multi-letter filenames as the combined C. S. Lewis audiobook', () => {
+      expect(deriveBookTitle('A.mp3')).toBe('A');
+      expect(deriveBookTitle('ab.mp3')).toBe('ab');
+    });
+
+    it('should group Acts chapter files into one audiobook', () => {
+      const filenames = ['ACTS.mp3', 'ACTS11.mp3', 'ACTS12.m4b', 'ACTS28.wav'];
+
+      expect(filenames.map(deriveBookTitle)).toEqual(['Acts', 'Acts', 'Acts', 'Acts']);
+      expect(new Set(filenames.map(deriveBookKey))).toEqual(new Set(['acts']));
+    });
+  });
+
   describe('URL Validation', () => {
     it('should extract YouTube ID from standard URL', () => {
       const url = 'https://www.youtube.com/watch?v=inLnzoQZrMs';
