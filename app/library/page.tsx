@@ -1739,6 +1739,14 @@ export default function LibraryPage() {
                           </button>
                           <button
                             type="button"
+                            onClick={() => setFolderItem({ id: book.id, label: displayTitle(book) })}
+                            title="Add to folder"
+                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10"
+                          >
+                            📁
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => setConfirmDelete(book)}
                             title="Remove from library"
                             className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-300 transition hover:bg-rose-500/20"
@@ -1971,6 +1979,14 @@ export default function LibraryPage() {
                               className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10"
                             >
                               Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFolderItem({ id: book.id, label: book.title })}
+                              title="Add to folder"
+                              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10"
+                            >
+                              📁
                             </button>
                             <button
                               type="button"
