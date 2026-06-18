@@ -22,6 +22,20 @@ export type LibrarySource =
 
 export type BookFormat = 'pdf' | 'epub' | 'txt' | 'docx';
 
+/** A free public-domain ebook from an online source (read in-app via the proxy). */
+export interface OnlineEbook {
+  id: string;
+  title: string;
+  author: string;
+  /** 'epub' or 'txt' — opened in the matching reader */
+  format: 'epub' | 'txt';
+  /** Direct download URL (whitelisted host, fetched via /api/fetch-ebook) */
+  url: string;
+  coverUrl?: string;
+  source: string;
+  category: 'Classic literature' | 'Sci-fi & fantasy' | 'Philosophy & nonfiction' | 'Christian & faith';
+}
+
 /** A single audio file within an audiobook. */
 export interface AudioTrack {
   /** Drive file id of the audio track */

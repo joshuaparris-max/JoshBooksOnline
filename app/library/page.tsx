@@ -6,6 +6,7 @@ import { signOut } from 'next-auth/react';
 import { DrivePicker } from '@/components/DrivePicker';
 import MetadataEditor from '@/components/MetadataEditor';
 import { AudiobookCard } from '@/components/AudiobookCard';
+import { ONLINE_EBOOKS } from '@/lib/onlineEbooks';
 import type { BookEntry, BookMetadata, AudiobookEntry, Audiobook } from '@/types/books';
 
 const SOURCE_BADGES: Record<string, string> = {
@@ -453,6 +454,7 @@ export default function LibraryPage() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [tab, setTab] = useState<'ebooks' | 'audiobooks'>('ebooks');
+  const [ebookSource, setEbookSource] = useState<'drive' | 'online'>('drive');
   const [audiobooks, setAudiobooks] = useState<AudiobookEntry[] | null>(null);
   const [audiobooksLoading, setAudiobooksLoading] = useState(false);
   const [audioSource, setAudioSource] = useState<'drive' | 'online'>('drive');
@@ -617,6 +619,17 @@ export default function LibraryPage() {
         a.catalogueMatches.some((m) => m.toLowerCase().includes(q))
     );
   }, [onlineAudiobooks, search]);
+
+  const filteredOnlineEbooks = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return ONLINE_EBOOKS;
+    return ONLINE_EBOOKS.filter(
+      (b) =>
+        b.title.toLowerCase().includes(q) ||
+        b.author.toLowerCase().includes(q) ||
+        b.category.toLowerCase().includes(q)
+    );
+  }, [search]);
 
   useEffect(() => {
     window.localStorage.setItem('joshbooks-links', JSON.stringify(links));
@@ -1166,6 +1179,37 @@ export default function LibraryPage() {
           )}
 
           {tab === 'ebooks' && (
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setEbookSource('drive')}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${ebookSource === 'drive' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+              >
+                My Drive
+              </button>
+              <button
+                type="button"
+                onClick={() => setEbookSource('online')}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${ebookSource === 'online' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+              >
+                Free Online
+              </button>
+            </div>
+          )}
+
+          {tab === 'ebooks' && ebookSource === 'online' && (
+            <div className="mt-4">
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search free public-domain ebooks…"
+                className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
+              />
+            </div>
+          )}
+
+          {tab === 'ebooks' && ebookSource === 'drive' && (
           <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center">
             <input
               type="search"
@@ -1292,7 +1336,39 @@ export default function LibraryPage() {
           </section>
         )}
 
-        {tab === 'ebooks' && (loading ? (
+        {tab === 'ebooks' && ebookSource === 'online' && (
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredOnlineEbooks.map((book) => (
+              <Link
+                key={book.id}
+                href={`/read-online?url=${encodeURIComponent(book.url)}&format=${book.format}&title=${encodeURIComponent(book.title)}`}
+                className="group flex gap-4 rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70"
+              >
+                {book.coverUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={book.coverUrl} alt="" loading="lazy" className="h-28 w-20 shrink-0 rounded-xl object-cover" />
+                ) : (
+                  <div className="flex h-28 w-20 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-2xl">📖</div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <h2 className="line-clamp-2 font-semibold text-white">{book.title}</h2>
+                  <p className="truncate text-sm text-slate-400">{book.author}</p>
+                  <p className="mt-1 text-xs text-slate-500">{book.category}</p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                    <span className="inline-flex items-center rounded-full bg-emerald-600/20 px-2.5 py-0.5 text-emerald-200">
+                      Read free
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-white/5 px-2.5 py-0.5 text-slate-300">
+                      {book.source}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </section>
+        )}
+
+        {tab === 'ebooks' && ebookSource === 'drive' && (loading ? (
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }, (_, index) => (
               <div key={index} className="animate-pulse rounded-3xl border border-white/10 bg-slate-900/80 p-6">
