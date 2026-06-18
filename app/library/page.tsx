@@ -341,6 +341,7 @@ export default function LibraryPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<BookEntry | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [tab, setTab] = useState<'ebooks' | 'audiobooks'>('ebooks');
   const [audiobooks, setAudiobooks] = useState<AudiobookEntry[] | null>(null);
   const [audiobooksLoading, setAudiobooksLoading] = useState(false);
@@ -357,6 +358,16 @@ export default function LibraryPage() {
     if (storedView === 'grid' || storedView === 'table') setViewMode(storedView);
     if (storedField && SORT_OPTIONS.some((o) => o.value === storedField)) setSortField(storedField);
     if (storedDir === 'asc' || storedDir === 'desc') setSortDir(storedDir);
+
+    const storedHidden = window.localStorage.getItem('joshbooks-hidden');
+    if (storedHidden) {
+      try {
+        const ids = JSON.parse(storedHidden) as string[];
+        if (Array.isArray(ids)) setHiddenIds(new Set(ids));
+      } catch {
+        // ignore malformed stored value
+      }
+    }
 
     const storedColumns = window.localStorage.getItem('joshbooks-columns');
     if (storedColumns) {
@@ -535,33 +546,42 @@ export default function LibraryPage() {
     });
   };
 
-  /** Remove a book from the library (file stays in Drive). */
-  const removeBook = async (book: BookEntry) => {
+  /**
+   * Remove a book from the library (file stays in Drive). The hidden list is the
+   * source of truth and lives in localStorage, so removal always works even when
+   * the file lives in a shared folder we can't write to. The Drive call is a
+   * best-effort sync that won't block the UI if it fails.
+   */
+  const removeBook = (book: BookEntry) => {
     setRemovingId(book.id);
-    try {
-      const response = await fetch('/api/library/remove', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId: book.id, source: book.source }),
-      });
-      if (!response.ok) throw new Error('remove failed');
-      setBooks((prev) => (prev ? prev.filter((b) => b.id !== book.id) : prev));
-      discardPending(book.id);
-      setConfirmDelete(null);
-    } catch {
-      setImportStatus({ type: 'error', message: `Could not remove "${book.name}". Please try again.` });
-      setTimeout(() => setImportStatus({ type: 'idle', message: '' }), 5000);
-    } finally {
-      setRemovingId(null);
-    }
+
+    // Authoritative, always-works local hide
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      next.add(book.id);
+      window.localStorage.setItem('joshbooks-hidden', JSON.stringify([...next]));
+      return next;
+    });
+    setBooks((prev) => (prev ? prev.filter((b) => b.id !== book.id) : prev));
+    discardPending(book.id);
+    setConfirmDelete(null);
+    setRemovingId(null);
+
+    // Best-effort: also hide in Drive so it syncs to other devices (ignore failure)
+    fetch('/api/library/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileId: book.id, source: book.source }),
+    }).catch(() => {});
   };
 
   const sortedBooks = useMemo(() => {
     if (!books) return [];
     const query = search.trim().toLowerCase();
+    const visible = books.filter((book) => !hiddenIds.has(book.id));
 
     const filtered = query
-      ? books.filter((book) => {
+      ? visible.filter((book) => {
           return (
             displayTitle(book).toLowerCase().includes(query) ||
             displayAuthors(book).toLowerCase().includes(query) ||
@@ -570,24 +590,25 @@ export default function LibraryPage() {
             book.format.toLowerCase().includes(query)
           );
         })
-      : [...books];
+      : visible;
 
     return filtered.sort((a, b) => compareBooks(a, b, sortField, sortDir));
-  }, [books, search, sortField, sortDir]);
+  }, [books, search, sortField, sortDir, hiddenIds]);
 
   const filteredAudiobooks = useMemo(() => {
     if (!audiobooks) return [];
     const query = search.trim().toLowerCase();
+    const visible = audiobooks.filter((a) => !hiddenIds.has(a.id));
     const list = query
-      ? audiobooks.filter(
+      ? visible.filter(
           (a) =>
             a.title.toLowerCase().includes(query) ||
             (a.authors?.join(', ').toLowerCase().includes(query) ?? false) ||
             a.source.toLowerCase().includes(query)
         )
-      : audiobooks;
+      : visible;
     return list;
-  }, [audiobooks, search]);
+  }, [audiobooks, search, hiddenIds]);
 
   const pendingCount = Object.keys(pending).length;
   const fetchTargetCount = books ? books.filter((b) => !b.metadataSource && !pending[b.id]).length : 0;
