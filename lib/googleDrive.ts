@@ -77,8 +77,9 @@ function naturalCompare(a: string, b: string): number {
  */
 function stripChapterSuffix(base: string): string {
   let s = base;
-  // Leading track number, e.g. "01 - Title" or "01. Title"
-  s = s.replace(/^\s*\d{1,3}\s*[-_.)\]]\s*/, '');
+  // Leading track numbers, with or without a separator and even attached to the
+  // title word: "01 - Title", "01. Title", "01 1 Title", "01PSALM" -> "Title"/"PSALM".
+  s = s.replace(/^[\s\-_.]*(?:\d+[\s\-_.]*)+/, '');
   let prev = '';
   while (s !== prev) {
     prev = s;
