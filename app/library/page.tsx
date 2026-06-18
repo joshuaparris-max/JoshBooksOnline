@@ -216,35 +216,35 @@ const TABLE_COLUMNS: {
     sortField: 'title',
     locked: true,
     cell: (book) => (
-      <>
-        <Link href={`/reader/${book.id}`} className="font-medium text-white hover:text-sky-300">
+      <div className="max-w-[24rem]">
+        <Link href={`/reader/${book.id}`} className="block truncate font-medium text-white hover:text-sky-300">
           {displayTitle(book)}
         </Link>
         {book.series && (
-          <div className="text-xs text-slate-500">
+          <div className="truncate text-xs text-slate-500">
             {book.series}
             {book.seriesIndex !== undefined ? ` #${book.seriesIndex}` : ''}
           </div>
         )}
-      </>
+      </div>
     ),
   },
   {
     key: 'author',
     label: 'Author',
     sortField: 'author',
-    cell: (book) => <span className="text-slate-300">{displayAuthors(book) || '—'}</span>,
+    cell: (book) => <div className="max-w-[14rem] truncate text-slate-300">{displayAuthors(book) || '—'}</div>,
   },
   {
     key: 'published',
     label: 'Published',
     sortField: 'published',
-    cell: (book) => <span className="text-slate-400">{book.publishedDate ?? '—'}</span>,
+    cell: (book) => <span className="whitespace-nowrap text-slate-400">{book.publishedDate ?? '—'}</span>,
   },
   {
     key: 'publisher',
     label: 'Publisher',
-    cell: (book) => <span className="text-slate-400">{book.publisher ?? '—'}</span>,
+    cell: (book) => <div className="max-w-[12rem] truncate text-slate-400">{book.publisher ?? '—'}</div>,
   },
   {
     key: 'series',
@@ -292,7 +292,7 @@ const TABLE_COLUMNS: {
     label: 'Size',
     sortField: 'size',
     align: 'right',
-    cell: (book) => <span className="text-slate-400">{formatBytes(book.size)}</span>,
+    cell: (book) => <span className="whitespace-nowrap text-slate-400">{formatBytes(book.size)}</span>,
   },
   {
     key: 'progress',
@@ -305,13 +305,13 @@ const TABLE_COLUMNS: {
     key: 'added',
     label: 'Added',
     sortField: 'added',
-    cell: (book) => <span className="text-slate-400">{formatDateShort(book.modifiedTime)}</span>,
+    cell: (book) => <span className="whitespace-nowrap text-slate-400">{formatDateShort(book.modifiedTime)}</span>,
   },
   {
     key: 'lastOpened',
     label: 'Last opened',
     sortField: 'lastOpened',
-    cell: (book) => <span className="text-slate-400">{book.lastOpened ? formatDateShort(book.lastOpened) : '—'}</span>,
+    cell: (book) => <span className="whitespace-nowrap text-slate-400">{book.lastOpened ? formatDateShort(book.lastOpened) : '—'}</span>,
   },
 ];
 
@@ -855,7 +855,7 @@ export default function LibraryPage() {
                     <th
                       key={col.key}
                       onClick={col.sortField ? () => toggleSort(col.sortField!) : undefined}
-                      className={`px-4 py-3 font-medium ${col.align === 'right' ? 'text-right' : ''} ${
+                      className={`whitespace-nowrap px-4 py-3 font-medium ${col.align === 'right' ? 'text-right' : ''} ${
                         col.sortField ? 'cursor-pointer select-none hover:text-white' : ''
                       }`}
                     >
@@ -883,7 +883,7 @@ export default function LibraryPage() {
                         <td key={col.key} className={`px-4 py-3 ${col.align === 'right' ? 'text-right' : ''}`}>
                           {col.cell(book)}
                           {col.key === 'title' && suggestion && (
-                            <div className="mt-1 text-xs text-amber-300">
+                            <div className="mt-1 max-w-[24rem] truncate text-xs text-amber-300">
                               Suggested: {suggestion.title}
                               {suggestion.authors?.[0] ? ` — ${suggestion.authors[0]}` : ''}
                             </div>
