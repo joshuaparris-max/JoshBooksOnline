@@ -143,6 +143,9 @@ export async function listFilesInFolder(
       const format = getMimeTypeFormat(file.mimeType!);
       if (!format) continue; // Skip unsupported formats
 
+      // Skip books the user has removed from the library (hidden, file left in Drive)
+      if ((file.appProperties as Record<string, string> | undefined)?.m_hidden === '1') continue;
+
       const appProps = parseAppProperties(
         file.appProperties as Record<string, string> | undefined
       );
@@ -332,6 +335,45 @@ export async function updateBookMetadata(
 }
 
 /**
+ * Remove a book from the library without deleting the underlying Drive file.
+ * Best-effort detaches the file from its library folder, and always marks it
+ * hidden (m_hidden) so it no longer appears in listings. The file itself stays
+ * in the user's Google Drive.
+ */
+export async function removeBookFromLibrary(
+  accessToken: string,
+  fileId: string,
+  source: LibrarySource
+): Promise<void> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+
+  // Work out which library folder this book was listed under
+  let folderId: string | undefined;
+  if (source === 'Local Books') {
+    folderId = (await findLocalBooksFolderId(accessToken)) ?? undefined;
+  } else {
+    folderId = FIXED_FOLDERS[source as Exclude<LibrarySource, 'Local Books'>];
+  }
+
+  // Best-effort: detach from the library folder. This can fail on shared folders
+  // the user can't reorganise — in that case the hidden flag below still removes it.
+  if (folderId) {
+    try {
+      await drive.files.update({ fileId, removeParents: folderId });
+    } catch (error) {
+      console.warn(`Could not detach ${fileId} from ${source}; hiding instead.`, error);
+    }
+  }
+
+  // Always hide it from the library view
+  await drive.files.update({
+    fileId,
+    requestBody: { appProperties: { m_hidden: '1' } },
+  });
+}
+
+/**
  * Get metadata for a specific file by its ID
  * Used for importing files selected from the Google Picker
  */
@@ -440,6 +482,9 @@ export async function listFilesInFolderRecursive(
 
       const format = getMimeTypeFormat(file.mimeType!);
       if (!format) continue; // Skip unsupported formats
+
+      // Skip books the user has removed from the library (hidden, file left in Drive)
+      if ((file.appProperties as Record<string, string> | undefined)?.m_hidden === '1') continue;
 
       const appProps = parseAppProperties(
         file.appProperties as Record<string, string> | undefined

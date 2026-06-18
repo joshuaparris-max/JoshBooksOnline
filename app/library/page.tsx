@@ -339,6 +339,8 @@ export default function LibraryPage() {
   const [pending, setPending] = useState<Record<string, BookMetadata>>({});
   const [editingBook, setEditingBook] = useState<BookEntry | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<BookEntry | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [importStatus, setImportStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({
     type: 'idle',
     message: '',
@@ -504,6 +506,27 @@ export default function LibraryPage() {
       delete next[fileId];
       return next;
     });
+  };
+
+  /** Remove a book from the library (file stays in Drive). */
+  const removeBook = async (book: BookEntry) => {
+    setRemovingId(book.id);
+    try {
+      const response = await fetch('/api/library/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId: book.id, source: book.source }),
+      });
+      if (!response.ok) throw new Error('remove failed');
+      setBooks((prev) => (prev ? prev.filter((b) => b.id !== book.id) : prev));
+      discardPending(book.id);
+      setConfirmDelete(null);
+    } catch {
+      setImportStatus({ type: 'error', message: `Could not remove "${book.name}". Please try again.` });
+      setTimeout(() => setImportStatus({ type: 'idle', message: '' }), 5000);
+    } finally {
+      setRemovingId(null);
+    }
   };
 
   const sortedBooks = useMemo(() => {
@@ -833,13 +856,22 @@ export default function LibraryPage() {
                       </div>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setEditingBook(book)}
-                      className="w-full rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
-                    >
-                      Edit metadata
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditingBook(book)}
+                        className="flex-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                      >
+                        Edit metadata
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(book)}
+                        className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   )}
                 </div>
               </article>
@@ -921,6 +953,14 @@ export default function LibraryPage() {
                           >
                             Edit
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDelete(book)}
+                            title="Remove from library"
+                            className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-300 transition hover:bg-rose-500/20"
+                          >
+                            Remove
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -983,6 +1023,36 @@ export default function LibraryPage() {
           onClose={() => setEditingBook(null)}
           onSave={(metadata) => saveMetadata(editingBook.id, metadata)}
         />
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
+            <h2 className="text-lg font-semibold text-white">Remove from library?</h2>
+            <p className="mt-3 text-sm text-slate-300">
+              <span className="font-medium text-white">{displayTitle(confirmDelete)}</span> will be removed from
+              your library. The file itself stays in your Google Drive — this only hides it here.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(null)}
+                disabled={removingId === confirmDelete.id}
+                className="rounded-full bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => removeBook(confirmDelete)}
+                disabled={removingId === confirmDelete.id}
+                className="rounded-full bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-50"
+              >
+                {removingId === confirmDelete.id ? 'Removing…' : 'Remove'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );
