@@ -1,0 +1,164 @@
+Add the following YouTube audiobooks to JoshBooksOnline.
+
+Repository:
+https://github.com/joshuaparris-max/JoshBooksOnline
+
+Requirements:
+- Match each audiobook to every listed catalogue record in `catalogueMatches`.
+- Store the exact `youtubeUrl`; do not replace it with a YouTube search URL.
+- Preserve any existing audiobook links.
+- Do not create duplicate links when multiple files represent the same book.
+- Make YouTube links editable and removable in the UI.
+- Display a clear external-source label such as “YouTube audiobook”.
+- Gracefully handle unavailable, private, age-restricted, or embedding-disabled videos.
+- Do not auto-play.
+- Add automated tests for URL validation, duplicate prevention, matching aliases, and unavailable-video fallback.
+- Run lint, typecheck, tests and production build before reporting completion.
+
+Audiobook data:
+
+[
+  {
+    "title": "1984",
+    "author": "George Orwell",
+    "youtubeUrl": "https://www.youtube.com/watch?v=inLnzoQZrMs",
+    "catalogueMatches": [
+      "05-OrwellGeorge-1984",
+      "Nineteen Eighty-Four"
+    ],
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "title": "A Tale of a Tub",
+    "author": "Jonathan Swift",
+    "youtubeUrl": "https://www.youtube.com/watch?v=I11yPuRuS6A",
+    "catalogueMatches": [
+      "A tale of a tub"
+    ],
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "title": "A Tale of Two Cities",
+    "author": "Charles Dickens",
+    "youtubeUrl": "https://www.youtube.com/watch?v=PmjXbGJCu6I",
+    "catalogueMatches": [
+      "A Tale of Two Cities"
+    ],
+    "source": "LibriVox-sourced full audiobook",
+    "rightsNote": "Public-domain text; video description identifies LibriVox volunteers."
+  },
+  {
+    "title": "All's Well That Ends Well",
+    "author": "William Shakespeare",
+    "youtubeUrl": "https://www.youtube.com/watch?v=xeKm0f_oGwM",
+    "catalogueMatches": [
+      "All's Well That Ends Well"
+    ],
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "title": "Genesis, Exodus and Leviticus (KJV)",
+    "author": "King James Version",
+    "youtubeUrl": "https://www.youtube.com/watch?v=mYqxTk3lH9c",
+    "catalogueMatches": [
+      "01-Genesis.txt",
+      "Bible"
+    ],
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Public-domain KJV text and LibriVox recording. This link covers Genesis, Exodus and Leviticus rather than the complete Bible."
+  },
+  {
+    "title": "Pride and Prejudice",
+    "author": "Jane Austen",
+    "youtubeUrl": "https://www.youtube.com/watch?v=ZhxqauL9WbM",
+    "catalogueMatches": [
+      "austen-pride-and-prejudice-illustrations",
+      "Pride and Prejudice"
+    ],
+    "source": "LibriVox recording, read by Karen Savage",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "title": "Romeo and Juliet",
+    "author": "William Shakespeare",
+    "youtubeUrl": "https://www.youtube.com/watch?v=o_-RH2ohxAo",
+    "catalogueMatches": [
+      "Romeo and Juliet"
+    ],
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "title": "Twelfth Night",
+    "author": "William Shakespeare",
+    "youtubeUrl": "https://www.youtube.com/watch?v=yDRI8KBmZvw",
+    "catalogueMatches": [
+      "Twelfth Night, or What You Will"
+    ],
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "title": "Wuthering Heights",
+    "author": "Emily Brontë",
+    "youtubeUrl": "https://www.youtube.com/watch?v=r29vNQ-ac_M",
+    "catalogueMatches": [
+      "Wuthering Heights"
+    ],
+    "source": "LibriVox Audiobooks, read by Ruth Golding",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "title": "Three Men in a Boat",
+    "author": "Jerome K. Jerome",
+    "youtubeUrl": "https://www.youtube.com/watch?v=5bPbdTsloPY",
+    "catalogueMatches": [
+      "Three Men in a Boat (to say nothing of the dog)"
+    ],
+    "source": "LibriVox Audiobooks, read by Nick Bulka",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "title": "The Art of War",
+    "author": "Sun Tzu",
+    "youtubeUrl": "https://www.youtube.com/watch?v=oEZ4gBuKz4M",
+    "catalogueMatches": [
+      "The Art of War"
+    ],
+    "source": "LibriVox Audiobooks, read by Moira Fogarty",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "title": "The Imitation of Christ",
+    "author": "Thomas à Kempis",
+    "youtubeUrl": "https://www.youtube.com/watch?v=Qc0-PGO4YD4",
+    "catalogueMatches": [
+      "Imitation of Christ"
+    ],
+    "source": "LibriVox Audiobooks, read by David Barnes",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "title": "The Way to Wealth",
+    "author": "Benjamin Franklin",
+    "youtubeUrl": "https://www.youtube.com/watch?v=o7daIP4Gf4U",
+    "catalogueMatches": [
+      "Way to wealth"
+    ],
+    "source": "LibriVox recording, read by Bob Gonzalez",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "title": "The Complete Poems of John Milton",
+    "author": "John Milton",
+    "youtubeUrl": "https://www.youtube.com/watch?v=gi7IydPzgTE",
+    "catalogueMatches": [
+      "Milton's Poems"
+    ],
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Probable catalogue match; manually confirm that the local item is the intended Milton collection."
+  }
+]

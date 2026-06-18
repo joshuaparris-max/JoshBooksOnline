@@ -1,0 +1,575 @@
+[
+  {
+    "id": "1984-orwell",
+    "title": "1984",
+    "author": "George Orwell",
+    "youtubeUrl": "https://www.youtube.com/watch?v=inLnzoQZrMs",
+    "catalogueMatches": [
+      "05-OrwellGeorge-1984",
+      "Nineteen Eighty-Four"
+    ],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "tale-of-tub-swift",
+    "title": "A Tale of a Tub",
+    "author": "Jonathan Swift",
+    "youtubeUrl": "https://www.youtube.com/watch?v=I11yPuRuS6A",
+    "catalogueMatches": [
+      "A tale of a tub"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "id": "tale-two-cities-dickens",
+    "title": "A Tale of Two Cities",
+    "author": "Charles Dickens",
+    "youtubeUrl": "https://www.youtube.com/watch?v=PmjXbGJCu6I",
+    "catalogueMatches": [
+      "A Tale of Two Cities"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox-sourced full audiobook",
+    "rightsNote": "Public-domain text; video description identifies LibriVox volunteers."
+  },
+  {
+    "id": "alls-well-shakespeare",
+    "title": "All's Well That Ends Well",
+    "author": "William Shakespeare",
+    "youtubeUrl": "https://www.youtube.com/watch?v=xeKm0f_oGwM",
+    "catalogueMatches": [
+      "All's Well That Ends Well"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "id": "genesis-exodus-leviticus-kjv",
+    "title": "Genesis, Exodus and Leviticus (KJV)",
+    "author": "King James Version",
+    "youtubeUrl": "https://www.youtube.com/watch?v=mYqxTk3lH9c",
+    "catalogueMatches": [
+      "01-Genesis.txt",
+      "Bible"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Public-domain KJV text and LibriVox recording. This link covers Genesis, Exodus and Leviticus rather than the complete Bible.",
+    "notes": "Suitable for your 01-Genesis.txt record; it covers the first three books rather than the whole Bible."
+  },
+  {
+    "id": "pride-prejudice-austen",
+    "title": "Pride and Prejudice",
+    "author": "Jane Austen",
+    "youtubeUrl": "https://www.youtube.com/watch?v=ZhxqauL9WbM",
+    "catalogueMatches": [
+      "austen-pride-and-prejudice-illustrations",
+      "Pride and Prejudice"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox recording, read by Karen Savage",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "id": "romeo-juliet-shakespeare",
+    "title": "Romeo and Juliet",
+    "author": "William Shakespeare",
+    "youtubeUrl": "https://www.youtube.com/watch?v=o_-RH2ohxAo",
+    "catalogueMatches": [
+      "Romeo and Juliet"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "id": "twelfth-night-shakespeare",
+    "title": "Twelfth Night",
+    "author": "William Shakespeare",
+    "youtubeUrl": "https://www.youtube.com/watch?v=yDRI8KBmZvw",
+    "catalogueMatches": [
+      "Twelfth Night, or What You Will"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "id": "wuthering-heights-bronte",
+    "title": "Wuthering Heights",
+    "author": "Emily Brontë",
+    "youtubeUrl": "https://www.youtube.com/watch?v=r29vNQ-ac_M",
+    "catalogueMatches": [
+      "Wuthering Heights"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks, read by Ruth Golding",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "id": "three-men-boat-jerome",
+    "title": "Three Men in a Boat",
+    "author": "Jerome K. Jerome",
+    "youtubeUrl": "https://www.youtube.com/watch?v=5bPbdTsloPY",
+    "catalogueMatches": [
+      "Three Men in a Boat (to say nothing of the dog)"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks, read by Nick Bulka",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "id": "art-of-war-sunzi",
+    "title": "The Art of War",
+    "author": "Sun Tzu",
+    "youtubeUrl": "https://www.youtube.com/watch?v=oEZ4gBuKz4M",
+    "catalogueMatches": [
+      "The Art of War"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks, read by Moira Fogarty",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "id": "imitation-of-christ-kempis",
+    "title": "The Imitation of Christ",
+    "author": "Thomas à Kempis",
+    "youtubeUrl": "https://www.youtube.com/watch?v=Qc0-PGO4YD4",
+    "catalogueMatches": [
+      "Imitation of Christ"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks, read by David Barnes",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "id": "way-to-wealth-franklin",
+    "title": "The Way to Wealth",
+    "author": "Benjamin Franklin",
+    "youtubeUrl": "https://www.youtube.com/watch?v=o7daIP4Gf4U",
+    "catalogueMatches": [
+      "Way to wealth"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox recording, read by Bob Gonzalez",
+    "rightsNote": "Public-domain text and LibriVox recording."
+  },
+  {
+    "id": "complete-poems-milton",
+    "title": "The Complete Poems of John Milton",
+    "author": "John Milton",
+    "youtubeUrl": "https://www.youtube.com/watch?v=gi7IydPzgTE",
+    "catalogueMatches": [
+      "Milton's Poems"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks",
+    "rightsNote": "Probable catalogue match; manually confirm that the local item is the intended Milton collection."
+  },
+  {
+    "id": "bible-kjv-complete",
+    "title": "Bible (King James Version), Complete",
+    "author": "King James Version",
+    "youtubeUrl": "https://www.youtube.com/watch?v=5B-3uy3rAKs",
+    "catalogueMatches": [
+      "01-Genesis.txt",
+      "Bible"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox recording on YouTube",
+    "notes": "Suitable as a complete-Bible link; the existing Genesis-specific link can remain as an additional option."
+  },
+  {
+    "id": "paradise-lost-milton",
+    "title": "Paradise Lost",
+    "author": "John Milton",
+    "youtubeUrl": "https://www.youtube.com/watch?v=0hu8p-NYSkE",
+    "catalogueMatches": [
+      "Milton's Poems"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "Public-domain audiobook on YouTube",
+    "notes": "Probable match within the Milton collection; do not overwrite a broader collection link without checking."
+  },
+  {
+    "id": "paradise-regained-milton",
+    "title": "Paradise Regained",
+    "author": "John Milton",
+    "youtubeUrl": "https://www.youtube.com/watch?v=0xUcm7TfPb8",
+    "catalogueMatches": [
+      "Milton's Poems"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "Public-domain audiobook on YouTube",
+    "notes": "Additional work that may belong under the Milton collection rather than replacing Paradise Lost."
+  },
+  {
+    "id": "fahrenheit-451-bradbury",
+    "title": "Fahrenheit 451",
+    "author": "Ray Bradbury",
+    "youtubeUrl": "https://www.youtube.com/watch?v=3pYspGBoLTU",
+    "catalogueMatches": [
+      "07-BradburyRay-Fahrenheit451"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Preview only; never show as a complete audiobook."
+  },
+  {
+    "id": "lion-witch-wardrobe-lewis",
+    "title": "The Lion, the Witch and the Wardrobe",
+    "author": "C. S. Lewis",
+    "youtubeUrl": "https://www.youtube.com/watch?v=5tt-MqBU_T0",
+    "catalogueMatches": [
+      "1TheLiontheWitchandtheWardrobe-C.S.Lewis"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Preview only."
+  },
+  {
+    "id": "magicians-nephew-lewis",
+    "title": "The Magician's Nephew",
+    "author": "C. S. Lewis",
+    "youtubeUrl": "https://www.youtube.com/watch?v=m4phLuTSoj4",
+    "catalogueMatches": [
+      "chronicles of narnia- magicians nephew by c.s.lewis",
+      "The Magician's Nephew"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Abridged-edition preview."
+  },
+  {
+    "id": "prince-caspian-lewis",
+    "title": "Prince Caspian",
+    "author": "C. S. Lewis",
+    "youtubeUrl": "https://www.youtube.com/watch?v=SFWjBLD3-Hw",
+    "catalogueMatches": [
+      "Prince Caspian"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Abridged-edition preview."
+  },
+  {
+    "id": "horse-boy-lewis",
+    "title": "The Horse and His Boy",
+    "author": "C. S. Lewis",
+    "youtubeUrl": "https://www.youtube.com/watch?v=iUzd0PKBzkc",
+    "catalogueMatches": [
+      "The Horse and His Boy"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Unabridged-edition preview."
+  },
+  {
+    "id": "voyage-dawn-treader-lewis",
+    "title": "The Voyage of the Dawn Treader",
+    "author": "C. S. Lewis",
+    "youtubeUrl": "https://www.youtube.com/watch?v=_5r3RdgReOw",
+    "catalogueMatches": [
+      "The Voyage of the Dawn Treader"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Unabridged-edition preview."
+  },
+  {
+    "id": "hobbit-tolkien",
+    "title": "The Hobbit",
+    "author": "J. R. R. Tolkien",
+    "youtubeUrl": "https://www.youtube.com/watch?v=P6v9zQVdpaw",
+    "catalogueMatches": [
+      "The Hobbit"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Official HarperCollins audiobook preview; abridged Martin Shaw edition."
+  },
+  {
+    "id": "black-dekker",
+    "title": "Black",
+    "author": "Ted Dekker",
+    "youtubeUrl": "https://www.youtube.com/watch?v=iIWJiGvUqHQ",
+    "catalogueMatches": [
+      "Black-TedDekker",
+      "Black-TedDekker.txt.docx"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Preview only."
+  },
+  {
+    "id": "red-dekker",
+    "title": "Red",
+    "author": "Ted Dekker",
+    "youtubeUrl": "https://www.youtube.com/watch?v=rVFXsbBleFw",
+    "catalogueMatches": [
+      "Red-TedDekker"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Preview only."
+  },
+  {
+    "id": "white-dekker",
+    "title": "White",
+    "author": "Ted Dekker",
+    "youtubeUrl": "https://www.youtube.com/watch?v=K9qpvYnCJs4",
+    "catalogueMatches": [
+      "White-TedDekker"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Preview only."
+  },
+  {
+    "id": "thr3e-dekker",
+    "title": "Thr3e",
+    "author": "Ted Dekker",
+    "youtubeUrl": "https://www.youtube.com/watch?v=KF-9Ij6y6eI",
+    "catalogueMatches": [
+      "Thr3e-TedDekker"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Preview only."
+  },
+  {
+    "id": "adam-dekker",
+    "title": "Adam",
+    "author": "Ted Dekker",
+    "youtubeUrl": "https://www.youtube.com/watch?v=X6UtGIZ2GG4",
+    "catalogueMatches": [
+      "Adam-TedDekker2"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Preview only."
+  },
+  {
+    "id": "hood-lawhead",
+    "title": "Hood",
+    "author": "Stephen R. Lawhead",
+    "youtubeUrl": "https://www.youtube.com/watch?v=TWFRoJ9jakw",
+    "catalogueMatches": [
+      "Hood-StephenR.Lawhead3"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Preview only."
+  },
+  {
+    "id": "scarlet-lawhead",
+    "title": "Scarlet",
+    "author": "Stephen R. Lawhead",
+    "youtubeUrl": "https://www.youtube.com/watch?v=P5hWmOU4QRM",
+    "catalogueMatches": [
+      "Scarlet-StephenR.Lawhead2"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Preview only."
+  },
+  {
+    "id": "think-grow-rich-hill",
+    "title": "Think and Grow Rich",
+    "author": "Napoleon Hill",
+    "youtubeUrl": "https://www.youtube.com/watch?v=ZUbfskQ-GAY",
+    "catalogueMatches": [
+      "Think and Grow Rich",
+      "Napoleon Hill"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "YouTube audiobook",
+    "notes": "Self-help classic by Napoleon Hill."
+  },
+  {
+    "id": "magician-feist",
+    "title": "Magician",
+    "author": "Raymond E. Feist",
+    "youtubeUrl": "https://www.youtube.com/watch?v=AfmVKN-RwAQ",
+    "catalogueMatches": [
+      "Magician",
+      "Raymond E. Feist",
+      "Magician-RaymondFeist"
+    ],
+    "availabilityType": "unknown",
+    "source": "YouTube audiobook"
+  },
+  {
+    "id": "treasure-island-stevenson",
+    "title": "Treasure Island",
+    "author": "Robert Louis Stevenson",
+    "youtubeUrl": "https://www.youtube.com/watch?v=atBFFhV2Jcs",
+    "catalogueMatches": [
+      "Treasure Island"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "YouTube audiobook"
+  },
+  {
+    "id": "peter-pan-barrie",
+    "title": "Peter Pan",
+    "author": "J. M. Barrie",
+    "youtubeUrl": "https://www.youtube.com/watch?v=_jGjPZuBMZg",
+    "catalogueMatches": [
+      "Peter Pan"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "YouTube audiobook"
+  },
+  {
+    "id": "secret-garden-burnett",
+    "title": "The Secret Garden",
+    "author": "Frances Hodgson Burnett",
+    "youtubeUrl": "https://www.youtube.com/watch?v=Heo96fQPtc0",
+    "catalogueMatches": [
+      "The Secret Garden"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "YouTube audiobook"
+  },
+  {
+    "id": "sherlock-holmes-conan-doyle",
+    "title": "Sherlock Holmes",
+    "author": "Sir Arthur Conan Doyle",
+    "youtubeUrl": "https://www.youtube.com/watch?v=A4TU2h_rDlM",
+    "catalogueMatches": [
+      "Sherlock Holmes",
+      "A. Conan Doyle"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "YouTube audiobook"
+  },
+  {
+    "id": "book-of-john-kjv",
+    "title": "The Book of John (KJV)",
+    "author": "King James Version",
+    "youtubeUrl": "https://www.youtube.com/watch?v=fmRpNBdfaqI",
+    "catalogueMatches": [
+      "Bible",
+      "Gospel of John"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "YouTube audiobook",
+    "notes": "Gospel of John from the King James Version Bible."
+  },
+  {
+    "id": "van-gogh-letters",
+    "title": "The Letters of a Post-Impressionist",
+    "author": "Vincent van Gogh",
+    "youtubeUrl": "https://www.youtube.com/watch?v=B7QuTOwCJiA",
+    "catalogueMatches": [
+      "Van Gogh",
+      "Vincent van Gogh"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks",
+    "notes": "Full LibriVox audiobook of van Gogh's letters."
+  },
+  {
+    "id": "van-gogh-letters-visual",
+    "title": "Van Gogh's Letters (Audiobook with Paintings)",
+    "author": "Vincent van Gogh",
+    "youtubeUrl": "https://www.youtube.com/watch?v=UDkhMOeFwzA",
+    "catalogueMatches": [
+      "Van Gogh",
+      "Vincent van Gogh"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "YouTube audiobook",
+    "notes": "Visual audiobook version with paintings included."
+  },
+  {
+    "id": "space-trilogy-lewis",
+    "title": "The Space Trilogy",
+    "author": "C. S. Lewis",
+    "youtubeUrl": "https://www.youtube.com/watch?v=va8bHteabPs",
+    "catalogueMatches": [
+      "Out of the Silent Planet",
+      "Perelandra",
+      "That Hideous Strength",
+      "Space Trilogy"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Combined preview covering all three books of the Space Trilogy."
+  },
+  {
+    "id": "silver-chair-lewis",
+    "title": "The Silver Chair (Abridged)",
+    "author": "C. S. Lewis",
+    "youtubeUrl": "https://www.youtube.com/watch?v=C2JW0SJGhq4",
+    "catalogueMatches": [
+      "The Silver Chair",
+      "Silver Chair"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Abridged-edition preview."
+  },
+  {
+    "id": "abolition-man-great-divorce-lewis",
+    "title": "The Abolition of Man and The Great Divorce",
+    "author": "C. S. Lewis",
+    "youtubeUrl": "https://www.youtube.com/watch?v=YIj-SG12tHg",
+    "catalogueMatches": [
+      "The Abolition of Man",
+      "The Great Divorce",
+      "Abolition of Man",
+      "Great Divorce"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "notes": "Combined preview of two essays/works."
+  }
+]

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import ReaderSearchBar from './ReaderSearchBar';
+import { useReaderTheme, READER_THEMES, READER_THEME_SURFACE } from '@/lib/useReaderTheme';
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -77,6 +78,7 @@ export default function DocxReader({ name, arrayBuffer, initialLocation, onProgr
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<number>(1);
+  const [theme, setTheme] = useReaderTheme();
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -203,6 +205,17 @@ export default function DocxReader({ name, arrayBuffer, initialLocation, onProgr
           >
             Find
           </button>
+          <span className="text-slate-400">Theme:</span>
+          {READER_THEMES.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTheme(t)}
+              className={`rounded-full px-3 py-1 capitalize transition ${theme === t ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+            >
+              {t}
+            </button>
+          ))}
           <span className="text-slate-400">Font size:</span>
           {[0, 1, 2, 3].map((index) => (
             <button
@@ -233,7 +246,7 @@ export default function DocxReader({ name, arrayBuffer, initialLocation, onProgr
         ) : (
           <div
             ref={contentRef}
-            className={`docx-content rounded-3xl bg-white p-8 text-slate-900 ${fontSizes[fontSize]}`}
+            className={`docx-content rounded-3xl p-8 transition-colors ${READER_THEME_SURFACE[theme]} ${fontSizes[fontSize]}`}
           />
         )}
       </div>

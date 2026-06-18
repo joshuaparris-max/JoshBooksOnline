@@ -22,6 +22,20 @@ export type LibrarySource =
 
 export type BookFormat = 'pdf' | 'epub' | 'txt' | 'docx';
 
+/** A free public-domain ebook from an online source (read in-app via the proxy). */
+export interface OnlineEbook {
+  id: string;
+  title: string;
+  author: string;
+  /** 'epub' or 'txt' — opened in the matching reader */
+  format: 'epub' | 'txt';
+  /** Direct download URL (whitelisted host, fetched via /api/fetch-ebook) */
+  url: string;
+  coverUrl?: string;
+  source: string;
+  category: 'Classic literature' | 'Sci-fi & fantasy' | 'Philosophy & nonfiction' | 'Christian & faith';
+}
+
 /** A single audio file within an audiobook. */
 export interface AudioTrack {
   /** Drive file id of the audio track */
@@ -41,6 +55,8 @@ export interface AudiobookEntry {
   source: LibrarySource;
   /** true when this audiobook is a folder of tracks */
   isFolder: boolean;
+  /** true when loose tracks were manually merged in JoshBooks */
+  isManualGroup?: boolean;
   /** Tracks, when loaded (the list endpoint omits these for speed) */
   tracks?: AudioTrack[];
 
@@ -85,6 +101,40 @@ export interface BookMetadata {
   /** Open Library cover id — stored so the cover URL can be reconstructed */
   openLibraryCoverId?: string;
   metadataSource?: MetadataSource;
+}
+
+export type AudiobookAvailabilityType = 'full_public_domain' | 'official_preview' | 'unknown';
+
+export interface Audiobook {
+  /** Unique identifier for the audiobook */
+  id: string;
+
+  /** Title of the audiobook */
+  title: string;
+
+  /** Author of the audiobook */
+  author: string;
+
+  /** Full YouTube URL */
+  youtubeUrl: string;
+
+  /** Catalogue names/files this audiobook matches */
+  catalogueMatches: string[];
+
+  /** Type of availability (full audiobook, preview, or unknown) */
+  availabilityType: AudiobookAvailabilityType;
+
+  /** Display label for the UI (e.g., "Full public-domain audiobook", "Official audiobook preview") */
+  displayLabel?: string;
+
+  /** Source of the audiobook (e.g., "LibriVox", "Google Play Books") */
+  source?: string;
+
+  /** Rights or availability notes */
+  rightsNote?: string;
+
+  /** Additional notes about the audiobook */
+  notes?: string;
 }
 
 export interface BookEntry {

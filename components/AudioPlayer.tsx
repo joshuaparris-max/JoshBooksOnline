@@ -36,11 +36,40 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
   const [rate, setRate] = useState(1);
   const resumePos = useRef(audiobook.audioPosition ?? 0);
   const lastSave = useRef(0);
+  const [resumeLoaded, setResumeLoaded] = useState(false);
 
   const current = tracks[index];
 
-  // Load the current track's stream; resume position applies to the first track only.
+  // Fetch the cross-device resume point (Redis) before loading any audio.
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(`/api/audio-progress?id=${encodeURIComponent(audiobook.id)}`, {
+          cache: 'no-store',
+        });
+        const { progress } = (await response.json()) as {
+          progress: { track?: number; position?: number } | null;
+        };
+        if (!cancelled && progress) {
+          if (typeof progress.track === 'number' && progress.track < tracks.length) setIndex(progress.track);
+          if (typeof progress.position === 'number') resumePos.current = progress.position;
+        }
+      } catch {
+        // fall back to the Drive-provided resume already in state
+      } finally {
+        if (!cancelled) setResumeLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audiobook.id]);
+
+  // Load the current track's stream; resume position applies on first load.
+  useEffect(() => {
+    if (!resumeLoaded) return;
     const audio = audioRef.current;
     if (!audio || !current) return;
     audio.src = `/api/stream/${current.id}?mime=${encodeURIComponent(mimeFromName(current.name))}`;
@@ -56,7 +85,7 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
     audio.addEventListener('loadedmetadata', onLoaded, { once: true });
     return () => audio.removeEventListener('loadedmetadata', onLoaded);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index]);
+  }, [index, resumeLoaded]);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = rate;
@@ -68,10 +97,15 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
     const now = Date.now();
     if (!force && now - lastSave.current < 8000) return;
     lastSave.current = now;
+    // Cross-device resume (Redis); best-effort Drive sync too.
+    const body = JSON.stringify({ id: audiobook.id, track: index, position: Math.floor(audio.currentTime) });
+    fetch('/api/audio-progress', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }).catch(
+      () => {}
+    );
     fetch('/api/library/audio-progress', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: audiobook.id, track: index, position: Math.floor(audio.currentTime) }),
+      body,
     }).catch(() => {});
   };
 
