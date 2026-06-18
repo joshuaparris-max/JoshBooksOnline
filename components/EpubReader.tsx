@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ePub from 'epubjs';
+import ReaderSearchBar from './ReaderSearchBar';
+
+interface EpubMatch {
+  cfi: string;
+  excerpt: string;
+}
 
 interface EpubReaderProps {
   fileId: string;
@@ -44,6 +50,12 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
   const [showToolbar, setShowToolbar] = useState(true);
   const saveTimeout = useRef<number | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<EpubMatch[]>([]);
+  const [activeMatch, setActiveMatch] = useState(0);
+  const [searching, setSearching] = useState(false);
+  const prevHighlight = useRef<string | null>(null);
 
   const location = useMemo(() => initialLocation?.trim() || '', [initialLocation]);
 
@@ -151,14 +163,133 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
     renditionRef.current?.themes.fontSize(fontSizes[fontSize]);
   }, [fontSize]);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Debounced full-text search across the whole spine
+  useEffect(() => {
+    if (!searchOpen) return;
+    const q = query.trim();
+    if (q.length < 2) {
+      setResults([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const book = bookRef.current;
+      if (!book) return;
+      setSearching(true);
+      try {
+        await book.ready;
+        const items = book.spine?.spineItems ?? [];
+        const found: EpubMatch[] = [];
+        for (const item of items) {
+          if (cancelled) return;
+          try {
+            await item.load(book.load.bind(book));
+            const matches = (item.find(q) as EpubMatch[]) ?? [];
+            matches.forEach((m) => found.push(m));
+          } catch {
+            // skip sections that fail to load/search
+          } finally {
+            try {
+              item.unload();
+            } catch {
+              // ignore
+            }
+          }
+        }
+        if (!cancelled) {
+          setResults(found);
+          setActiveMatch(0);
+        }
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [query, searchOpen]);
+
+  // Navigate to and highlight the active match
+  useEffect(() => {
+    const rendition = renditionRef.current;
+    const match = results[activeMatch];
+    if (!rendition || !match) return;
+    rendition
+      .display(match.cfi)
+      .then(() => {
+        if (prevHighlight.current) {
+          try {
+            rendition.annotations.remove(prevHighlight.current, 'highlight');
+          } catch {
+            // ignore
+          }
+        }
+        try {
+          rendition.annotations.highlight(match.cfi);
+          prevHighlight.current = match.cfi;
+        } catch {
+          // ignore
+        }
+      })
+      .catch(() => {});
+  }, [activeMatch, results]);
+
+  const nextMatch = () => results.length && setActiveMatch((i) => (i + 1) % results.length);
+  const prevMatch = () =>
+    results.length && setActiveMatch((i) => (i - 1 + results.length) % results.length);
+
+  const closeSearch = () => {
+    setSearchOpen(false);
+    const rendition = renditionRef.current;
+    if (prevHighlight.current && rendition) {
+      try {
+        rendition.annotations.remove(prevHighlight.current, 'highlight');
+      } catch {
+        // ignore
+      }
+    }
+    prevHighlight.current = null;
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      {searchOpen && (
+        <ReaderSearchBar
+          query={query}
+          onQueryChange={setQuery}
+          onNext={nextMatch}
+          onPrev={prevMatch}
+          onClose={closeSearch}
+          current={results.length ? activeMatch + 1 : 0}
+          total={results.length}
+          busy={searching}
+        />
+      )}
       <div className="fixed inset-x-0 top-0 z-30 flex items-center justify-between gap-4 border-b border-white/10 bg-slate-950/90 px-4 py-3 backdrop-blur md:px-8">
         <div>
           <p className="text-sm uppercase tracking-[0.3em] text-slate-400">EPUB Reader</p>
           <h1 className="text-lg font-semibold">{name}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSearchOpen((v) => !v)}
+            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm transition hover:bg-white/10"
+          >
+            Find
+          </button>
           <button
             type="button"
             onClick={() => setShowToolbar((value) => !value)}

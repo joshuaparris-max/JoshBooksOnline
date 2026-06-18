@@ -1,6 +1,64 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import ReaderSearchBar from './ReaderSearchBar';
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Highlight all matches of `query` inside `container` by wrapping them in
+ * <mark data-find> elements. Returns the total match count and scrolls the
+ * active match into view. Existing highlights are removed first.
+ */
+function highlightContainer(container: HTMLElement, query: string, activeIndex: number): number {
+  container.querySelectorAll('mark[data-find]').forEach((mark) => {
+    const parent = mark.parentNode;
+    if (!parent) return;
+    parent.replaceChild(document.createTextNode(mark.textContent ?? ''), mark);
+    parent.normalize();
+  });
+
+  if (!query) return 0;
+
+  const re = new RegExp(escapeRegExp(query), 'gi');
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+  let node: Node | null;
+  while ((node = walker.nextNode())) textNodes.push(node as Text);
+
+  const marks: HTMLElement[] = [];
+  for (const textNode of textNodes) {
+    const value = textNode.nodeValue ?? '';
+    re.lastIndex = 0;
+    if (!re.test(value)) continue;
+    re.lastIndex = 0;
+
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(value)) !== null) {
+      if (m.index > last) frag.appendChild(document.createTextNode(value.slice(last, m.index)));
+      const mark = document.createElement('mark');
+      mark.setAttribute('data-find', '');
+      mark.textContent = m[0];
+      frag.appendChild(mark);
+      marks.push(mark);
+      last = m.index + m[0].length;
+      if (m.index === re.lastIndex) re.lastIndex += 1;
+    }
+    if (last < value.length) frag.appendChild(document.createTextNode(value.slice(last)));
+    textNode.parentNode?.replaceChild(frag, textNode);
+  }
+
+  marks.forEach((mark, i) => {
+    mark.className = i === activeIndex ? 'bg-amber-400 text-black' : 'bg-amber-500/40';
+  });
+  marks[activeIndex]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
+  return marks.length;
+}
 
 interface DocxReaderProps {
   fileId: string;
@@ -19,6 +77,11 @@ export default function DocxReader({ name, arrayBuffer, initialLocation, onProgr
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<number>(1);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [activeMatch, setActiveMatch] = useState(0);
+  const [matchCount, setMatchCount] = useState(0);
 
   useEffect(() => {
     onProgressRef.current = onProgress;
@@ -83,14 +146,63 @@ export default function DocxReader({ name, arrayBuffer, initialLocation, onProgr
     };
   }, [html]);
 
+  // Inject the converted HTML imperatively so we can mutate it for search highlights.
+  useEffect(() => {
+    if (contentRef.current && html !== null) {
+      contentRef.current.innerHTML = html;
+    }
+  }, [html]);
+
+  useEffect(() => {
+    setActiveMatch(0);
+  }, [query]);
+
+  useEffect(() => {
+    if (!contentRef.current || html === null) return;
+    const count = highlightContainer(contentRef.current, searchOpen ? query.trim() : '', activeMatch);
+    setMatchCount(count);
+  }, [html, query, activeMatch, searchOpen]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const nextMatch = () => matchCount && setActiveMatch((i) => (i + 1) % matchCount);
+  const prevMatch = () => matchCount && setActiveMatch((i) => (i - 1 + matchCount) % matchCount);
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      {searchOpen && (
+        <ReaderSearchBar
+          query={query}
+          onQueryChange={setQuery}
+          onNext={nextMatch}
+          onPrev={prevMatch}
+          onClose={() => setSearchOpen(false)}
+          current={matchCount ? activeMatch + 1 : 0}
+          total={matchCount}
+        />
+      )}
       <div className="fixed inset-x-0 top-0 z-30 flex flex-col gap-3 border-b border-white/10 bg-slate-950/95 px-4 py-4 backdrop-blur md:flex-row md:items-center md:justify-between md:px-8">
         <div>
           <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Word Reader</p>
           <h1 className="text-lg font-semibold">{name}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-200">
+          <button
+            type="button"
+            onClick={() => setSearchOpen((v) => !v)}
+            className="rounded-full bg-slate-800 px-3 py-1 text-slate-200 transition hover:bg-slate-700"
+          >
+            Find
+          </button>
           <span className="text-slate-400">Font size:</span>
           {[0, 1, 2, 3].map((index) => (
             <button
@@ -120,8 +232,8 @@ export default function DocxReader({ name, arrayBuffer, initialLocation, onProgr
           </div>
         ) : (
           <div
+            ref={contentRef}
             className={`docx-content rounded-3xl bg-white p-8 text-slate-900 ${fontSizes[fontSize]}`}
-            dangerouslySetInnerHTML={{ __html: html }}
           />
         )}
       </div>

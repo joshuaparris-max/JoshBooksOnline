@@ -2,6 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GlobalWorkerOptions, getDocument, type PDFDocumentProxy } from 'pdfjs-dist';
+import ReaderSearchBar from './ReaderSearchBar';
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+interface PdfMatch {
+  page: number;
+  snippet: string;
+}
 
 GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
 
@@ -22,6 +32,12 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
   const [renderedPages, setRenderedPages] = useState<Set<number>>(new Set());
   const saveTimeout = useRef<number | null>(null);
   const inFlightPages = useRef<Set<number>>(new Set());
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [matches, setMatches] = useState<PdfMatch[]>([]);
+  const [activeMatch, setActiveMatch] = useState(0);
+  const [searching, setSearching] = useState(false);
+  const pageTextCache = useRef<Map<number, string>>(new Map());
 
   const pages = useMemo(() => Array.from({ length: numPages }, (_, i) => i + 1), [numPages]);
 
@@ -152,14 +168,103 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
     setCurrentPage(page);
   };
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Extract and cache each page's text, then collect matches across the document.
+  useEffect(() => {
+    if (!searchOpen || !pdf) return;
+    const q = query.trim();
+    if (q.length < 2) {
+      setMatches([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setSearching(true);
+      const re = new RegExp(escapeRegExp(q), 'gi');
+      const found: PdfMatch[] = [];
+      for (let p = 1; p <= numPages; p += 1) {
+        if (cancelled) return;
+        let text = pageTextCache.current.get(p);
+        if (text === undefined) {
+          try {
+            const page = await pdf.getPage(p);
+            const tc = await page.getTextContent();
+            text = tc.items.map((it) => ('str' in it ? it.str : '')).join(' ');
+          } catch {
+            text = '';
+          }
+          pageTextCache.current.set(p, text);
+        }
+        re.lastIndex = 0;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) {
+          const from = Math.max(0, m.index - 30);
+          const snippet =
+            (from > 0 ? '…' : '') + text.slice(from, m.index + q.length + 30).trim() + '…';
+          found.push({ page: p, snippet });
+          if (m.index === re.lastIndex) re.lastIndex += 1;
+        }
+      }
+      if (!cancelled) {
+        setMatches(found);
+        setActiveMatch(0);
+      }
+      setSearching(false);
+    }, 400);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [query, searchOpen, pdf, numPages]);
+
+  useEffect(() => {
+    const match = matches[activeMatch];
+    if (match) goToPage(match.page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMatch, matches]);
+
+  const nextMatch = () => matches.length && setActiveMatch((i) => (i + 1) % matches.length);
+  const prevMatch = () =>
+    matches.length && setActiveMatch((i) => (i - 1 + matches.length) % matches.length);
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      {searchOpen && (
+        <ReaderSearchBar
+          query={query}
+          onQueryChange={setQuery}
+          onNext={nextMatch}
+          onPrev={prevMatch}
+          onClose={() => setSearchOpen(false)}
+          current={matches.length ? activeMatch + 1 : 0}
+          total={matches.length}
+          busy={searching}
+          detail={matches[activeMatch] ? `page ${matches[activeMatch].page}` : undefined}
+        />
+      )}
       <div className="fixed inset-x-0 top-0 z-30 flex flex-col gap-3 border-b border-white/10 bg-slate-950/95 px-4 py-4 backdrop-blur md:flex-row md:items-center md:justify-between md:px-8">
         <div>
           <p className="text-sm uppercase tracking-[0.3em] text-slate-400">PDF Reader</p>
           <h1 className="text-lg font-semibold">{name}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-sm text-slate-200">
+          <button
+            type="button"
+            onClick={() => setSearchOpen((v) => !v)}
+            className="rounded-full bg-slate-800 px-4 py-2 transition hover:bg-slate-700"
+          >
+            Find
+          </button>
           <button
             type="button"
             onClick={() => goToPage(currentPage - 1)}
