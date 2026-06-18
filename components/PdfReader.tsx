@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GlobalWorkerOptions, getDocument, type PDFDocumentProxy } from 'pdfjs-dist';
+import {
+  GlobalWorkerOptions,
+  TextLayer,
+  getDocument,
+  type PDFDocumentProxy,
+} from 'pdfjs-dist';
 import ReaderSearchBar from './ReaderSearchBar';
 
 function escapeRegExp(value: string) {
@@ -11,6 +16,25 @@ function escapeRegExp(value: string) {
 interface PdfMatch {
   page: number;
   snippet: string;
+}
+
+interface PageTextLayer {
+  divs: HTMLElement[];
+  strings: string[];
+}
+
+interface TextRange {
+  start: number;
+  end: number;
+}
+
+type ReaderTheme = 'light' | 'dark' | 'sepia';
+
+const READER_THEME_KEY = 'joshbooks-reader-theme';
+const READER_THEMES: ReaderTheme[] = ['light', 'dark', 'sepia'];
+
+function isReaderTheme(value: string | null): value is ReaderTheme {
+  return value === 'light' || value === 'dark' || value === 'sepia';
 }
 
 GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
@@ -37,9 +61,88 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
   const [matches, setMatches] = useState<PdfMatch[]>([]);
   const [activeMatch, setActiveMatch] = useState(0);
   const [searching, setSearching] = useState(false);
+  const [theme, setTheme] = useState<ReaderTheme>(() => {
+    if (typeof window === 'undefined') return 'light';
+    const stored = window.localStorage.getItem(READER_THEME_KEY);
+    return isReaderTheme(stored) ? stored : 'light';
+  });
   const pageTextCache = useRef<Map<number, string>>(new Map());
+  const pageTextLayers = useRef<Map<number, PageTextLayer>>(new Map());
 
   const pages = useMemo(() => Array.from({ length: numPages }, (_, i) => i + 1), [numPages]);
+  const canvasFilter =
+    theme === 'dark'
+      ? 'invert(1) hue-rotate(180deg)'
+      : theme === 'sepia'
+        ? 'sepia(0.6) contrast(0.95) brightness(0.95)'
+        : undefined;
+  const themeLabel = theme[0].toUpperCase() + theme.slice(1);
+
+  const getTextRanges = (text: string, search: string): TextRange[] => {
+    if (search.length < 2) return [];
+
+    const re = new RegExp(escapeRegExp(search), 'gi');
+    const ranges: TextRange[] = [];
+    let match: RegExpExecArray | null;
+
+    while ((match = re.exec(text)) !== null) {
+      ranges.push({ start: match.index, end: match.index + search.length });
+      if (match.index === re.lastIndex) re.lastIndex += 1;
+    }
+
+    return ranges;
+  };
+
+  const renderHighlights = () => {
+    const q = query.trim();
+
+    for (const pageNumber of pages) {
+      const pageElement = pageRefs.current[pageNumber - 1];
+      const highlightLayer = pageElement?.querySelector<HTMLElement>('[data-highlight-layer]');
+      const textLayer = pageTextLayers.current.get(pageNumber);
+      const text = pageTextCache.current.get(pageNumber);
+
+      if (!pageElement || !highlightLayer) continue;
+
+      highlightLayer.replaceChildren();
+      if (!textLayer || !text || q.length < 2 || matches.length === 0) continue;
+
+      const pageRanges = getTextRanges(text, q);
+      const activePageMatchIndex =
+        matches[activeMatch]?.page === pageNumber
+          ? matches.slice(0, activeMatch + 1).filter((match) => match.page === pageNumber).length - 1
+          : -1;
+
+      let cursor = 0;
+      const indexedDivs = textLayer.divs.map((div, index) => {
+        const start = cursor;
+        const value = textLayer.strings[index] ?? '';
+        cursor += value.length + 1;
+        return { div, start, end: start + value.length };
+      });
+
+      pageRanges.forEach((range, rangeIndex) => {
+        const isActive = rangeIndex === activePageMatchIndex;
+
+        indexedDivs.forEach(({ div, start, end }) => {
+          if (Math.max(range.start, start) >= Math.min(range.end, end)) return;
+
+          const pageRect = highlightLayer.parentElement?.getBoundingClientRect();
+          const rect = div.getBoundingClientRect();
+          if (!pageRect || rect.width === 0 || rect.height === 0) return;
+          const marker = document.createElement('span');
+          marker.className = isActive
+            ? 'absolute rounded-sm bg-amber-300/80 shadow-[0_0_0_1px_rgba(251,191,36,0.65)]'
+            : 'absolute rounded-sm bg-amber-300/30';
+          marker.style.left = `${rect.left - pageRect.left}px`;
+          marker.style.top = `${rect.top - pageRect.top}px`;
+          marker.style.width = `${rect.width}px`;
+          marker.style.height = `${rect.height}px`;
+          highlightLayer.appendChild(marker);
+        });
+      });
+    }
+  };
 
   useEffect(() => {
     const loadPdf = async () => {
@@ -53,6 +156,20 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
       console.error('Failed to load PDF', error);
     });
   }, [arrayBuffer]);
+
+  useEffect(() => {
+    window.localStorage.setItem(READER_THEME_KEY, theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== READER_THEME_KEY || !isReaderTheme(event.newValue)) return;
+      setTheme(event.newValue);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   useEffect(() => {
     if (numPages === 0 || !pdf) return;
@@ -71,6 +188,33 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
   useEffect(() => {
     if (!pdf) return;
 
+    const renderTextLayer = async (pageNumber: number) => {
+      const pageElement = pageRefs.current[pageNumber - 1];
+      const textContainer = pageElement?.querySelector<HTMLElement>('[data-text-layer]');
+      if (!textContainer) return;
+
+      const page = await pdf.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const textContent = await page.getTextContent();
+      textContainer.replaceChildren();
+      textContainer.style.width = `${viewport.width}px`;
+      textContainer.style.height = `${viewport.height}px`;
+
+      const textLayer = new TextLayer({
+        textContentSource: textContent,
+        container: textContainer,
+        viewport,
+      });
+
+      await textLayer.render();
+      pageTextLayers.current.set(pageNumber, {
+        divs: textLayer.textDivs,
+        strings: textLayer.textContentItemsStr,
+      });
+      pageTextCache.current.set(pageNumber, textLayer.textContentItemsStr.join(' '));
+      renderHighlights();
+    };
+
     const renderPage = async (pageNumber: number) => {
       if (pageNumber < 1 || pageNumber > (pdf as PDFDocumentProxy).numPages) return;
       if (renderedPages.has(pageNumber)) return;
@@ -85,12 +229,20 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
         if (!context) return;
         canvas.width = viewport.width;
         canvas.height = viewport.height;
+        const overlays = pageRefs.current[pageNumber - 1]?.querySelectorAll<HTMLElement>(
+          '[data-page-overlay]'
+        );
+        overlays?.forEach((overlay) => {
+          overlay.style.width = `${viewport.width}px`;
+          overlay.style.height = `${viewport.height}px`;
+        });
         const renderContext = {
           canvasContext: context,
           viewport,
           canvas,
-        } as any;
+        };
         await page.render(renderContext).promise;
+        await renderTextLayer(pageNumber);
         setRenderedPages((prev) => new Set(prev).add(pageNumber));
       } catch (error) {
         console.error('PDF page render failed', error);
@@ -102,6 +254,8 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
     renderPage(currentPage);
     renderPage(currentPage - 1);
     renderPage(currentPage + 1);
+    // renderHighlights is intentionally omitted; it is called after text-layer render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdf, currentPage, renderedPages]);
 
   useEffect(() => {
@@ -233,9 +387,23 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMatch, matches]);
 
+  useEffect(() => {
+    renderHighlights();
+    const handleResize = () => renderHighlights();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  });
+
   const nextMatch = () => matches.length && setActiveMatch((i) => (i + 1) % matches.length);
   const prevMatch = () =>
     matches.length && setActiveMatch((i) => (i - 1 + matches.length) % matches.length);
+  const toggleTheme = () => {
+    setTheme((current) => {
+      const index = READER_THEMES.indexOf(current);
+      return READER_THEMES[(index + 1) % READER_THEMES.length];
+    });
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -264,6 +432,13 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
             className="rounded-full bg-slate-800 px-4 py-2 transition hover:bg-slate-700"
           >
             Find
+          </button>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="rounded-full bg-slate-800 px-4 py-2 transition hover:bg-slate-700"
+          >
+            {themeLabel}
           </button>
           <button
             type="button"
@@ -304,8 +479,18 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
                 <span>Page {pageNumber}</span>
                 <span>{pageNumber === currentPage ? 'Visible' : ''}</span>
               </div>
-              <div className="overflow-hidden rounded-3xl bg-black">
+              <div className="relative overflow-hidden rounded-3xl bg-black" style={{ filter: canvasFilter }}>
                 <canvas className="w-full" />
+                <div
+                  data-page-overlay
+                  data-highlight-layer
+                  className="pointer-events-none absolute left-0 top-0"
+                />
+                <div
+                  data-page-overlay
+                  data-text-layer
+                  className="absolute left-0 top-0 select-text text-transparent [&_*]:text-transparent"
+                />
               </div>
             </section>
           ))
