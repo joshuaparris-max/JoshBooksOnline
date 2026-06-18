@@ -464,6 +464,9 @@ export default function LibraryPage() {
   const [links, setLinks] = useState<Record<string, string>>({});
   const [linkingBook, setLinkingBook] = useState<BookEntry | null>(null);
   const [linkSearch, setLinkSearch] = useState('');
+  // Local metadata overrides (id -> saved metadata) so edits persist even when
+  // the Drive write fails on shared, read-only files.
+  const [metaOverrides, setMetaOverrides] = useState<Record<string, BookMetadata>>({});
   const [importStatus, setImportStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({
     type: 'idle',
     message: '',
@@ -483,6 +486,16 @@ export default function LibraryPage() {
       try {
         const parsed = JSON.parse(storedLinks) as Record<string, string>;
         if (parsed && typeof parsed === 'object') setLinks(parsed);
+      } catch {
+        // ignore malformed stored value
+      }
+    }
+
+    const storedMeta = window.localStorage.getItem('joshbooks-meta');
+    if (storedMeta) {
+      try {
+        const parsed = JSON.parse(storedMeta) as Record<string, BookMetadata>;
+        if (parsed && typeof parsed === 'object') setMetaOverrides(parsed);
       } catch {
         // ignore malformed stored value
       }
@@ -579,6 +592,10 @@ export default function LibraryPage() {
   useEffect(() => {
     window.localStorage.setItem('joshbooks-links', JSON.stringify(links));
   }, [links]);
+
+  useEffect(() => {
+    window.localStorage.setItem('joshbooks-meta', JSON.stringify(metaOverrides));
+  }, [metaOverrides]);
 
   // Auto-match: link an ebook to an audiobook when their titles normalise equal
   // and the match is unambiguous. Explicit links are never overwritten.
@@ -740,26 +757,30 @@ export default function LibraryPage() {
     setTimeout(() => setEnrich((s) => ({ ...s, message: '' })), 8000);
   };
 
-  /** Persist explicit metadata (an approved suggestion or an edited form) to Drive. */
+  /**
+   * Save metadata. Local override is authoritative (persists across reloads even
+   * on shared, read-only Drive files); the Drive write is best-effort sync.
+   */
   const saveMetadata = async (fileId: string, metadata: BookMetadata) => {
     setSavingId(fileId);
+    // Authoritative local save + immediate UI patch
+    setMetaOverrides((prev) => ({ ...prev, [fileId]: metadata }));
+    setBooks((prev) => (prev ? prev.map((b) => (b.id === fileId ? { ...b, ...metadata } : b)) : prev));
+    setAudiobooks((prev) => (prev ? prev.map((a) => (a.id === fileId ? { ...a, ...metadata } : a)) : prev));
+    setPending((prev) => {
+      const next = { ...prev };
+      delete next[fileId];
+      return next;
+    });
+    // Best-effort Drive sync (won't block or fail the save)
     try {
-      const response = await fetch('/api/library/metadata', {
+      await fetch('/api/library/metadata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileId, metadata }),
       });
-      if (!response.ok) throw new Error('save failed');
-      // Patch whichever collection the id belongs to
-      setBooks((prev) => (prev ? prev.map((b) => (b.id === fileId ? { ...b, ...metadata } : b)) : prev));
-      setAudiobooks((prev) =>
-        prev ? prev.map((a) => (a.id === fileId ? { ...a, ...metadata } : a)) : prev
-      );
-      setPending((prev) => {
-        const next = { ...prev };
-        delete next[fileId];
-        return next;
-      });
+    } catch {
+      // ignore — local override already saved
     } finally {
       setSavingId(null);
     }
@@ -823,7 +844,9 @@ export default function LibraryPage() {
   const sortedBooks = useMemo(() => {
     if (!books) return [];
     const query = search.trim().toLowerCase();
-    const visible = books.filter((book) => !hiddenIds.has(book.id));
+    const visible = books
+      .filter((book) => !hiddenIds.has(book.id))
+      .map((book) => (metaOverrides[book.id] ? { ...book, ...metaOverrides[book.id] } : book));
 
     const filtered = query
       ? visible.filter((book) => {
@@ -838,12 +861,14 @@ export default function LibraryPage() {
       : visible;
 
     return filtered.sort((a, b) => compareBooks(a, b, sortField, sortDir));
-  }, [books, search, sortField, sortDir, hiddenIds]);
+  }, [books, search, sortField, sortDir, hiddenIds, metaOverrides]);
 
   const filteredAudiobooks = useMemo(() => {
     if (!audiobooks) return [];
     const query = search.trim().toLowerCase();
-    const visible = audiobooks.filter((a) => !hiddenIds.has(a.id));
+    const visible = audiobooks
+      .filter((a) => !hiddenIds.has(a.id))
+      .map((a) => (metaOverrides[a.id] ? { ...a, ...metaOverrides[a.id] } : a));
     const list = query
       ? visible.filter(
           (a) =>
@@ -853,7 +878,7 @@ export default function LibraryPage() {
         )
       : visible;
     return [...list].sort((a, b) => compareAudiobooks(a, b, audioSortField, audioSortDir));
-  }, [audiobooks, search, hiddenIds, audioSortField, audioSortDir]);
+  }, [audiobooks, search, hiddenIds, audioSortField, audioSortDir, metaOverrides]);
 
   const activeAudioColumns = AUDIO_TABLE_COLUMNS.filter(
     (col) => col.locked || visibleAudioColumns.includes(col.key)
