@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { DrivePicker } from '@/components/DrivePicker';
 import MetadataEditor from '@/components/MetadataEditor';
 import { AudiobookCard } from '@/components/AudiobookCard';
 import { ONLINE_EBOOKS } from '@/lib/onlineEbooks';
+import { useCollections } from '@/lib/useCollections';
+import CollectionsManager from '@/components/CollectionsManager';
 import type { BookEntry, BookMetadata, AudiobookEntry, Audiobook } from '@/types/books';
 
 const SOURCE_BADGES: Record<string, string> = {
@@ -455,6 +457,10 @@ export default function LibraryPage() {
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [tab, setTab] = useState<'ebooks' | 'audiobooks'>('ebooks');
   const [ebookSource, setEbookSource] = useState<'drive' | 'online'>('drive');
+  const collectionsApi = useCollections();
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const [folderItem, setFolderItem] = useState<{ id: string; label: string } | null>(null);
   const [audiobooks, setAudiobooks] = useState<AudiobookEntry[] | null>(null);
   const [audiobooksLoading, setAudiobooksLoading] = useState(false);
   const [audioSource, setAudioSource] = useState<'drive' | 'online'>('drive');
@@ -608,28 +614,48 @@ export default function LibraryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, audioSource]);
 
+  // Item ids in the selected collection (or null when showing everything).
+  const activeCollectionSet = useMemo(() => {
+    if (!selectedCollectionId || selectedCollectionId === '__unfiled__') return null;
+    return collectionsApi.collectionItemIds(selectedCollectionId, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCollectionId, collectionsApi.collectionItemIds]);
+
+  const passesCollection = useCallback(
+    (id: string) => {
+      if (!selectedCollectionId) return true;
+      if (selectedCollectionId === '__unfiled__') return !collectionsApi.allFiledItemIds.has(id);
+      return activeCollectionSet ? activeCollectionSet.has(id) : true;
+    },
+    [selectedCollectionId, activeCollectionSet, collectionsApi.allFiledItemIds]
+  );
+
   const filteredOnline = useMemo(() => {
     if (!onlineAudiobooks) return [];
     const q = search.trim().toLowerCase();
-    if (!q) return onlineAudiobooks;
-    return onlineAudiobooks.filter(
-      (a) =>
+    return onlineAudiobooks.filter((a) => {
+      if (!passesCollection(a.id)) return false;
+      if (!q) return true;
+      return (
         a.title.toLowerCase().includes(q) ||
         a.author.toLowerCase().includes(q) ||
         a.catalogueMatches.some((m) => m.toLowerCase().includes(q))
-    );
-  }, [onlineAudiobooks, search]);
+      );
+    });
+  }, [onlineAudiobooks, search, passesCollection]);
 
   const filteredOnlineEbooks = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return ONLINE_EBOOKS;
-    return ONLINE_EBOOKS.filter(
-      (b) =>
+    return ONLINE_EBOOKS.filter((b) => {
+      if (!passesCollection(b.id)) return false;
+      if (!q) return true;
+      return (
         b.title.toLowerCase().includes(q) ||
         b.author.toLowerCase().includes(q) ||
         b.category.toLowerCase().includes(q)
-    );
-  }, [search]);
+      );
+    });
+  }, [search, passesCollection]);
 
   useEffect(() => {
     window.localStorage.setItem('joshbooks-links', JSON.stringify(links));
@@ -638,6 +664,58 @@ export default function LibraryPage() {
   useEffect(() => {
     window.localStorage.setItem('joshbooks-meta', JSON.stringify(metaOverrides));
   }, [metaOverrides]);
+
+  // --- Server sync: load once on mount, then push changes (debounced) ---
+  const serverReady = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch('/api/userdata', { cache: 'no-store' });
+        const { data } = (await response.json()) as { data: Record<string, unknown> | null };
+        if (!cancelled && data) {
+          if (data.meta) setMetaOverrides(data.meta as Record<string, BookMetadata>);
+          if (Array.isArray(data.hidden)) setHiddenIds(new Set(data.hidden as string[]));
+          if (data.links) setLinks(data.links as Record<string, string>);
+          if (data.collections || data.membership) {
+            collectionsApi.hydrate(
+              (data.collections as never) ?? [],
+              (data.membership as never) ?? {}
+            );
+          }
+        }
+      } catch {
+        // server not configured / offline — localStorage still works
+      } finally {
+        if (!cancelled) serverReady.current = true;
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!serverReady.current) return;
+    const blob = {
+      v: 1,
+      meta: metaOverrides,
+      hidden: [...hiddenIds],
+      links,
+      collections: collectionsApi.collections,
+      membership: collectionsApi.membership,
+    };
+    const timer = window.setTimeout(() => {
+      fetch('/api/userdata', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(blob),
+      }).catch(() => {});
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [metaOverrides, hiddenIds, links, collectionsApi.collections, collectionsApi.membership]);
 
   // Auto-match: link an ebook to an audiobook when their titles normalise equal
   // and the match is unambiguous. Explicit links are never overwritten.
@@ -887,7 +965,7 @@ export default function LibraryPage() {
     if (!books) return [];
     const query = search.trim().toLowerCase();
     const visible = books
-      .filter((book) => !hiddenIds.has(book.id))
+      .filter((book) => !hiddenIds.has(book.id) && passesCollection(book.id))
       .map((book) => (metaOverrides[book.id] ? { ...book, ...metaOverrides[book.id] } : book));
 
     const filtered = query
@@ -903,13 +981,13 @@ export default function LibraryPage() {
       : visible;
 
     return filtered.sort((a, b) => compareBooks(a, b, sortField, sortDir));
-  }, [books, search, sortField, sortDir, hiddenIds, metaOverrides]);
+  }, [books, search, sortField, sortDir, hiddenIds, metaOverrides, passesCollection]);
 
   const filteredAudiobooks = useMemo(() => {
     if (!audiobooks) return [];
     const query = search.trim().toLowerCase();
     const visible = audiobooks
-      .filter((a) => !hiddenIds.has(a.id))
+      .filter((a) => !hiddenIds.has(a.id) && passesCollection(a.id))
       .map((a) => (metaOverrides[a.id] ? { ...a, ...metaOverrides[a.id] } : a));
     const list = query
       ? visible.filter(
@@ -920,7 +998,7 @@ export default function LibraryPage() {
         )
       : visible;
     return [...list].sort((a, b) => compareAudiobooks(a, b, audioSortField, audioSortDir));
-  }, [audiobooks, search, hiddenIds, audioSortField, audioSortDir, metaOverrides]);
+  }, [audiobooks, search, hiddenIds, audioSortField, audioSortDir, metaOverrides, passesCollection]);
 
   const activeAudioColumns = AUDIO_TABLE_COLUMNS.filter(
     (col) => col.locked || visibleAudioColumns.includes(col.key)
@@ -1035,6 +1113,29 @@ export default function LibraryPage() {
             >
               🎧 Audiobooks
             </button>
+
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setFolderItem(null);
+                  setCollectionsOpen(true);
+                }}
+                className="rounded-full bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/10"
+              >
+                📁 Folders
+              </button>
+              {selectedCollectionId && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-sky-600/20 px-3 py-1.5 text-sm text-sky-200">
+                  {selectedCollectionId === '__unfiled__'
+                    ? 'Unfiled'
+                    : collectionsApi.collections.find((c) => c.id === selectedCollectionId)?.name ?? 'Folder'}
+                  <button type="button" onClick={() => setSelectedCollectionId(null)} title="Clear filter">
+                    ✕
+                  </button>
+                </span>
+              )}
+            </div>
           </div>
 
           {tab === 'audiobooks' && (
@@ -1522,6 +1623,14 @@ export default function LibraryPage() {
                         </button>
                         <button
                           type="button"
+                          onClick={() => setFolderItem({ id: book.id, label: displayTitle(book) })}
+                          title="Add to folder"
+                          className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                        >
+                          📁
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setConfirmDelete(book)}
                           className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
                         >
@@ -1763,6 +1872,14 @@ export default function LibraryPage() {
                               className="flex-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
                             >
                               Edit metadata
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFolderItem({ id: book.id, label: book.title })}
+                              title="Add to folder"
+                              className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                            >
+                              📁
                             </button>
                             <button
                               type="button"
@@ -2009,6 +2126,27 @@ export default function LibraryPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {collectionsOpen && (
+        <CollectionsManager
+          api={collectionsApi}
+          selectedId={selectedCollectionId}
+          onSelect={(id) => {
+            setSelectedCollectionId(id);
+            setCollectionsOpen(false);
+          }}
+          onClose={() => setCollectionsOpen(false)}
+        />
+      )}
+
+      {folderItem && (
+        <CollectionsManager
+          api={collectionsApi}
+          itemId={folderItem.id}
+          itemLabel={folderItem.label}
+          onClose={() => setFolderItem(null)}
+        />
       )}
     </main>
   );
