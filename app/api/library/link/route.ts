@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { linkEbookAudio } from '@/lib/googleDrive';
+import { clearLibraryCache } from '@/lib/libraryCache';
 import authOptions from '@/lib/auth';
 
 /**
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Missing ebookId' }, { status: 400 });
     }
     await linkEbookAudio(session.accessToken, ebookId, audioId ?? null);
+    clearLibraryCache(session.accessToken);
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error('Failed to link:', error);

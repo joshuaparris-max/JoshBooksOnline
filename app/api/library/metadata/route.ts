@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { updateBookMetadata } from '@/lib/googleDrive';
+import { clearLibraryCache } from '@/lib/libraryCache';
 import authOptions from '@/lib/auth';
 import type { BookMetadata } from '@/types/books';
 
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
     }
 
     await updateBookMetadata(session.accessToken, fileId, metadata);
+    clearLibraryCache(session.accessToken);
 
     return Response.json({ ok: true, metadata });
   } catch (error) {

@@ -536,12 +536,13 @@ export default function LibraryPage() {
     window.localStorage.setItem('joshbooks-columns', JSON.stringify(visibleColumns));
   }, [visibleColumns]);
 
-  const refreshLibrary = async () => {
+  const refreshLibrary = async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/library', { cache: 'no-store' });
+      const url = forceRefresh ? '/api/library?refresh=1' : '/api/library';
+      const response = await fetch(url);
       if (!response.ok) {
         const body = await response.json().catch(() => null);
         setError(body?.error ?? 'Failed to load library');
@@ -559,10 +560,11 @@ export default function LibraryPage() {
     }
   };
 
-  const refreshAudiobooks = async () => {
+  const refreshAudiobooks = async (forceRefresh = false) => {
     setAudiobooksLoading(true);
     try {
-      const response = await fetch('/api/library/audiobooks', { cache: 'no-store' });
+      const url = forceRefresh ? '/api/library/audiobooks?refresh=1' : '/api/library/audiobooks';
+      const response = await fetch(url);
       if (!response.ok) {
         setAudiobooks([]);
         return;
@@ -594,7 +596,11 @@ export default function LibraryPage() {
   }, [links]);
 
   useEffect(() => {
-    window.localStorage.setItem('joshbooks-meta', JSON.stringify(metaOverrides));
+    try {
+      window.localStorage.setItem('joshbooks-meta', JSON.stringify(metaOverrides));
+    } catch {
+      // ignore localStorage errors (private mode/quota)
+    }
   }, [metaOverrides]);
 
   // Auto-match: link an ebook to an audiobook when their titles normalise equal
@@ -664,7 +670,7 @@ export default function LibraryPage() {
     });
     setTimeout(() => {
       setImportStatus({ type: 'idle', message: '' });
-      refreshLibrary();
+      refreshLibrary(true);
     }, 2000);
   };
 
@@ -764,7 +770,17 @@ export default function LibraryPage() {
   const saveMetadata = async (fileId: string, metadata: BookMetadata) => {
     setSavingId(fileId);
     // Authoritative local save + immediate UI patch
-    setMetaOverrides((prev) => ({ ...prev, [fileId]: metadata }));
+    setMetaOverrides((prev) => {
+      const next = { ...prev, [fileId]: metadata };
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem('joshbooks-meta', JSON.stringify(next));
+        } catch {
+          // ignore localStorage errors (private mode/quota)
+        }
+      }
+      return next;
+    });
     setBooks((prev) => (prev ? prev.map((b) => (b.id === fileId ? { ...b, ...metadata } : b)) : prev));
     setAudiobooks((prev) => (prev ? prev.map((a) => (a.id === fileId ? { ...a, ...metadata } : a)) : prev));
     setPending((prev) => {
@@ -957,7 +973,7 @@ export default function LibraryPage() {
               </button>
               <button
                 type="button"
-                onClick={refreshLibrary}
+                onClick={() => refreshLibrary(true)}
                 className="inline-flex items-center justify-center rounded-full bg-slate-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
               >
                 Refresh Library
@@ -1099,7 +1115,7 @@ export default function LibraryPage() {
 
                 <button
                   type="button"
-                  onClick={refreshAudiobooks}
+                  onClick={() => refreshAudiobooks(true)}
                   className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800"
                 >
                   Refresh
@@ -1255,7 +1271,7 @@ export default function LibraryPage() {
             <p className="mt-2 text-slate-300">{error}</p>
             <button
               type="button"
-              onClick={refreshLibrary}
+              onClick={() => refreshLibrary(true)}
               className="mt-4 rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400"
             >
               Try again

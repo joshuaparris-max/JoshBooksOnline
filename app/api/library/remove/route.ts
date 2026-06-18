@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { removeBookFromLibrary } from '@/lib/googleDrive';
+import { clearLibraryCache } from '@/lib/libraryCache';
 import authOptions from '@/lib/auth';
 import type { LibrarySource } from '@/types/books';
 
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
     }
 
     await removeBookFromLibrary(session.accessToken, fileId, source);
+    clearLibraryCache(session.accessToken);
 
     return Response.json({ ok: true });
   } catch (error) {

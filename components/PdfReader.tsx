@@ -1,7 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { GlobalWorkerOptions, getDocument, type PDFDocumentProxy } from 'pdfjs-dist';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  GlobalWorkerOptions,
+  Util,
+  getDocument,
+  type PDFDocumentProxy,
+} from 'pdfjs-dist';
 import ReaderSearchBar from './ReaderSearchBar';
 
 function escapeRegExp(value: string) {
@@ -11,6 +16,22 @@ function escapeRegExp(value: string) {
 interface PdfMatch {
   page: number;
   snippet: string;
+  index: number;
+}
+
+interface PageTextRun {
+  str: string;
+  start: number;
+  end: number;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+interface PageTextData {
+  text: string;
+  runs: PageTextRun[];
 }
 
 GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
@@ -37,9 +58,61 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
   const [matches, setMatches] = useState<PdfMatch[]>([]);
   const [activeMatch, setActiveMatch] = useState(0);
   const [searching, setSearching] = useState(false);
-  const pageTextCache = useRef<Map<number, string>>(new Map());
+  const pageTextCache = useRef<Map<number, PageTextData>>(new Map());
 
   const pages = useMemo(() => Array.from({ length: numPages }, (_, i) => i + 1), [numPages]);
+
+  const syncOverlayScale = useCallback((pageNumber: number) => {
+    const pageElement = pageRefs.current[pageNumber - 1];
+    const canvas = pageElement?.querySelector('canvas');
+    if (!canvas || canvas.width === 0) return;
+
+    const scale = canvas.getBoundingClientRect().width / canvas.width;
+    const overlays = pageElement?.querySelectorAll<HTMLElement>('[data-page-overlay]');
+    overlays?.forEach((overlay) => {
+      overlay.style.transform = `scale(${scale})`;
+    });
+  }, []);
+
+  const getPageTextData = useCallback(
+    async (pageNumber: number): Promise<PageTextData> => {
+      const cached = pageTextCache.current.get(pageNumber);
+      if (cached) return cached;
+      if (!pdf) return { text: '', runs: [] };
+
+      const page = await pdf.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const textContent = await page.getTextContent();
+      const runs: PageTextRun[] = [];
+      let text = '';
+
+      for (const item of textContent.items) {
+        if (!('str' in item) || !item.str) continue;
+
+        const transform = Util.transform(viewport.transform, item.transform);
+        const height = Math.hypot(transform[2], transform[3]) || item.height || 10;
+        const width = item.width * viewport.scale;
+        const start = text.length;
+        const end = start + item.str.length;
+
+        runs.push({
+          str: item.str,
+          start,
+          end,
+          left: transform[4],
+          top: transform[5] - height,
+          width,
+          height,
+        });
+        text += `${item.str} `;
+      }
+
+      const data = { text, runs };
+      pageTextCache.current.set(pageNumber, data);
+      return data;
+    },
+    [pdf]
+  );
 
   useEffect(() => {
     const loadPdf = async () => {
@@ -71,6 +144,31 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
   useEffect(() => {
     if (!pdf) return;
 
+    const renderTextLayer = async (pageNumber: number) => {
+      const layer = pageRefs.current[pageNumber - 1]?.querySelector<HTMLElement>('[data-text-layer]');
+      if (!layer) return;
+
+      try {
+        const { runs } = await getPageTextData(pageNumber);
+        layer.replaceChildren();
+
+        for (const run of runs) {
+          const span = document.createElement('span');
+          span.textContent = run.str;
+          span.className = 'absolute whitespace-pre text-transparent';
+          span.style.left = `${run.left}px`;
+          span.style.top = `${run.top}px`;
+          span.style.width = `${run.width}px`;
+          span.style.height = `${run.height}px`;
+          span.style.fontSize = `${run.height}px`;
+          span.style.lineHeight = '1';
+          layer.appendChild(span);
+        }
+      } catch (error) {
+        console.error('PDF text layer render failed', error);
+      }
+    };
+
     const renderPage = async (pageNumber: number) => {
       if (pageNumber < 1 || pageNumber > (pdf as PDFDocumentProxy).numPages) return;
       if (renderedPages.has(pageNumber)) return;
@@ -85,12 +183,21 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
         if (!context) return;
         canvas.width = viewport.width;
         canvas.height = viewport.height;
+        const overlays = pageRefs.current[pageNumber - 1]?.querySelectorAll<HTMLElement>(
+          '[data-page-overlay]'
+        );
+        overlays?.forEach((overlay) => {
+          overlay.style.width = `${viewport.width}px`;
+          overlay.style.height = `${viewport.height}px`;
+        });
+        window.requestAnimationFrame(() => syncOverlayScale(pageNumber));
         const renderContext = {
           canvasContext: context,
           viewport,
           canvas,
-        } as any;
+        };
         await page.render(renderContext).promise;
+        await renderTextLayer(pageNumber);
         setRenderedPages((prev) => new Set(prev).add(pageNumber));
       } catch (error) {
         console.error('PDF page render failed', error);
@@ -102,7 +209,16 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
     renderPage(currentPage);
     renderPage(currentPage - 1);
     renderPage(currentPage + 1);
-  }, [pdf, currentPage, renderedPages]);
+  }, [pdf, currentPage, getPageTextData, renderedPages, syncOverlayScale]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      renderedPages.forEach((pageNumber) => syncOverlayScale(pageNumber));
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [renderedPages, syncOverlayScale]);
 
   useEffect(() => {
     if (!pdf || numPages === 0) return;
@@ -111,7 +227,6 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
     if (!container) return;
 
     const handleScroll = () => {
-      const top = window.scrollY;
       let mostVisible = currentPage;
       let maxVisible = 0;
 
@@ -194,16 +309,11 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
       const found: PdfMatch[] = [];
       for (let p = 1; p <= numPages; p += 1) {
         if (cancelled) return;
-        let text = pageTextCache.current.get(p);
-        if (text === undefined) {
-          try {
-            const page = await pdf.getPage(p);
-            const tc = await page.getTextContent();
-            text = tc.items.map((it) => ('str' in it ? it.str : '')).join(' ');
-          } catch {
-            text = '';
-          }
-          pageTextCache.current.set(p, text);
+        let text = '';
+        try {
+          text = (await getPageTextData(p)).text;
+        } catch {
+          text = '';
         }
         re.lastIndex = 0;
         let m: RegExpExecArray | null;
@@ -211,7 +321,7 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
           const from = Math.max(0, m.index - 30);
           const snippet =
             (from > 0 ? '…' : '') + text.slice(from, m.index + q.length + 30).trim() + '…';
-          found.push({ page: p, snippet });
+          found.push({ page: p, snippet, index: m.index });
           if (m.index === re.lastIndex) re.lastIndex += 1;
         }
       }
@@ -225,13 +335,56 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [query, searchOpen, pdf, numPages]);
+  }, [query, searchOpen, pdf, numPages, getPageTextData]);
 
   useEffect(() => {
     const match = matches[activeMatch];
     if (match) goToPage(match.page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMatch, matches]);
+
+  useEffect(() => {
+    const q = query.trim();
+
+    for (const pageNumber of pages) {
+      const layer = pageRefs.current[pageNumber - 1]?.querySelector<HTMLElement>(
+        '[data-highlight-layer]'
+      );
+      if (!layer) continue;
+
+      layer.replaceChildren();
+      if (q.length < 2 || matches.length === 0) continue;
+
+      const textData = pageTextCache.current.get(pageNumber);
+      if (!textData) continue;
+
+      matches.forEach((match, matchIndex) => {
+        if (match.page !== pageNumber) return;
+
+        const matchStart = match.index;
+        const matchEnd = match.index + q.length;
+        const isActive = matchIndex === activeMatch;
+
+        for (const run of textData.runs) {
+          const overlapStart = Math.max(matchStart, run.start);
+          const overlapEnd = Math.min(matchEnd, run.end);
+          if (overlapStart >= overlapEnd) continue;
+
+          const startRatio = (overlapStart - run.start) / run.str.length;
+          const endRatio = (overlapEnd - run.start) / run.str.length;
+          const highlight = document.createElement('span');
+          highlight.className = isActive
+            ? 'absolute rounded-sm bg-amber-300/80 shadow-[0_0_0_1px_rgba(251,191,36,0.65)]'
+            : 'absolute rounded-sm bg-amber-300/30';
+          highlight.style.left = `${run.left + run.width * startRatio}px`;
+          highlight.style.top = `${run.top}px`;
+          highlight.style.width = `${Math.max(2, run.width * (endRatio - startRatio))}px`;
+          highlight.style.height = `${run.height}px`;
+          layer.appendChild(highlight);
+        }
+      });
+    }
+  }, [activeMatch, matches, pages, query]);
 
   const nextMatch = () => matches.length && setActiveMatch((i) => (i + 1) % matches.length);
   const prevMatch = () =>
@@ -304,8 +457,18 @@ export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onPr
                 <span>Page {pageNumber}</span>
                 <span>{pageNumber === currentPage ? 'Visible' : ''}</span>
               </div>
-              <div className="overflow-hidden rounded-3xl bg-black">
+              <div className="relative overflow-hidden rounded-3xl bg-black">
                 <canvas className="w-full" />
+                <div
+                  data-page-overlay
+                  data-highlight-layer
+                  className="pointer-events-none absolute left-0 top-0 origin-top-left"
+                />
+                <div
+                  data-page-overlay
+                  data-text-layer
+                  className="absolute left-0 top-0 origin-top-left select-text"
+                />
               </div>
             </section>
           ))

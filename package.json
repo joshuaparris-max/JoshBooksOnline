@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync-local-books": "powershell -ExecutionPolicy ByPass -File scripts/sync-local-books.ps1"
   },
   "dependencies": {
     "epubjs": "^0.3.93",

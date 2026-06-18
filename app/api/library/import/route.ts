@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { NextRequest, NextResponse } from 'next/server';
 import authOptions from '@/lib/auth';
 import { listFilesInFolderRecursive, getFileMetadata, addFileToUnsorted, getMimeTypeFormat } from '@/lib/googleDrive';
+import { clearLibraryCache } from '@/lib/libraryCache';
 import type { BookEntry } from '@/types/books';
 
 /**
@@ -118,6 +119,8 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+
+    clearLibraryCache(session.accessToken);
 
     return NextResponse.json({
       importedCount: importedFiles.length,

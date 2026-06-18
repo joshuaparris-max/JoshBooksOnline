@@ -131,3 +131,17 @@ middleware.ts             # Protect /library and /reader routes
 
 Phase 2 (PowerShell sync script) will upload local books from `C:\dev\Books` to the "Local Books" folder in Drive.
 
+### Local book sync
+
+Run the sync script from the repository root with PowerShell:
+
+```powershell
+$env:LOCAL_BOOKS_ROOT = 'C:\dev\Books'
+$env:GOOGLE_CLIENT_ID = '<your_google_client_id>'
+$env:GOOGLE_CLIENT_SECRET = '<your_google_client_secret>'
+$env:GOOGLE_REFRESH_TOKEN = '<your_refresh_token>'
+npm run sync-local-books
+```
+
+The script creates the Drive folder `Local Books` if it does not already exist and uploads supported files recursively.
+
