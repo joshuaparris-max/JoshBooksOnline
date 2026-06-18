@@ -457,6 +457,29 @@ export async function getAudiobookMeta(
   };
 }
 
+/**
+ * Best-effort: record a link between an ebook and an audiobook in both files'
+ * appProperties so it can sync across devices. Pass audioId=null to unlink.
+ */
+export async function linkEbookAudio(
+  accessToken: string,
+  ebookId: string,
+  audioId: string | null
+): Promise<void> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+  await drive.files.update({
+    fileId: ebookId,
+    requestBody: { appProperties: { m_link_audio: audioId } as unknown as Record<string, string> },
+  });
+  if (audioId) {
+    await drive.files.update({
+      fileId: audioId,
+      requestBody: { appProperties: { m_link_text: ebookId } },
+    });
+  }
+}
+
 /** Save audiobook resume position (track index + seconds) to appProperties. */
 export async function updateAudioProgress(
   accessToken: string,

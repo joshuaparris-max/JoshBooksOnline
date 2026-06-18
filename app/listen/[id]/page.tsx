@@ -21,6 +21,22 @@ export default function ListenPage() {
   const id = params?.id;
   const [audiobook, setAudiobook] = useState<AudiobookEntry | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [linkedTextId, setLinkedTextId] = useState<string | undefined>(undefined);
+
+  // Resolve the linked text edition from the local link map (reverse lookup)
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const raw = window.localStorage.getItem('joshbooks-links');
+      if (raw) {
+        const links = JSON.parse(raw) as Record<string, string>;
+        const ebookId = Object.keys(links).find((k) => links[k] === id);
+        if (ebookId) setLinkedTextId(ebookId);
+      }
+    } catch {
+      // ignore
+    }
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -62,12 +78,12 @@ export default function ListenPage() {
         ) : (
           <>
             <AudioPlayer audiobook={audiobook} />
-            {audiobook.linkedTextId && (
+            {(linkedTextId ?? audiobook.linkedTextId) && (
               <Link
-                href={`/reader/${audiobook.linkedTextId}`}
+                href={`/reader/${linkedTextId ?? audiobook.linkedTextId}`}
                 className="block rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-medium text-sky-300 transition hover:bg-white/10"
               >
-                Read the text edition →
+                📖 Read the text edition →
               </Link>
             )}
           </>

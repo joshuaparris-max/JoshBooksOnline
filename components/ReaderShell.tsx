@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import DockedAudioPlayer from './DockedAudioPlayer';
 
 export interface ReaderShellProps {
   fileId?: string;
@@ -17,7 +18,22 @@ interface DriveFileMetadata {
   mimeType: string;
   appProperties?: {
     lastLocation?: string;
+    m_link_audio?: string;
   };
+}
+
+/** Find the audiobook linked to this ebook: localStorage first, then Drive. */
+function getLinkedAudio(fileId: string, metadata: DriveFileMetadata | null): string | undefined {
+  try {
+    const raw = window.localStorage.getItem('joshbooks-links');
+    if (raw) {
+      const links = JSON.parse(raw) as Record<string, string>;
+      if (links[fileId]) return links[fileId];
+    }
+  } catch {
+    // ignore
+  }
+  return metadata?.appProperties?.m_link_audio || undefined;
 }
 
 export default function ReaderShell({ fileId, EpubReader, PdfReader, TxtReader, DocxReader }: ReaderShellProps) {
@@ -30,6 +46,7 @@ export default function ReaderShell({ fileId, EpubReader, PdfReader, TxtReader, 
   const [error, setError] = useState<string | null>(null);
 
   const accessToken = session?.accessToken;
+  const linkedAudioId = fileId ? getLinkedAudio(fileId, metadata) : undefined;
 
   useEffect(() => {
     if (status === 'loading' || !fileId) return;
@@ -191,6 +208,7 @@ export default function ReaderShell({ fileId, EpubReader, PdfReader, TxtReader, 
             }}
           />
         </div>
+        {linkedAudioId && <DockedAudioPlayer audiobookId={linkedAudioId} />}
       </div>
     );
   }
@@ -217,6 +235,7 @@ export default function ReaderShell({ fileId, EpubReader, PdfReader, TxtReader, 
             }}
           />
         </div>
+        {linkedAudioId && <DockedAudioPlayer audiobookId={linkedAudioId} />}
       </div>
     );
   }
@@ -247,6 +266,7 @@ export default function ReaderShell({ fileId, EpubReader, PdfReader, TxtReader, 
             }}
           />
         </div>
+        {linkedAudioId && <DockedAudioPlayer audiobookId={linkedAudioId} />}
       </div>
     );
   }

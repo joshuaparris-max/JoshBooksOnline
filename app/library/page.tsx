@@ -58,6 +58,15 @@ function prettifyName(name: string) {
   return name.replace(/\.(pdf|epub|txt|docx)$/i, '').replace(/[_]+/g, ' ').trim();
 }
 
+/** Normalised key for auto-matching an ebook title to an audiobook title. */
+function normalizeKey(s: string) {
+  return s
+    .replace(/\.(pdf|epub|txt|docx)$/i, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
 function displayTitle(book: BookEntry) {
   return book.title?.trim() || prettifyName(book.name);
 }
@@ -451,6 +460,10 @@ export default function LibraryPage() {
   const [showAudioColumnEditor, setShowAudioColumnEditor] = useState(false);
   const [editingAudio, setEditingAudio] = useState<AudiobookEntry | null>(null);
   const [confirmDeleteAudio, setConfirmDeleteAudio] = useState<AudiobookEntry | null>(null);
+  // ebookId -> audiobookId links (localStorage authoritative, best-effort Drive sync)
+  const [links, setLinks] = useState<Record<string, string>>({});
+  const [linkingBook, setLinkingBook] = useState<BookEntry | null>(null);
+  const [linkSearch, setLinkSearch] = useState('');
   const [importStatus, setImportStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({
     type: 'idle',
     message: '',
@@ -464,6 +477,16 @@ export default function LibraryPage() {
     if (storedView === 'grid' || storedView === 'table') setViewMode(storedView);
     if (storedField && SORT_OPTIONS.some((o) => o.value === storedField)) setSortField(storedField);
     if (storedDir === 'asc' || storedDir === 'desc') setSortDir(storedDir);
+
+    const storedLinks = window.localStorage.getItem('joshbooks-links');
+    if (storedLinks) {
+      try {
+        const parsed = JSON.parse(storedLinks) as Record<string, string>;
+        if (parsed && typeof parsed === 'object') setLinks(parsed);
+      } catch {
+        // ignore malformed stored value
+      }
+    }
 
     const storedHidden = window.localStorage.getItem('joshbooks-hidden');
     if (storedHidden) {
@@ -546,6 +569,72 @@ export default function LibraryPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
+
+  // Audiobooks are needed for auto-matching links, so load them once up front too
+  useEffect(() => {
+    if (audiobooks === null && !audiobooksLoading) refreshAudiobooks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem('joshbooks-links', JSON.stringify(links));
+  }, [links]);
+
+  // Auto-match: link an ebook to an audiobook when their titles normalise equal
+  // and the match is unambiguous. Explicit links are never overwritten.
+  useEffect(() => {
+    if (!books || !audiobooks) return;
+    const byKey = new Map<string, string>();
+    const dup = new Set<string>();
+    for (const a of audiobooks) {
+      const k = normalizeKey(a.title);
+      if (byKey.has(k)) dup.add(k);
+      else byKey.set(k, a.id);
+    }
+    setLinks((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const b of books) {
+        if (next[b.id]) continue;
+        const k = normalizeKey(b.title ?? prettifyName(b.name));
+        if (!k || dup.has(k)) continue;
+        const audioId = byKey.get(k);
+        if (audioId) {
+          next[b.id] = audioId;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [books, audiobooks]);
+
+  const reverseLinks = useMemo(() => {
+    const r: Record<string, string> = {};
+    for (const [ebookId, audioId] of Object.entries(links)) r[audioId] = ebookId;
+    return r;
+  }, [links]);
+
+  const setLink = (ebookId: string, audioId: string) => {
+    setLinks((prev) => ({ ...prev, [ebookId]: audioId }));
+    fetch('/api/library/link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ebookId, audioId }),
+    }).catch(() => {});
+  };
+
+  const unlink = (ebookId: string) => {
+    setLinks((prev) => {
+      const next = { ...prev };
+      delete next[ebookId];
+      return next;
+    });
+    fetch('/api/library/link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ebookId, audioId: null }),
+    }).catch(() => {});
+  };
 
   const handleImportStart = () => {
     setImportStatus({ type: 'loading', message: 'Importing files...' });
@@ -1241,21 +1330,49 @@ export default function LibraryPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditingBook(book)}
-                        className="flex-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
-                      >
-                        Edit metadata
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDelete(book)}
-                        className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
-                      >
-                        Remove
-                      </button>
+                    <div className="space-y-2">
+                      {links[book.id] ? (
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/listen/${links[book.id]}`}
+                            className="flex-1 rounded-full bg-sky-600/20 px-3 py-2 text-center text-xs font-semibold text-sky-200 transition hover:bg-sky-600/30"
+                          >
+                            🎧 Listen
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => unlink(book.id)}
+                            title="Unlink audiobook"
+                            className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300 transition hover:bg-white/10"
+                          >
+                            Unlink
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setLinkingBook(book)}
+                          className="w-full rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                        >
+                          🎧 Link audiobook
+                        </button>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditingBook(book)}
+                          className="flex-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                        >
+                          Edit metadata
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDelete(book)}
+                          className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1329,6 +1446,24 @@ export default function LibraryPage() {
                                 ✕
                               </button>
                             </>
+                          )}
+                          {links[book.id] ? (
+                            <Link
+                              href={`/listen/${links[book.id]}`}
+                              title="Listen to linked audiobook"
+                              className="rounded-full bg-sky-600/20 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:bg-sky-600/30"
+                            >
+                              🎧
+                            </Link>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setLinkingBook(book)}
+                              title="Link an audiobook"
+                              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10"
+                            >
+                              🔗
+                            </button>
                           )}
                           <button
                             type="button"
@@ -1436,21 +1571,31 @@ export default function LibraryPage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setEditingAudio(book)}
-                            className="flex-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
-                          >
-                            Edit metadata
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDeleteAudio(book)}
-                            className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
-                          >
-                            Remove
-                          </button>
+                        <div className="space-y-2">
+                          {reverseLinks[book.id] && (
+                            <Link
+                              href={`/reader/${reverseLinks[book.id]}`}
+                              className="block rounded-full bg-sky-600/20 px-3 py-2 text-center text-xs font-semibold text-sky-200 transition hover:bg-sky-600/30"
+                            >
+                              📖 Read text edition
+                            </Link>
+                          )}
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingAudio(book)}
+                              className="flex-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                            >
+                              Edit metadata
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteAudio(book)}
+                              className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1599,6 +1744,67 @@ export default function LibraryPage() {
           onClose={() => setEditingAudio(null)}
           onSave={(metadata) => saveMetadata(editingAudio.id, metadata)}
         />
+      )}
+
+      {linkingBook && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
+          <div className="my-8 w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-white">Link an audiobook</h2>
+                <p className="truncate text-xs text-slate-500">for {displayTitle(linkingBook)}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setLinkingBook(null);
+                  setLinkSearch('');
+                }}
+                className="rounded-full bg-slate-800 px-3 py-1.5 text-sm text-slate-200 transition hover:bg-slate-700"
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-4">
+              <input
+                type="search"
+                value={linkSearch}
+                onChange={(e) => setLinkSearch(e.target.value)}
+                placeholder="Search audiobooks…"
+                className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-500"
+              />
+              <div className="mt-3 max-h-80 space-y-1 overflow-y-auto">
+                {(audiobooks ?? [])
+                  .filter((a) => {
+                    const q = linkSearch.trim().toLowerCase();
+                    return !q || a.title.toLowerCase().includes(q) || (a.authors?.join(', ').toLowerCase().includes(q) ?? false);
+                  })
+                  .slice(0, 100)
+                  .map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => {
+                        setLink(linkingBook.id, a.id);
+                        setLinkingBook(null);
+                        setLinkSearch('');
+                      }}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-slate-800"
+                    >
+                      <span className="text-lg">🎧</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{a.title}</span>
+                        {a.authors && <span className="block truncate text-xs text-slate-400">{a.authors.join(', ')}</span>}
+                      </span>
+                    </button>
+                  ))}
+                {audiobooks && audiobooks.length === 0 && (
+                  <p className="px-3 py-4 text-center text-sm text-slate-500">No audiobooks in your library yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {confirmDeleteAudio && (
