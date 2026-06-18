@@ -938,7 +938,6 @@ export default function LibraryPage() {
                 Browse books from your mapped Drive folders, then open them in the reader.
               </p>
             </div>
-<<<<<<< Updated upstream
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
               <DrivePicker
                 onImportStart={handleImportStart}
@@ -956,15 +955,12 @@ export default function LibraryPage() {
                   ? `Fetching… ${enrich.done}/${enrich.total}`
                   : `Fetch suggestions${fetchTargetCount ? ` (${fetchTargetCount})` : ''}`}
               </button>
-=======
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 href="/audiobooks"
                 className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
               >
                 🎧 Audiobooks
               </Link>
->>>>>>> Stashed changes
               <button
                 type="button"
                 onClick={refreshLibrary}
