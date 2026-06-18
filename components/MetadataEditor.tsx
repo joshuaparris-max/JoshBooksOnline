@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { BookEntry, BookMetadata } from '@/types/books';
+import type { BookMetadata } from '@/types/books';
 
 interface MetadataEditorProps {
-  book: BookEntry;
+  /** Only the display name is needed — works for both ebooks and audiobooks. */
+  book: { name: string };
   /** Pre-filled metadata — a pending online suggestion or the book's current metadata. */
   initial: BookMetadata;
   onClose: () => void;

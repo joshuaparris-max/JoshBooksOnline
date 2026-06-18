@@ -317,6 +317,106 @@ const TABLE_COLUMNS: {
 
 const DEFAULT_COLUMNS = ['title', 'author', 'published', 'format', 'source', 'size', 'progress', 'added'];
 
+// --- Audiobook sorting + table columns (parallel to the ebook config above) ---
+
+type AudioSortField = 'title' | 'author' | 'published' | 'source';
+
+const AUDIO_SORT_OPTIONS: { value: AudioSortField; label: string }[] = [
+  { value: 'title', label: 'Title' },
+  { value: 'author', label: 'Author' },
+  { value: 'published', label: 'Publish date' },
+  { value: 'source', label: 'Source' },
+];
+
+function audioSortKey(a: AudiobookEntry, field: AudioSortField): string | undefined {
+  switch (field) {
+    case 'title':
+      return a.title.toLowerCase();
+    case 'author':
+      return a.authors?.[0]?.toLowerCase();
+    case 'published':
+      return a.publishedDate;
+    case 'source':
+      return a.source;
+    default:
+      return undefined;
+  }
+}
+
+function compareAudiobooks(a: AudiobookEntry, b: AudiobookEntry, field: AudioSortField, dir: SortDir) {
+  const ka = audioSortKey(a, field);
+  const kb = audioSortKey(b, field);
+  const missingA = ka === undefined || ka === '';
+  const missingB = kb === undefined || kb === '';
+  if (missingA && missingB) return 0;
+  if (missingA) return 1;
+  if (missingB) return -1;
+  const cmp = String(ka).localeCompare(String(kb));
+  return dir === 'asc' ? cmp : -cmp;
+}
+
+function extractAudioMetadata(a: AudiobookEntry): BookMetadata {
+  return {
+    title: a.title,
+    authors: a.authors,
+    publishedDate: a.publishedDate,
+    description: a.description,
+    coverUrl: a.coverUrl,
+    metadataSource: a.metadataSource,
+  };
+}
+
+const AUDIO_TABLE_COLUMNS: {
+  key: string;
+  label: string;
+  sortField?: AudioSortField;
+  locked?: boolean;
+  cell: (a: AudiobookEntry) => React.ReactNode;
+}[] = [
+  {
+    key: 'title',
+    label: 'Title',
+    sortField: 'title',
+    locked: true,
+    cell: (a) => (
+      <div className="max-w-[24rem]">
+        <Link href={`/listen/${a.id}`} className="block truncate font-medium text-white hover:text-sky-300">
+          {a.title}
+        </Link>
+      </div>
+    ),
+  },
+  {
+    key: 'author',
+    label: 'Author',
+    sortField: 'author',
+    cell: (a) => <div className="max-w-[14rem] truncate text-slate-300">{a.authors?.join(', ') || '—'}</div>,
+  },
+  {
+    key: 'published',
+    label: 'Published',
+    sortField: 'published',
+    cell: (a) => <span className="whitespace-nowrap text-slate-400">{a.publishedDate ?? '—'}</span>,
+  },
+  {
+    key: 'kind',
+    label: 'Type',
+    cell: (a) => <span className="whitespace-nowrap text-slate-400">{a.isFolder ? 'Audiobook' : 'Single file'}</span>,
+  },
+  {
+    key: 'source',
+    label: 'Source',
+    sortField: 'source',
+    cell: (a) => (
+      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${SOURCE_BADGES[a.source] ?? 'bg-slate-500 text-white'}`}>
+        {a.source}
+      </span>
+    ),
+  },
+];
+
+const DEFAULT_AUDIO_COLUMNS = ['title', 'author', 'published', 'kind', 'source'];
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function LibraryPage() {
@@ -345,6 +445,12 @@ export default function LibraryPage() {
   const [tab, setTab] = useState<'ebooks' | 'audiobooks'>('ebooks');
   const [audiobooks, setAudiobooks] = useState<AudiobookEntry[] | null>(null);
   const [audiobooksLoading, setAudiobooksLoading] = useState(false);
+  const [audioSortField, setAudioSortField] = useState<AudioSortField>('title');
+  const [audioSortDir, setAudioSortDir] = useState<SortDir>('asc');
+  const [visibleAudioColumns, setVisibleAudioColumns] = useState<string[]>(DEFAULT_AUDIO_COLUMNS);
+  const [showAudioColumnEditor, setShowAudioColumnEditor] = useState(false);
+  const [editingAudio, setEditingAudio] = useState<AudiobookEntry | null>(null);
+  const [confirmDeleteAudio, setConfirmDeleteAudio] = useState<AudiobookEntry | null>(null);
   const [importStatus, setImportStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({
     type: 'idle',
     message: '',
@@ -467,19 +573,19 @@ export default function LibraryPage() {
     refreshLibrary();
   }, []);
 
-  /** Fetch the top online suggestion for a book and stage it (no write). Returns true if found. */
-  const stageOne = async (book: BookEntry): Promise<boolean> => {
+  /** Fetch the top online suggestion for an item and stage it (no write). Returns true if found. */
+  const stageById = async (id: string, name: string): Promise<boolean> => {
     try {
       const response = await fetch('/api/library/metadata/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: book.name }),
+        body: JSON.stringify({ name }),
       });
       if (!response.ok) return false;
       const data = (await response.json()) as { candidates: BookMetadata[] };
       const top = data.candidates?.[0];
       if (top) {
-        setPending((prev) => ({ ...prev, [book.id]: top }));
+        setPending((prev) => ({ ...prev, [id]: top }));
         return true;
       }
       return false;
@@ -502,11 +608,39 @@ export default function LibraryPage() {
     let done = 0;
     let matched = 0;
     for (const book of targets) {
-      const ok = await stageOne(book);
+      const ok = await stageById(book.id, book.name);
       if (ok) matched += 1;
       done += 1;
       setEnrich((s) => ({ ...s, done, message: `Fetching ${done}/${targets.length}…` }));
       await sleep(300); // be gentle with the public APIs
+    }
+    setEnrich({
+      running: false,
+      done,
+      total: targets.length,
+      message: `Fetched ${matched} suggestion${matched !== 1 ? 's' : ''} — review and approve each below.`,
+    });
+    setTimeout(() => setEnrich((s) => ({ ...s, message: '' })), 8000);
+  };
+
+  /** Bulk: stage suggestions for every un-enriched audiobook for review. */
+  const fetchAllAudioMetadata = async () => {
+    if (!audiobooks) return;
+    const targets = audiobooks.filter((a) => !a.metadataSource && !pending[a.id]);
+    if (targets.length === 0) {
+      setEnrich({ running: false, done: 0, total: 0, message: 'Nothing new to fetch.' });
+      setTimeout(() => setEnrich((s) => ({ ...s, message: '' })), 4000);
+      return;
+    }
+    setEnrich({ running: true, done: 0, total: targets.length, message: `Fetching 0/${targets.length}…` });
+    let done = 0;
+    let matched = 0;
+    for (const a of targets) {
+      const ok = await stageById(a.id, a.title);
+      if (ok) matched += 1;
+      done += 1;
+      setEnrich((s) => ({ ...s, done, message: `Fetching ${done}/${targets.length}…` }));
+      await sleep(300);
     }
     setEnrich({
       running: false,
@@ -527,7 +661,11 @@ export default function LibraryPage() {
         body: JSON.stringify({ fileId, metadata }),
       });
       if (!response.ok) throw new Error('save failed');
+      // Patch whichever collection the id belongs to
       setBooks((prev) => (prev ? prev.map((b) => (b.id === fileId ? { ...b, ...metadata } : b)) : prev));
+      setAudiobooks((prev) =>
+        prev ? prev.map((a) => (a.id === fileId ? { ...a, ...metadata } : a)) : prev
+      );
       setPending((prev) => {
         const next = { ...prev };
         delete next[fileId];
@@ -575,6 +713,24 @@ export default function LibraryPage() {
     }).catch(() => {});
   };
 
+  /** Remove an audiobook from the library (same local-first approach as removeBook). */
+  const removeAudiobook = (a: AudiobookEntry) => {
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      next.add(a.id);
+      window.localStorage.setItem('joshbooks-hidden', JSON.stringify([...next]));
+      return next;
+    });
+    setAudiobooks((prev) => (prev ? prev.filter((x) => x.id !== a.id) : prev));
+    discardPending(a.id);
+    setConfirmDeleteAudio(null);
+    fetch('/api/library/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileId: a.id, source: a.source }),
+    }).catch(() => {});
+  };
+
   const sortedBooks = useMemo(() => {
     if (!books) return [];
     const query = search.trim().toLowerCase();
@@ -607,8 +763,34 @@ export default function LibraryPage() {
             a.source.toLowerCase().includes(query)
         )
       : visible;
-    return list;
-  }, [audiobooks, search, hiddenIds]);
+    return [...list].sort((a, b) => compareAudiobooks(a, b, audioSortField, audioSortDir));
+  }, [audiobooks, search, hiddenIds, audioSortField, audioSortDir]);
+
+  const activeAudioColumns = AUDIO_TABLE_COLUMNS.filter(
+    (col) => col.locked || visibleAudioColumns.includes(col.key)
+  );
+
+  const toggleAudioSort = (field: AudioSortField) => {
+    if (audioSortField === field) {
+      setAudioSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setAudioSortField(field);
+      setAudioSortDir('asc');
+    }
+  };
+
+  const audioSortArrow = (field: AudioSortField) =>
+    audioSortField === field ? (audioSortDir === 'asc' ? ' ▲' : ' ▼') : '';
+
+  const toggleAudioColumn = (key: string) => {
+    setVisibleAudioColumns((cols) =>
+      cols.includes(key) ? cols.filter((c) => c !== key) : [...cols, key]
+    );
+  };
+
+  const audioFetchTargetCount = audiobooks
+    ? audiobooks.filter((a) => !a.metadataSource && !pending[a.id]).length
+    : 0;
 
   const pendingCount = Object.keys(pending).length;
   const fetchTargetCount = books ? books.filter((b) => !b.metadataSource && !pending[b.id]).length : 0;
@@ -694,7 +876,7 @@ export default function LibraryPage() {
           </div>
 
           {tab === 'audiobooks' && (
-            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center">
               <input
                 type="search"
                 value={search}
@@ -702,15 +884,115 @@ export default function LibraryPage() {
                 placeholder="Search audiobooks by title or author"
                 className="w-full flex-1 rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
               />
-              <button
-                type="button"
-                onClick={refreshAudiobooks}
-                className="rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-slate-200 transition hover:bg-slate-800"
-              >
-                Refresh
-              </button>
-              <div className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-3 text-sm text-slate-400">
-                {audiobooks ? filteredAudiobooks.length : '...'} audiobooks
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={fetchAllAudioMetadata}
+                  disabled={enrich.running || !audiobooks || audioFetchTargetCount === 0}
+                  title="Fetch online suggestions for audiobooks — nothing is saved until you approve each one"
+                  className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+                >
+                  {enrich.running
+                    ? `Fetching… ${enrich.done}/${enrich.total}`
+                    : `Fetch suggestions${audioFetchTargetCount ? ` (${audioFetchTargetCount})` : ''}`}
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <label htmlFor="audio-sort" className="text-sm text-slate-400">
+                    Sort
+                  </label>
+                  <select
+                    id="audio-sort"
+                    value={audioSortField}
+                    onChange={(event) => setAudioSortField(event.target.value as AudioSortField)}
+                    className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-500"
+                  >
+                    {AUDIO_SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setAudioSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+                    className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 transition hover:bg-slate-800"
+                  >
+                    {audioSortDir === 'asc' ? '▲ Asc' : '▼ Desc'}
+                  </button>
+                </div>
+
+                <div className="flex items-center rounded-2xl border border-white/10 bg-slate-950 p-1 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('grid')}
+                    className={`rounded-xl px-3 py-1.5 transition ${viewMode === 'grid' ? 'bg-slate-200 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}
+                  >
+                    Grid
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('table')}
+                    className={`rounded-xl px-3 py-1.5 transition ${viewMode === 'table' ? 'bg-slate-200 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}
+                  >
+                    Table
+                  </button>
+                </div>
+
+                {viewMode === 'table' && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowAudioColumnEditor((v) => !v)}
+                      className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 transition hover:bg-slate-800"
+                    >
+                      Columns ▾
+                    </button>
+                    {showAudioColumnEditor && (
+                      <>
+                        <div className="fixed inset-0 z-30" onClick={() => setShowAudioColumnEditor(false)} />
+                        <div className="absolute right-0 z-40 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-900 p-2 shadow-xl shadow-black/40">
+                          <p className="px-2 py-1 text-xs uppercase tracking-wider text-slate-500">Visible columns</p>
+                          {AUDIO_TABLE_COLUMNS.map((col) => (
+                            <label
+                              key={col.key}
+                              className={`flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm ${col.locked ? 'text-slate-500' : 'cursor-pointer text-slate-200 hover:bg-slate-800'}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={col.locked || visibleAudioColumns.includes(col.key)}
+                                disabled={col.locked}
+                                onChange={() => toggleAudioColumn(col.key)}
+                                className="h-4 w-4 accent-sky-500"
+                              />
+                              {col.label}
+                              {col.locked && <span className="ml-auto text-xs text-slate-600">always</span>}
+                            </label>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => setVisibleAudioColumns(DEFAULT_AUDIO_COLUMNS)}
+                            className="mt-1 w-full rounded-xl px-2 py-1.5 text-left text-xs text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
+                          >
+                            Reset to default
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={refreshAudiobooks}
+                  className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800"
+                >
+                  Refresh
+                </button>
+                <div className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-400">
+                  {audiobooks ? filteredAudiobooks.length : '...'} audiobooks
+                </div>
               </div>
             </div>
           )}
@@ -1086,36 +1368,187 @@ export default function LibraryPage() {
               <p className="text-xl font-medium">No audiobooks found.</p>
               <p className="mt-2">Add audio to your Audiobooks or Outlander Drive folders, then refresh.</p>
             </section>
-          ) : (
+          ) : viewMode === 'grid' ? (
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filteredAudiobooks.map((book) => (
-                <Link
-                  key={book.id}
-                  href={`/listen/${book.id}`}
-                  className="group flex items-center gap-4 rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70"
-                >
-                  {book.coverUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={book.coverUrl} alt="" className="h-20 w-14 shrink-0 rounded-xl object-cover" />
-                  ) : (
-                    <div className="flex h-20 w-14 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-2xl">
-                      🎧
+              {filteredAudiobooks.map((book) => {
+                const suggestion = pending[book.id];
+                return (
+                  <article
+                    key={book.id}
+                    className="flex flex-col rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70"
+                  >
+                    <Link href={`/listen/${book.id}`} className="flex items-center gap-4">
+                      {book.coverUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={book.coverUrl} alt="" className="h-20 w-14 shrink-0 rounded-xl object-cover" />
+                      ) : (
+                        <div className="flex h-20 w-14 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-2xl">
+                          🎧
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <h2 className="line-clamp-2 font-semibold text-white">{book.title}</h2>
+                        {book.authors && <p className="truncate text-sm text-slate-400">{book.authors.join(', ')}</p>}
+                        {book.publishedDate && <p className="text-xs text-slate-500">{book.publishedDate}</p>}
+                        <p className="mt-1 text-xs text-slate-500">
+                          {book.isFolder ? 'Audiobook' : 'Single file'} · {book.source}
+                        </p>
+                        {book.audioPosition !== undefined && book.audioPosition > 0 && (
+                          <span className="mt-2 inline-block rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-300">
+                            Resume
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+
+                    <div className="mt-4">
+                      {suggestion ? (
+                        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">Suggested — review</p>
+                          <p className="mt-1 truncate text-sm font-medium text-white">{suggestion.title}</p>
+                          <p className="truncate text-xs text-slate-300">
+                            {suggestion.authors?.join(', ') || 'Unknown author'}
+                            {suggestion.publishedDate ? ` · ${suggestion.publishedDate}` : ''}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => saveMetadata(book.id, suggestion)}
+                              disabled={savingId === book.id}
+                              className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                            >
+                              {savingId === book.id ? 'Saving…' : 'Approve'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingAudio(book)}
+                              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/10"
+                            >
+                              Edit…
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => discardPending(book.id)}
+                              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                            >
+                              Discard
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditingAudio(book)}
+                            className="flex-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                          >
+                            Edit metadata
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteAudio(book)}
+                            className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <h2 className="line-clamp-2 font-semibold text-white">{book.title}</h2>
-                    {book.authors && <p className="truncate text-sm text-slate-400">{book.authors.join(', ')}</p>}
-                    <p className="mt-1 text-xs text-slate-500">
-                      {book.isFolder ? 'Audiobook' : 'Single file'} · {book.source}
-                    </p>
-                    {book.audioPosition !== undefined && book.audioPosition > 0 && (
-                      <span className="mt-2 inline-block rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-300">
-                        Resume
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              ))}
+                  </article>
+                );
+              })}
+            </section>
+          ) : (
+            <section className="overflow-x-auto rounded-3xl border border-white/10 bg-slate-900/80 shadow-xl shadow-black/10">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-400">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Cover</th>
+                    {activeAudioColumns.map((col) => (
+                      <th
+                        key={col.key}
+                        onClick={col.sortField ? () => toggleAudioSort(col.sortField!) : undefined}
+                        className={`whitespace-nowrap px-4 py-3 font-medium ${col.sortField ? 'cursor-pointer select-none hover:text-white' : ''}`}
+                      >
+                        {col.label}
+                        {col.sortField ? audioSortArrow(col.sortField) : ''}
+                      </th>
+                    ))}
+                    <th className="px-4 py-3 font-medium" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredAudiobooks.map((book) => {
+                    const suggestion = pending[book.id];
+                    return (
+                      <tr key={book.id} className={`transition hover:bg-slate-800/60 ${suggestion ? 'bg-amber-500/5' : ''}`}>
+                        <td className="px-4 py-3">
+                          <Link href={`/listen/${book.id}`}>
+                            {book.coverUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={book.coverUrl} alt="" className="h-14 w-10 rounded-md object-cover" />
+                            ) : (
+                              <div className="flex h-14 w-10 items-center justify-center rounded-md bg-sky-600 text-lg">🎧</div>
+                            )}
+                          </Link>
+                        </td>
+                        {activeAudioColumns.map((col) => (
+                          <td key={col.key} className="px-4 py-3">
+                            {col.cell(book)}
+                            {col.key === 'title' && suggestion && (
+                              <div className="mt-1 max-w-[24rem] truncate text-xs text-amber-300">
+                                Suggested: {suggestion.title}
+                                {suggestion.authors?.[0] ? ` — ${suggestion.authors[0]}` : ''}
+                              </div>
+                            )}
+                          </td>
+                        ))}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1">
+                            {suggestion && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => saveMetadata(book.id, suggestion)}
+                                  disabled={savingId === book.id}
+                                  title="Approve suggestion"
+                                  className="rounded-full bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                                >
+                                  ✓
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => discardPending(book.id)}
+                                  title="Discard suggestion"
+                                  className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-slate-300 transition hover:bg-white/10"
+                                >
+                                  ✕
+                                </button>
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setEditingAudio(book)}
+                              title="Edit metadata"
+                              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteAudio(book)}
+                              title="Remove from library"
+                              className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-300 transition hover:bg-rose-500/20"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </section>
           ))}
       </div>
@@ -1153,6 +1586,43 @@ export default function LibraryPage() {
                 className="rounded-full bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-50"
               >
                 {removingId === confirmDelete.id ? 'Removing…' : 'Remove'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingAudio && (
+        <MetadataEditor
+          book={{ name: editingAudio.title }}
+          initial={pending[editingAudio.id] ?? extractAudioMetadata(editingAudio)}
+          onClose={() => setEditingAudio(null)}
+          onSave={(metadata) => saveMetadata(editingAudio.id, metadata)}
+        />
+      )}
+
+      {confirmDeleteAudio && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
+            <h2 className="text-lg font-semibold text-white">Remove from library?</h2>
+            <p className="mt-3 text-sm text-slate-300">
+              <span className="font-medium text-white">{confirmDeleteAudio.title}</span> will be removed from your
+              library. The audio stays in your Google Drive — this only hides it here.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteAudio(null)}
+                className="rounded-full bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => removeAudiobook(confirmDeleteAudio)}
+                className="rounded-full bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-500"
+              >
+                Remove
               </button>
             </div>
           </div>
