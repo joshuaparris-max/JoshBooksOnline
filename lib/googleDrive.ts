@@ -155,9 +155,47 @@ function getBibleBookOrder(filename: string): number | null {
   return ordinal;
 }
 
+// Single-token Bible book names/abbreviations (letters only, uppercase). Covers
+// the "<BOOK><chapter>" filename scheme, e.g. ACTS11, FCOR1 (1 Cor), 01PSALM.
+const BIBLE_TOKENS = new Set<string>([
+  'GEN', 'GENESIS', 'EXO', 'EXOD', 'EXODUS', 'LEV', 'LEVITICUS', 'NUM', 'NUMB', 'NUMBERS',
+  'DEU', 'DEUT', 'DEUTERONOMY', 'JOS', 'JOSH', 'JOSHUA', 'JDG', 'JUDG', 'JUDGES', 'RUT', 'RUTH',
+  'FSAM', 'FSAMUEL', 'SSAM', 'SSAMUEL', 'FKING', 'FKINGS', 'SKING', 'SKINGS',
+  'FCHR', 'FCHRON', 'FCHRONICLES', 'SCHR', 'SCHRON', 'SCHRONICLES', 'EZR', 'EZRA',
+  'NEH', 'NEHEMIAH', 'EST', 'ESTH', 'ESTHER', 'JOB', 'PS', 'PSA', 'PSLM', 'PSALM', 'PSALMS',
+  'PRO', 'PRV', 'PROV', 'PROVERBS', 'ECC', 'ECCL', 'ECCLES', 'ECCLESIASTES',
+  'SONG', 'SONGS', 'SOS', 'SONGOFSOLOMON', 'SONGOFSONGS', 'ISA', 'ISAIAH', 'JER', 'JEREMIAH',
+  'LAM', 'LAMENT', 'LAMENTATIONS', 'EZE', 'EZK', 'EZEK', 'EZEKIEL', 'DAN', 'DANIEL',
+  'HOS', 'HOSEA', 'JOE', 'JOEL', 'AMO', 'AMOS', 'OBA', 'OBAD', 'OBADIAH', 'JON', 'JNH', 'JONAH',
+  'MIC', 'MICAH', 'NAH', 'NAHUM', 'HAB', 'HABAKKUK', 'ZEP', 'ZEPH', 'ZEPHANIAH',
+  'HAG', 'HAGGAI', 'ZEC', 'ZECH', 'ZECHARIAH', 'MAL', 'MALACHI',
+  'MT', 'MAT', 'MATT', 'MATTHEW', 'MK', 'MRK', 'MARK', 'LK', 'LUK', 'LUKE', 'JN', 'JHN', 'JOHN',
+  'ACT', 'ACTS', 'ROM', 'RMN', 'ROMANS', 'FCOR', 'FCORINTHIANS', 'FCORINTHAINS',
+  'SCOR', 'SCORINTHIANS', 'SCORINTHAINS', 'GAL', 'GALATIANS', 'EPH', 'EPHESIANS',
+  'PHP', 'PHIL', 'PHILIP', 'PHILIPPIANS', 'COL', 'COLOS', 'COLOSSIANS',
+  'FTHES', 'FTHESS', 'FTHESSALONIANS', 'STHES', 'STHESS', 'STHESSALONIANS',
+  'FTIM', 'FTIMOTHY', 'STIM', 'STIMOTHY', 'TIT', 'TITUS', 'PHM', 'PHLM', 'PHILEM', 'PHILEMON',
+  'HEB', 'HEBR', 'HEBREWS', 'JAS', 'JAM', 'JAMES', 'FPET', 'FPTR', 'FPETER', 'SPET', 'SPTR', 'SPETER',
+  'FJN', 'FJHN', 'FJOHN', 'SJN', 'SJHN', 'SJOHN', 'TJN', 'TJHN', 'TJOHN',
+  'JUD', 'JUDE', 'REV', 'RVL', 'REVELATION', 'REVELATIONS',
+]);
+
+/**
+ * True when a filename is a Bible-book audio file. Spaced names (e.g. "029 MARK")
+ * must pass the leading-number == book-ordinal check; single-token names
+ * (e.g. "ACTS11", "FCOR1", "01PSALM") are matched against known book tokens.
+ */
+function isBibleFile(filename: string): boolean {
+  const base = filename.replace(/\.[^.]+$/, '').trim();
+  if (/\s/.test(base)) return getBibleBookOrder(filename) !== null;
+  // Single token: strip leading/trailing chapter digits, keep letters only
+  const core = base.replace(/^\d+/, '').replace(/\d+$/, '').replace(/[^a-z]/gi, '').toUpperCase();
+  return core.length > 0 && BIBLE_TOKENS.has(core);
+}
+
 /** Human-friendly book title derived from a chapter filename. */
 function deriveBookTitle(filename: string): string {
-  if (getBibleBookOrder(filename)) return 'Bible';
+  if (isBibleFile(filename)) return 'Bible';
   const base = filename.replace(/\.[^.]+$/, '');
   const stripped = stripChapterSuffix(base);
   if (stripped && /[a-z]/i.test(stripped)) {
@@ -170,7 +208,7 @@ function deriveBookTitle(filename: string): string {
 
 /** Normalised grouping key: files of the same book/playlist share this key. */
 function deriveBookKey(filename: string): string {
-  if (getBibleBookOrder(filename)) return 'bible';
+  if (isBibleFile(filename)) return 'bible';
   const base = filename.replace(/\.[^.]+$/, '');
   const stripped = stripChapterSuffix(base);
   if (stripped && /[a-z]/i.test(stripped)) {
