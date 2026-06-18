@@ -49,6 +49,25 @@ describe('Audiobooks', () => {
       expect(filenames.map(deriveBookTitle)).toEqual(['Acts', 'Acts', 'Acts', 'Acts']);
       expect(new Set(filenames.map(deriveBookKey))).toEqual(new Set(['acts']));
     });
+
+    it('should group leading-numbered Manhood by Biddulph chapters into one audiobook', () => {
+      const filenames = [
+        'Chapter 1- Manhood by Biddulph.mp3',
+        'Chapter 2- Manhood by Biddulph.mp3',
+        'Chapter 3- Manhood by Biddulph.mp3',
+        'Chapter 4- Manhood by Biddulph.mp3',
+        'Chapter 5- Manhood by Biddulph.mp3',
+      ];
+
+      expect(filenames.map(deriveBookTitle)).toEqual([
+        'Manhood by Biddulph',
+        'Manhood by Biddulph',
+        'Manhood by Biddulph',
+        'Manhood by Biddulph',
+        'Manhood by Biddulph',
+      ]);
+      expect(new Set(filenames.map(deriveBookKey))).toEqual(new Set(['manhood by biddulph']));
+    });
   });
 
   describe('URL Validation', () => {

@@ -282,6 +282,12 @@ function isActsFile(filename: string): boolean {
   return /^acts\d*$/i.test(filename.replace(/\.[^.]+$/, '').trim());
 }
 
+function stripLeadingChapterPrefix(base: string): string {
+  return base
+    .replace(/^\s*chapter\s+\d+\s*[-:_.]\s*/i, '')
+    .trim();
+}
+
 /** Human-friendly book title derived from a chapter filename. */
 export function deriveBookTitle(filename: string): string {
   if (isActsFile(filename)) return 'Acts';
@@ -291,7 +297,7 @@ export function deriveBookTitle(filename: string): string {
   const knownChapterBook = lilithTitleFromChapterOnlyName(base);
   if (knownChapterBook) return knownChapterBook;
   if (isSingleLetterPart(base)) return 'Combined Audiobook (a–z)';
-  const stripped = stripChapterSuffix(base);
+  const stripped = stripChapterSuffix(stripLeadingChapterPrefix(base));
   if (stripped && /[a-z]/i.test(stripped)) {
     return stripped.replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
   }
@@ -309,7 +315,7 @@ export function deriveBookKey(filename: string): string {
   const knownChapterBook = lilithTitleFromChapterOnlyName(base);
   if (knownChapterBook) return normaliseTitle(knownChapterBook);
   if (isSingleLetterPart(base)) return 'pat:lettered';
-  const stripped = stripChapterSuffix(base);
+  const stripped = stripChapterSuffix(stripLeadingChapterPrefix(base));
   if (stripped && /[a-z]/i.test(stripped)) {
     return stripped.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   }
