@@ -83,15 +83,18 @@ function stripChapterSuffix(base: string): string {
   let prev = '';
   while (s !== prev) {
     prev = s;
-    // trailing named markers: "Chapter 12", "Track 5", "Part 2", "Disc 1", "L01", "T03", "CD2"
+    // story chapters: digit OR roman numeral — "Chapter 12", "Chapter XLVII", "Part IV"
     s = s.replace(
-      /[\s\-_.]*[([]?\s*(chapter|chap|chp|ch|track|trk|part|pt|disc|disk|cd|side|section|sec|episode|ep|vol|volume|book|bk|l|t|d)\s*\.?\s*\d+\s*[)\]]?\s*$/i,
+      /[\s\-_.]*[([]?\s*(chapter|chap|chp|ch|part|pt|section|sec|episode|ep|book|bk|vol|volume)\s*\.?\s*(?:\d+|[ivxlcdm]+)\s*[)\]]?\s*$/i,
       ''
     );
+    // disc/track codes: digits only — "Track 5", "Disc 1", "L01", "T03", "CD2"
+    s = s.replace(/[\s\-_.]*[([]?\s*(track|trk|disc|disk|cd|side|l|t|d)\s*\.?\s*\d+\s*[)\]]?\s*$/i, '');
     s = s.replace(/[\s\-_.]*[([]\s*\d{1,3}\s*[)\]]\s*$/, ''); // "(03)" "[03]"
     s = s.replace(/[\s\-_.]+\d{1,3}\s*$/, ''); // trailing bare number
   }
-  return s.trim();
+  // tidy leftover edge separators (e.g. "Lilith -" -> "Lilith")
+  return s.replace(/^[\s\-_.]+/, '').replace(/[\s\-_.]+$/, '').trim();
 }
 
 /** True when a name is purely track codes with no real title (e.g. "L01 T01", "CD2 Track 5"). */
@@ -193,10 +196,16 @@ function isBibleFile(filename: string): boolean {
   return core.length > 0 && BIBLE_TOKENS.has(core);
 }
 
+/** Files named as a single lowercase letter (a, b, c … z) are sequential parts. */
+function isSingleLetterPart(base: string): boolean {
+  return /^[a-z]$/.test(base.trim());
+}
+
 /** Human-friendly book title derived from a chapter filename. */
 function deriveBookTitle(filename: string): string {
   if (isBibleFile(filename)) return 'Bible';
   const base = filename.replace(/\.[^.]+$/, '');
+  if (isSingleLetterPart(base)) return 'Combined Audiobook (a–z)';
   const stripped = stripChapterSuffix(base);
   if (stripped && /[a-z]/i.test(stripped)) {
     return stripped.replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -210,6 +219,7 @@ function deriveBookTitle(filename: string): string {
 function deriveBookKey(filename: string): string {
   if (isBibleFile(filename)) return 'bible';
   const base = filename.replace(/\.[^.]+$/, '');
+  if (isSingleLetterPart(base)) return 'pat:lettered';
   const stripped = stripChapterSuffix(base);
   if (stripped && /[a-z]/i.test(stripped)) {
     return stripped.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
