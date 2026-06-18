@@ -87,6 +87,40 @@ export interface BookMetadata {
   metadataSource?: MetadataSource;
 }
 
+export type AudiobookAvailabilityType = 'full_public_domain' | 'official_preview' | 'unknown';
+
+export interface Audiobook {
+  /** Unique identifier for the audiobook */
+  id: string;
+
+  /** Title of the audiobook */
+  title: string;
+
+  /** Author of the audiobook */
+  author: string;
+
+  /** Full YouTube URL */
+  youtubeUrl: string;
+
+  /** Catalogue names/files this audiobook matches */
+  catalogueMatches: string[];
+
+  /** Type of availability (full audiobook, preview, or unknown) */
+  availabilityType: AudiobookAvailabilityType;
+
+  /** Display label for the UI (e.g., "Full public-domain audiobook", "Official audiobook preview") */
+  displayLabel?: string;
+
+  /** Source of the audiobook (e.g., "LibriVox", "Google Play Books") */
+  source?: string;
+
+  /** Rights or availability notes */
+  rightsNote?: string;
+
+  /** Additional notes about the audiobook */
+  notes?: string;
+}
+
 export interface BookEntry {
   /** Google Drive file ID */
   id: string;
