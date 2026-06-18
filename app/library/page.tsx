@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { DrivePicker } from '@/components/DrivePicker';
 import MetadataEditor from '@/components/MetadataEditor';
-import type { BookEntry, BookMetadata, AudiobookEntry } from '@/types/books';
+import { AudiobookCard } from '@/components/AudiobookCard';
+import type { BookEntry, BookMetadata, AudiobookEntry, Audiobook } from '@/types/books';
 
 const SOURCE_BADGES: Record<string, string> = {
   'IT PD Ebooks': 'bg-amber-500 text-slate-950',
@@ -454,6 +455,9 @@ export default function LibraryPage() {
   const [tab, setTab] = useState<'ebooks' | 'audiobooks'>('ebooks');
   const [audiobooks, setAudiobooks] = useState<AudiobookEntry[] | null>(null);
   const [audiobooksLoading, setAudiobooksLoading] = useState(false);
+  const [audioSource, setAudioSource] = useState<'drive' | 'online'>('drive');
+  const [onlineAudiobooks, setOnlineAudiobooks] = useState<Audiobook[] | null>(null);
+  const [onlineLoading, setOnlineLoading] = useState(false);
   const [audioSortField, setAudioSortField] = useState<AudioSortField>('title');
   const [audioSortDir, setAudioSortDir] = useState<SortDir>('asc');
   const [visibleAudioColumns, setVisibleAudioColumns] = useState<string[]>(DEFAULT_AUDIO_COLUMNS);
@@ -588,6 +592,31 @@ export default function LibraryPage() {
     if (audiobooks === null && !audiobooksLoading) refreshAudiobooks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Lazy-load the online (YouTube/LibriVox) catalog the first time it's viewed
+  useEffect(() => {
+    if (tab === 'audiobooks' && audioSource === 'online' && onlineAudiobooks === null && !onlineLoading) {
+      setOnlineLoading(true);
+      fetch('/api/audiobooks', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : []))
+        .then((data) => setOnlineAudiobooks(data as Audiobook[]))
+        .catch(() => setOnlineAudiobooks([]))
+        .finally(() => setOnlineLoading(false));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, audioSource]);
+
+  const filteredOnline = useMemo(() => {
+    if (!onlineAudiobooks) return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return onlineAudiobooks;
+    return onlineAudiobooks.filter(
+      (a) =>
+        a.title.toLowerCase().includes(q) ||
+        a.author.toLowerCase().includes(q) ||
+        a.catalogueMatches.some((m) => m.toLowerCase().includes(q))
+    );
+  }, [onlineAudiobooks, search]);
 
   useEffect(() => {
     window.localStorage.setItem('joshbooks-links', JSON.stringify(links));
@@ -996,16 +1025,35 @@ export default function LibraryPage() {
           </div>
 
           {tab === 'audiobooks' && (
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAudioSource('drive')}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${audioSource === 'drive' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+              >
+                My Drive
+              </button>
+              <button
+                type="button"
+                onClick={() => setAudioSource('online')}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${audioSource === 'online' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+              >
+                Online (YouTube)
+              </button>
+            </div>
+          )}
+
+          {tab === 'audiobooks' && (
             <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center">
               <input
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search audiobooks by title or author"
+                placeholder={audioSource === 'online' ? 'Search online catalogue…' : 'Search audiobooks by title or author'}
                 className="w-full flex-1 rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
               />
 
-              <div className="flex flex-wrap items-center gap-3">
+              <div className={`flex flex-wrap items-center gap-3 ${audioSource === 'online' ? 'hidden' : ''}`}>
                 <button
                   type="button"
                   onClick={fetchAllAudioMetadata}
@@ -1522,7 +1570,28 @@ export default function LibraryPage() {
           </section>
         ))}
 
-        {tab === 'audiobooks' &&
+        {tab === 'audiobooks' && audioSource === 'online' && (
+          onlineLoading ? (
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }, (_, index) => (
+                <div key={index} className="h-32 animate-pulse rounded-3xl border border-white/10 bg-slate-900/80" />
+              ))}
+            </section>
+          ) : filteredOnline.length === 0 ? (
+            <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-10 text-center text-slate-400">
+              <p className="text-xl font-medium">No online audiobooks match.</p>
+              <p className="mt-2">These are curated YouTube / LibriVox links for books in your catalogue.</p>
+            </section>
+          ) : (
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {filteredOnline.map((ab) => (
+                <AudiobookCard key={ab.id} audiobook={ab} />
+              ))}
+            </section>
+          )
+        )}
+
+        {tab === 'audiobooks' && audioSource === 'drive' &&
           (audiobooksLoading ? (
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }, (_, index) => (
