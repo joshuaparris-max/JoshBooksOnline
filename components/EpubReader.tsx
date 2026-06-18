@@ -60,7 +60,7 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
   const location = useMemo(() => initialLocation?.trim() || '', [initialLocation]);
 
   useEffect(() => {
-    const storedTheme = window.localStorage.getItem('bookshelf-reader-theme') as 'light' | 'dark' | 'sepia' | null;
+    const storedTheme = window.localStorage.getItem('joshbooks-reader-theme') as 'light' | 'dark' | 'sepia' | null;
     const storedFontSize = window.localStorage.getItem('bookshelf-reader-fontSize');
     if (storedTheme && ['light', 'dark', 'sepia'].includes(storedTheme)) {
       setCurrentTheme(storedTheme);
@@ -74,7 +74,7 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem('bookshelf-reader-theme', currentTheme);
+    window.localStorage.setItem('joshbooks-reader-theme', currentTheme);
   }, [currentTheme]);
 
   useEffect(() => {

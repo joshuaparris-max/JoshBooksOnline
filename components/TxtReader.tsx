@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ReaderSearchBar from './ReaderSearchBar';
+import { useReaderTheme, READER_THEMES, READER_THEME_SURFACE } from '@/lib/useReaderTheme';
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -22,6 +23,7 @@ export default function TxtReader({ name, arrayBuffer, initialLocation, onProgre
   const saveTimeout = useRef<number | null>(null);
   const onProgressRef = useRef(onProgress);
   const [fontSize, setFontSize] = useState<number>(1);
+  const [theme, setTheme] = useReaderTheme();
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeMatch, setActiveMatch] = useState(0);
@@ -158,6 +160,17 @@ export default function TxtReader({ name, arrayBuffer, initialLocation, onProgre
           >
             Find
           </button>
+          <span className="text-slate-400">Theme:</span>
+          {READER_THEMES.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTheme(t)}
+              className={`rounded-full px-3 py-1 capitalize transition ${theme === t ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+            >
+              {t}
+            </button>
+          ))}
           <span className="text-slate-400">Font size:</span>
           {[0, 1, 2, 3].map((index) => (
             <button
@@ -177,7 +190,7 @@ export default function TxtReader({ name, arrayBuffer, initialLocation, onProgre
         ref={containerRef}
         className="mx-auto h-[calc(100vh-96px)] max-w-3xl overflow-y-auto px-4 pb-16 md:px-8"
       >
-        <pre className={`whitespace-pre-wrap break-words font-serif leading-relaxed text-slate-100 ${fontSizes[fontSize]}`}>
+        <pre className={`whitespace-pre-wrap break-words rounded-3xl p-6 font-serif leading-relaxed transition-colors ${READER_THEME_SURFACE[theme]} ${fontSizes[fontSize]}`}>
           {content}
         </pre>
       </div>
