@@ -71,8 +71,9 @@ function naturalCompare(a: string, b: string): number {
 }
 
 /**
- * Strip chapter/track/part markers and trailing numbers from a filename base so
- * that "Sapiens - Chapter 03" and "Sapiens - Chapter 04" reduce to "Sapiens".
+ * Strip chapter/track/part/disc markers and trailing numbers from a filename
+ * base so that "Sapiens - Chapter 03" and "Sapiens - Chapter 04" reduce to
+ * "Sapiens", and "Wool L01 T01" reduces to "Wool".
  */
 function stripChapterSuffix(base: string): string {
   let s = base;
@@ -81,30 +82,61 @@ function stripChapterSuffix(base: string): string {
   let prev = '';
   while (s !== prev) {
     prev = s;
-    // trailing "Chapter 12", "Track 5", "Part 2", "Disc 1", "(03)", "[03]"
+    // trailing named markers: "Chapter 12", "Track 5", "Part 2", "Disc 1", "L01", "T03", "CD2"
     s = s.replace(
-      /[\s\-_.]*[([]?\s*(chapter|chap|chp|ch|track|trk|part|pt|disc|cd|section|sec|episode|ep)\s*\.?\s*\d+\s*[)\]]?\s*$/i,
+      /[\s\-_.]*[([]?\s*(chapter|chap|chp|ch|track|trk|part|pt|disc|disk|cd|side|section|sec|episode|ep|vol|volume|book|bk|l|t|d)\s*\.?\s*\d+\s*[)\]]?\s*$/i,
       ''
     );
-    s = s.replace(/[\s\-_.]*[([]\s*\d{1,3}\s*[)\]]\s*$/, '');
-    s = s.replace(/[\s\-_.]+\d{1,3}\s*$/, '');
+    s = s.replace(/[\s\-_.]*[([]\s*\d{1,3}\s*[)\]]\s*$/, ''); // "(03)" "[03]"
+    s = s.replace(/[\s\-_.]+\d{1,3}\s*$/, ''); // trailing bare number
   }
   return s.trim();
+}
+
+/** True when a name is purely track codes with no real title (e.g. "L01 T01", "CD2 Track 5"). */
+function isTrackCodeName(base: string): boolean {
+  const tokens = base.trim().split(/[\s\-_.]+/).filter(Boolean);
+  if (tokens.length === 0) return false;
+  return tokens.every(
+    (t) =>
+      /^[a-z]{1,3}\d{1,4}$/i.test(t) || // L01, T01, CD2
+      /^\d{1,4}$/.test(t) || // 01
+      /^(disc|disk|cd|part|pt|track|trk|vol|volume|book|bk|side|chapter|chap|ch|l|t|d)$/i.test(t) // bare marker word
+  );
+}
+
+/** Pattern skeleton for title-less names: "L01 T01" and "L10 T04" -> "L## T##". */
+function patternSkeleton(base: string): string {
+  return base
+    .replace(/\d+/g, '##')
+    .replace(/[_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
 }
 
 /** Human-friendly book title derived from a chapter filename. */
 function deriveBookTitle(filename: string): string {
   const base = filename.replace(/\.[^.]+$/, '');
   const stripped = stripChapterSuffix(base);
-  return (stripped || base).replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (stripped && /[a-z]/i.test(stripped)) {
+    return stripped.replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  // No real title left — show the numbering pattern (e.g. "L## T##")
+  if (isTrackCodeName(base)) return patternSkeleton(base);
+  return base.replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-/** Normalised grouping key: chapters of the same book share this key. */
+/** Normalised grouping key: files of the same book/playlist share this key. */
 function deriveBookKey(filename: string): string {
-  return deriveBookTitle(filename)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
+  const base = filename.replace(/\.[^.]+$/, '');
+  const stripped = stripChapterSuffix(base);
+  if (stripped && /[a-z]/i.test(stripped)) {
+    return stripped.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  // Title-less track codes group by their numbering skeleton
+  if (isTrackCodeName(base)) return `pat:${patternSkeleton(base).toLowerCase()}`;
+  return base.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
 /**
