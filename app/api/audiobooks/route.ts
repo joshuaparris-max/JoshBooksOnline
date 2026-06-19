@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
-import type { Audiobook } from '@/types/books';
-import audiobooks from '@/lib/audiobooks.json';
+import { getBaseYoutubeCatalog } from '@/lib/youtubeCatalog';
 
 /**
  * GET /api/audiobooks
  *
- * Returns all available audiobooks with optional filtering
- * Query parameters:
- *   - type: 'full' | 'preview' | 'all' (default: 'all')
- *   - search: Search audiobooks by title, author, or catalogue matches
+ * Returns the bundled YouTube audiobook catalog. Client-side userdata overrides
+ * (edits, removals, custom links) are merged in the browser.
  */
 export async function GET(request: Request) {
   try {
@@ -16,16 +13,14 @@ export async function GET(request: Request) {
     const type = searchParams.get('type') ?? 'all';
     const search = searchParams.get('search')?.toLowerCase() ?? '';
 
-    let filtered = [...(audiobooks as Audiobook[])];
+    let filtered = [...getBaseYoutubeCatalog()];
 
-    // Filter by type
     if (type === 'full') {
       filtered = filtered.filter((ab) => ab.availabilityType === 'full_public_domain');
     } else if (type === 'preview') {
       filtered = filtered.filter((ab) => ab.availabilityType === 'official_preview');
     }
 
-    // Filter by search query
     if (search) {
       filtered = filtered.filter((ab) => {
         const titleMatch = ab.title.toLowerCase().includes(search);
@@ -40,9 +35,6 @@ export async function GET(request: Request) {
     return NextResponse.json(filtered);
   } catch (error) {
     console.error('Error fetching audiobooks:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch audiobooks' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch audiobooks' }, { status: 500 });
   }
 }

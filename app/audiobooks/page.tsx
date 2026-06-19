@@ -4,56 +4,34 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { AudiobookCard } from '@/components/AudiobookCard';
+import YouTubeAudiobookEditor from '@/components/YouTubeAudiobookEditor';
 import type { Audiobook } from '@/types/books';
+import { useYoutubeCatalog } from '@/lib/useYoutubeCatalog';
 
 export default function AudiobooksPage() {
-  const [audiobooks, setAudiobooks] = useState<Audiobook[] | null>(null);
+  const youtube = useYoutubeCatalog();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'full' | 'preview'>('all');
+  const [editingYoutube, setEditingYoutube] = useState<Audiobook | null>(null);
 
   useEffect(() => {
-    const loadAudiobooks = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const params = new URLSearchParams();
-        if (typeFilter !== 'all') {
-          params.append('type', typeFilter);
-        }
-
-        const response = await fetch(`/api/audiobooks?${params}`, {
-          cache: 'no-store',
-        });
-
-        if (!response.ok) {
-          setError('Failed to load audiobooks');
-          setAudiobooks([]);
-          return;
-        }
-
-        const data = (await response.json()) as Audiobook[];
-        setAudiobooks(data);
-      } catch {
-        setError('Unable to fetch audiobooks. Please check your connection.');
-        setAudiobooks([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAudiobooks();
-  }, [typeFilter]);
+    if (youtube.hydrated) setLoading(false);
+  }, [youtube.hydrated]);
 
   const filteredAudiobooks = useMemo(() => {
-    if (!audiobooks) return [];
+    let list = youtube.catalog;
+
+    if (typeFilter === 'full') {
+      list = list.filter((ab) => ab.availabilityType === 'full_public_domain');
+    } else if (typeFilter === 'preview') {
+      list = list.filter((ab) => ab.availabilityType === 'official_preview');
+    }
 
     const query = search.trim().toLowerCase();
-    if (!query) return audiobooks;
+    if (!query) return list;
 
-    return audiobooks.filter((ab) => {
+    return list.filter((ab) => {
       const titleMatch = ab.title.toLowerCase().includes(query);
       const authorMatch = ab.author.toLowerCase().includes(query);
       const catalogueMatch = ab.catalogueMatches.some((match) =>
@@ -61,23 +39,19 @@ export default function AudiobooksPage() {
       );
       return titleMatch || authorMatch || catalogueMatch;
     });
-  }, [audiobooks, search]);
+  }, [youtube.catalog, search, typeFilter]);
 
   const stats = useMemo(() => {
-    if (!audiobooks) return { total: 0, full: 0, preview: 0 };
     return {
-      total: audiobooks.length,
-      full: audiobooks.filter((ab) => ab.availabilityType === 'full_public_domain')
-        .length,
-      preview: audiobooks.filter((ab) => ab.availabilityType === 'official_preview')
-        .length,
+      total: youtube.catalog.length,
+      full: youtube.catalog.filter((ab) => ab.availabilityType === 'full_public_domain').length,
+      preview: youtube.catalog.filter((ab) => ab.availabilityType === 'official_preview').length,
     };
-  }, [audiobooks]);
+  }, [youtube.catalog]);
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 p-6 sm:p-10">
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
         <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-xl shadow-black/20">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -104,7 +78,6 @@ export default function AudiobooksPage() {
           </div>
         </section>
 
-        {/* Search and Filters */}
         <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-xl shadow-black/20 space-y-4">
           <input
             type="search"
@@ -118,50 +91,39 @@ export default function AudiobooksPage() {
             <button
               type="button"
               onClick={() => setTypeFilter('all')}
-              className={`px-4 py-3 rounded-lg font-semibold text-sm transition ${
+              className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
                 typeFilter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'border-sky-500 bg-sky-600 text-white'
+                  : 'border-white/10 bg-slate-950 text-slate-300 hover:bg-slate-800'
               }`}
             >
-              All {audiobooks ? `(${stats.total})` : '...'}
+              All ({stats.total})
             </button>
             <button
               type="button"
               onClick={() => setTypeFilter('full')}
-              className={`px-4 py-3 rounded-lg font-semibold text-sm transition ${
+              className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
                 typeFilter === 'full'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'border-emerald-500 bg-emerald-600 text-white'
+                  : 'border-white/10 bg-slate-950 text-slate-300 hover:bg-slate-800'
               }`}
             >
-              Full {audiobooks ? `(${stats.full})` : '...'}
+              Full ({stats.full})
             </button>
             <button
               type="button"
               onClick={() => setTypeFilter('preview')}
-              className={`px-4 py-3 rounded-lg font-semibold text-sm transition ${
+              className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
                 typeFilter === 'preview'
-                  ? 'bg-amber-600 text-white'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'border-amber-500 bg-amber-600 text-white'
+                  : 'border-white/10 bg-slate-950 text-slate-300 hover:bg-slate-800'
               }`}
             >
-              Previews {audiobooks ? `(${stats.preview})` : '...'}
+              Previews ({stats.preview})
             </button>
-            <div className="rounded-lg border border-white/10 bg-slate-950 p-3 text-sm text-slate-400 text-center">
-              {filteredAudiobooks.length} results
-            </div>
           </div>
         </section>
 
-        {/* Error State */}
-        {error && (
-          <section className="rounded-3xl border border-red-500/20 bg-red-950/30 p-6">
-            <p className="text-red-300">{error}</p>
-          </section>
-        )}
-
-        {/* Loading State */}
         {loading && (
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }, (_, index) => (
@@ -173,17 +135,20 @@ export default function AudiobooksPage() {
           </section>
         )}
 
-        {/* Audiobooks Grid */}
-        {!loading && audiobooks && filteredAudiobooks.length > 0 && (
+        {!loading && filteredAudiobooks.length > 0 && (
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredAudiobooks.map((audiobook) => (
-              <AudiobookCard key={audiobook.id} audiobook={audiobook} />
+              <AudiobookCard
+                key={audiobook.id}
+                audiobook={audiobook}
+                onEdit={setEditingYoutube}
+                onRemove={youtube.removeYoutube}
+              />
             ))}
           </section>
         )}
 
-        {/* Empty State */}
-        {!loading && audiobooks && filteredAudiobooks.length === 0 && (
+        {!loading && filteredAudiobooks.length === 0 && (
           <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-12 text-center">
             <p className="text-xl text-slate-400 mb-2">No audiobooks found</p>
             <p className="text-sm text-slate-500">
@@ -192,6 +157,17 @@ export default function AudiobooksPage() {
           </section>
         )}
       </div>
+
+      {editingYoutube && (
+        <YouTubeAudiobookEditor
+          initial={editingYoutube}
+          onClose={() => setEditingYoutube(null)}
+          onSave={(ab) => {
+            youtube.saveYoutubeEdit(ab);
+            setEditingYoutube(null);
+          }}
+        />
+      )}
     </main>
   );
 }

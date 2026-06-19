@@ -6,6 +6,7 @@ import type { Audiobook } from '@/types/books';
 interface AudiobookCardProps {
   audiobook: Audiobook;
   onRemove?: (id: string) => void;
+  onEdit?: (audiobook: Audiobook) => void;
 }
 
 function getColorFromTitle(title: string) {
@@ -30,7 +31,7 @@ function extractYouTubeId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export function AudiobookCard({ audiobook, onRemove }: AudiobookCardProps) {
+export function AudiobookCard({ audiobook, onRemove, onEdit }: AudiobookCardProps) {
   const [showPlayer, setShowPlayer] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const youtubeId = extractYouTubeId(audiobook.youtubeUrl);
@@ -93,8 +94,18 @@ export function AudiobookCard({ audiobook, onRemove }: AudiobookCardProps) {
             >
               YouTube
             </a>
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(audiobook)}
+                className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-slate-200 text-sm font-semibold transition hover:bg-white/10"
+              >
+                Edit
+              </button>
+            )}
             {onRemove && (
               <button
+                type="button"
                 onClick={() => onRemove(audiobook.id)}
                 className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-400 text-sm font-semibold transition"
               >

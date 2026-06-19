@@ -1,2 +1,1 @@
-// Learn more: https://github.com/testing-library/jest-dom
-import '@testing-library/jest-dom';
+// Jest setup — extend here if DOM matchers are needed later.

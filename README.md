@@ -127,11 +127,7 @@ middleware.ts             # Protect /library and /reader routes
 ✅ GET `/api/library` returns real files from Drive folders
 ✅ POST `/api/library/progress` writes appProperties visible in Drive
 
-## Next Phase
-
-Phase 2 (PowerShell sync script) will upload local books from `C:\dev\Books` to the "Local Books" folder in Drive.
-
-### Local book sync
+## Phase 2 — Local book sync ✅
 
 Run the sync script from the repository root with PowerShell:
 
@@ -144,4 +140,11 @@ npm run sync-local-books
 ```
 
 The script creates the Drive folder `Local Books` if it does not already exist and uploads supported files recursively.
+
+## Additional features
+
+- **Metadata editor** with Google Books / Open Library search, persisted to Drive `appProperties`, localStorage, and Vercel KV (`/api/userdata`)
+- **YouTube audiobook catalog** with catalogue alias matching, editable/removable links, and multi-source picker
+- **Drive audiobooks**, ebook↔audiobook linking, virtual collections, online public-domain reads
+- **Quality gates**: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`
 

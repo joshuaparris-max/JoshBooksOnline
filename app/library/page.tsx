@@ -6,8 +6,12 @@ import { signOut } from 'next-auth/react';
 import { DrivePicker } from '@/components/DrivePicker';
 import MetadataEditor from '@/components/MetadataEditor';
 import { AudiobookCard } from '@/components/AudiobookCard';
+import YouTubeAudiobookEditor from '@/components/YouTubeAudiobookEditor';
+import EbookAudioLinks from '@/components/EbookAudioLinks';
 import { ONLINE_EBOOKS } from '@/lib/onlineEbooks';
+import { findYoutubeMatches } from '@/lib/youtubeCatalog';
 import { useCollections } from '@/lib/useCollections';
+import { useYoutubeCatalog } from '@/lib/useYoutubeCatalog';
 import CollectionsManager from '@/components/CollectionsManager';
 import type { BookEntry, BookMetadata, AudiobookEntry, Audiobook } from '@/types/books';
 
@@ -462,14 +466,15 @@ export default function LibraryPage() {
   const [tab, setTab] = useState<'ebooks' | 'audiobooks'>('ebooks');
   const [ebookSource, setEbookSource] = useState<'drive' | 'online'>('drive');
   const collectionsApi = useCollections();
+  const youtube = useYoutubeCatalog();
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [folderItem, setFolderItem] = useState<{ id: string; label: string } | null>(null);
   const [audiobooks, setAudiobooks] = useState<AudiobookEntry[] | null>(null);
   const [audiobooksLoading, setAudiobooksLoading] = useState(false);
   const [audioSource, setAudioSource] = useState<'drive' | 'online'>('drive');
-  const [onlineAudiobooks, setOnlineAudiobooks] = useState<Audiobook[] | null>(null);
-  const [onlineLoading, setOnlineLoading] = useState(false);
+  const [editingYoutube, setEditingYoutube] = useState<Audiobook | null>(null);
+  const [youtubeMatchPicker, setYoutubeMatchPicker] = useState<BookEntry | null>(null);
   const [audioSortField, setAudioSortField] = useState<AudioSortField>('title');
   const [audioSortDir, setAudioSortDir] = useState<SortDir>('asc');
   const [visibleAudioColumns, setVisibleAudioColumns] = useState<string[]>(DEFAULT_AUDIO_COLUMNS);
@@ -612,19 +617,6 @@ export default function LibraryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Lazy-load the online (YouTube/LibriVox) catalog the first time it's viewed
-  useEffect(() => {
-    if (tab === 'audiobooks' && audioSource === 'online' && onlineAudiobooks === null && !onlineLoading) {
-      setOnlineLoading(true);
-      fetch('/api/audiobooks', { cache: 'no-store' })
-        .then((r) => (r.ok ? r.json() : []))
-        .then((data) => setOnlineAudiobooks(data as Audiobook[]))
-        .catch(() => setOnlineAudiobooks([]))
-        .finally(() => setOnlineLoading(false));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, audioSource]);
-
   // Item ids in the selected collection (or null when showing everything).
   const activeCollectionSet = useMemo(() => {
     if (!selectedCollectionId || selectedCollectionId === '__unfiled__') return null;
@@ -642,9 +634,9 @@ export default function LibraryPage() {
   );
 
   const filteredOnline = useMemo(() => {
-    if (!onlineAudiobooks) return [];
+    if (!youtube.hydrated) return [];
     const q = search.trim().toLowerCase();
-    return onlineAudiobooks.filter((a) => {
+    return youtube.catalog.filter((a) => {
       if (!passesCollection(a.id)) return false;
       if (!q) return true;
       return (
@@ -653,7 +645,36 @@ export default function LibraryPage() {
         a.catalogueMatches.some((m) => m.toLowerCase().includes(q))
       );
     });
-  }, [onlineAudiobooks, search, passesCollection]);
+  }, [youtube.catalog, youtube.hydrated, search, passesCollection]);
+
+  const youtubeMatchesFor = useCallback(
+    (book: BookEntry) =>
+      findYoutubeMatches(
+        { name: book.name, title: metaOverrides[book.id]?.title ?? book.title },
+        youtube.catalog
+      ),
+    [youtube.catalog, metaOverrides]
+  );
+
+  const linkingYoutubeMatches = useMemo(() => {
+    if (!linkingBook) return [];
+    const catalogue = findYoutubeMatches(
+      { name: linkingBook.name, title: metaOverrides[linkingBook.id]?.title ?? linkingBook.title },
+      youtube.catalog
+    );
+    const q = linkSearch.trim().toLowerCase();
+    const all = youtube.catalog.filter((a) => {
+      if (!q) return true;
+      return (
+        a.title.toLowerCase().includes(q) ||
+        a.author.toLowerCase().includes(q) ||
+        a.catalogueMatches.some((m) => m.toLowerCase().includes(q))
+      );
+    });
+    const catalogueIds = new Set(catalogue.map((a) => a.id));
+    const rest = all.filter((a) => !catalogueIds.has(a.id));
+    return [...catalogue, ...rest];
+  }, [linkingBook, linkSearch, youtube.catalog, metaOverrides]);
 
   const filteredOnlineEbooks = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -693,6 +714,7 @@ export default function LibraryPage() {
           if (data.meta) setMetaOverrides(data.meta as Record<string, BookMetadata>);
           if (Array.isArray(data.hidden)) setHiddenIds(new Set(data.hidden as string[]));
           if (data.links) setLinks(data.links as Record<string, string>);
+          youtube.hydrateFromServer(data);
           if (data.collections || data.membership) {
             collectionsApi.hydrate(
               (data.collections as never) ?? [],
@@ -721,6 +743,7 @@ export default function LibraryPage() {
       links,
       collections: collectionsApi.collections,
       membership: collectionsApi.membership,
+      ...youtube.serverBlob,
     };
     const timer = window.setTimeout(() => {
       fetch('/api/userdata', {
@@ -730,7 +753,28 @@ export default function LibraryPage() {
       }).catch(() => {});
     }, 1200);
     return () => window.clearTimeout(timer);
-  }, [metaOverrides, hiddenIds, links, collectionsApi.collections, collectionsApi.membership]);
+  }, [metaOverrides, hiddenIds, links, collectionsApi.collections, collectionsApi.membership, youtube.serverBlob]);
+
+  // Auto-match YouTube audiobooks via catalogue aliases (unambiguous matches only).
+  useEffect(() => {
+    if (!books || !youtube.hydrated) return;
+    youtube.setYoutubeLinks((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const b of books) {
+        if (next[b.id]) continue;
+        const matches = findYoutubeMatches(
+          { name: b.name, title: metaOverrides[b.id]?.title ?? b.title },
+          youtube.catalog
+        );
+        if (matches.length === 1) {
+          next[b.id] = matches[0].id;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [books, youtube.catalog, youtube.hydrated, metaOverrides]);
 
   // Auto-match: link an ebook to an audiobook when their titles normalise equal
   // and the match is unambiguous. Explicit links are never overwritten.
@@ -1724,32 +1768,22 @@ export default function LibraryPage() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {links[book.id] ? (
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/listen/${links[book.id]}`}
-                            className="flex-1 rounded-full bg-sky-600/20 px-3 py-2 text-center text-xs font-semibold text-sky-200 transition hover:bg-sky-600/30"
-                          >
-                            🎧 Listen
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => unlink(book.id)}
-                            title="Unlink audiobook"
-                            className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300 transition hover:bg-white/10"
-                          >
-                            Unlink
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setLinkingBook(book)}
-                          className="w-full rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
-                        >
-                          🎧 Link audiobook
-                        </button>
-                      )}
+                      <EbookAudioLinks
+                        driveLinkId={links[book.id]}
+                        youtubeLinkId={youtube.youtubeLinks[book.id]}
+                        youtubeMatches={youtubeMatchesFor(book)}
+                        onLink={() => setLinkingBook(book)}
+                        onUnlinkDrive={() => unlink(book.id)}
+                        onUnlinkYoutube={() => youtube.setYoutubeLink(book.id, null)}
+                        onPickYoutube={() => {
+                          const matches = youtubeMatchesFor(book);
+                          if (matches.length === 1) {
+                            youtube.setYoutubeLink(book.id, matches[0].id);
+                          } else {
+                            setYoutubeMatchPicker(book);
+                          }
+                        }}
+                      />
                       <div className="flex gap-2">
                         <button
                           type="button"
@@ -1848,24 +1882,23 @@ export default function LibraryPage() {
                               </button>
                             </>
                           )}
-                          {links[book.id] ? (
-                            <Link
-                              href={`/listen/${links[book.id]}`}
-                              title="Listen to linked audiobook"
-                              className="rounded-full bg-sky-600/20 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:bg-sky-600/30"
-                            >
-                              🎧
-                            </Link>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setLinkingBook(book)}
-                              title="Link an audiobook"
-                              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10"
-                            >
-                              🔗
-                            </button>
-                          )}
+                          <EbookAudioLinks
+                            driveLinkId={links[book.id]}
+                            youtubeLinkId={youtube.youtubeLinks[book.id]}
+                            youtubeMatches={youtubeMatchesFor(book)}
+                            onLink={() => setLinkingBook(book)}
+                            onUnlinkDrive={() => unlink(book.id)}
+                            onUnlinkYoutube={() => youtube.setYoutubeLink(book.id, null)}
+                            onPickYoutube={() => {
+                              const matches = youtubeMatchesFor(book);
+                              if (matches.length === 1) {
+                                youtube.setYoutubeLink(book.id, matches[0].id);
+                              } else {
+                                setYoutubeMatchPicker(book);
+                              }
+                            }}
+                            compact
+                          />
                           <button
                             type="button"
                             onClick={() => setEditingBook(book)}
@@ -1901,7 +1934,7 @@ export default function LibraryPage() {
         ))}
 
         {tab === 'audiobooks' && audioSource === 'online' && (
-          onlineLoading ? (
+          !youtube.hydrated ? (
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }, (_, index) => (
                 <div key={index} className="h-32 animate-pulse rounded-3xl border border-white/10 bg-slate-900/80" />
@@ -1915,7 +1948,12 @@ export default function LibraryPage() {
           ) : (
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filteredOnline.map((ab) => (
-                <AudiobookCard key={ab.id} audiobook={ab} />
+                <AudiobookCard
+                  key={ab.id}
+                  audiobook={ab}
+                  onEdit={setEditingYoutube}
+                  onRemove={youtube.removeYoutube}
+                />
               ))}
             </section>
           )
@@ -2253,7 +2291,55 @@ export default function LibraryPage() {
                 placeholder="Search audiobooks…"
                 className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-500"
               />
-              <div className="mt-3 max-h-80 space-y-1 overflow-y-auto">
+              {linkingYoutubeMatches.length > 0 && (
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    YouTube / online
+                  </p>
+                  <div className="max-h-48 space-y-1 overflow-y-auto">
+                    {linkingYoutubeMatches.slice(0, 50).map((a, index) => {
+                      const isCatalogueMatch = findYoutubeMatches(
+                        {
+                          name: linkingBook.name,
+                          title: metaOverrides[linkingBook.id]?.title ?? linkingBook.title,
+                        },
+                        youtube.catalog
+                      ).some((m) => m.id === a.id);
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => {
+                            youtube.setYoutubeLink(linkingBook.id, a.id);
+                            setLinkingBook(null);
+                            setLinkSearch('');
+                          }}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-slate-800"
+                        >
+                          <span className="text-lg">▶</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-medium">
+                              {a.title}
+                              {isCatalogueMatch && index < 5 && (
+                                <span className="ml-2 text-xs text-emerald-400">catalogue match</span>
+                              )}
+                            </span>
+                            <span className="block truncate text-xs text-slate-400">
+                              {a.author}
+                              {a.displayLabel ? ` · ${a.displayLabel}` : ''}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Drive audiobooks
+                </p>
+                <div className="max-h-48 space-y-1 overflow-y-auto">
                 {(audiobooks ?? [])
                   .filter((a) => {
                     const q = linkSearch.trim().toLowerCase();
@@ -2279,8 +2365,9 @@ export default function LibraryPage() {
                     </button>
                   ))}
                 {audiobooks && audiobooks.length === 0 && (
-                  <p className="px-3 py-4 text-center text-sm text-slate-500">No audiobooks in your library yet.</p>
+                  <p className="px-3 py-4 text-center text-sm text-slate-500">No Drive audiobooks in your library yet.</p>
                 )}
+                </div>
               </div>
             </div>
           </div>
@@ -2334,6 +2421,59 @@ export default function LibraryPage() {
           itemLabel={folderItem.label}
           onClose={() => setFolderItem(null)}
         />
+      )}
+
+      {editingYoutube && (
+        <YouTubeAudiobookEditor
+          initial={editingYoutube}
+          onClose={() => setEditingYoutube(null)}
+          onSave={(ab) => {
+            youtube.saveYoutubeEdit(ab);
+            setEditingYoutube(null);
+          }}
+        />
+      )}
+
+      {youtubeMatchPicker && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
+          <div className="my-8 w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-white">Pick a YouTube audiobook</h2>
+                <p className="truncate text-xs text-slate-500">for {displayTitle(youtubeMatchPicker)}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setYoutubeMatchPicker(null)}
+                className="rounded-full bg-slate-800 px-3 py-1.5 text-sm text-slate-200 transition hover:bg-slate-700"
+              >
+                Close
+              </button>
+            </div>
+            <div className="max-h-96 space-y-1 overflow-y-auto p-4">
+              {youtubeMatchesFor(youtubeMatchPicker).map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => {
+                    youtube.setYoutubeLink(youtubeMatchPicker.id, a.id);
+                    setYoutubeMatchPicker(null);
+                  }}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-slate-800"
+                >
+                  <span className="text-lg">▶</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{a.title}</span>
+                    <span className="block truncate text-xs text-slate-400">
+                      {a.author}
+                      {a.displayLabel ? ` · ${a.displayLabel}` : ''}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );
