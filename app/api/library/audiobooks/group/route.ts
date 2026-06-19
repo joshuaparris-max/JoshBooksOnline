@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { groupAudiobooks, ungroupAudiobook } from '@/lib/googleDrive';
+import { clearLibraryCache } from '@/lib/libraryCache';
 import authOptions from '@/lib/auth';
 
 /**
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
         return Response.json({ error: 'Select at least two audiobooks and provide a title.' }, { status: 400 });
       }
       await groupAudiobooks(session.accessToken, ids, title);
+      clearLibraryCache(session.accessToken);
       return Response.json({ ok: true });
     }
 
@@ -35,6 +37,7 @@ export async function POST(request: Request) {
         return Response.json({ error: 'Missing audiobook id.' }, { status: 400 });
       }
       await ungroupAudiobook(session.accessToken, body.id);
+      clearLibraryCache(session.accessToken);
       return Response.json({ ok: true });
     }
 
