@@ -70,6 +70,83 @@ function naturalCompare(a: string, b: string): number {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 }
 
+const LILITH_CHAPTER_TITLES = new Set(
+  [
+    'The Library',
+    'The Mirror',
+    'The Raven',
+    'Somewhere or Nowhere?',
+    'The Old Church',
+    "The Sexton's Cottage",
+    'The Cemetery',
+    "My Father's Manuscript",
+    'I Repent',
+    'The Bad Burrow',
+    'Friends and Foes',
+    'The Little Ones',
+    'A Crisis',
+    'The Princess',
+    'The Leopardess',
+    'The Vane',
+    'The House of Vane',
+    'The Magic Mirror',
+    'The skeleton House',
+    'The Giant',
+    'Mr. Raven',
+    'The Microcosm',
+    'The Valley of Spores',
+    'The Death of the Shadow',
+    'The Palace of Lilith',
+    'The Mirror of Death',
+    'The Supper',
+    'The Battle',
+    'The Great Letter',
+    'The Woman',
+    'The Sleep',
+    'The Shadow',
+    'The Regained Paradise',
+    "The Women's War",
+    'The Rescue',
+    'The Buried Moon',
+    'The Night of Evil',
+    'The Morning of Grief',
+    'The White Leopardess',
+    'The Sea of Life',
+    'The Restoration',
+    'The New Name',
+    'The House of Death',
+    'The New Dawn',
+    'The Journey Home',
+    'The City',
+    'The Endless Ending',
+  ].map(normaliseTitle)
+);
+
+const CS_LEWIS_COMBINED_AUDIOBOOK_TITLE = 'The Abolition of Man and The Great Divorce';
+
+function normaliseTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function manualAudioGroupKey(props?: Record<string, string>): string | undefined {
+  return props?.m_audio_group ? `manual:${props.m_audio_group}` : undefined;
+}
+
+function audioGroupTitle(file: { name: string; props?: Record<string, string> }): string {
+  return file.props?.m_audio_group_title?.trim() || deriveBookTitle(file.name);
+}
+
+function lilithTitleFromChapterOnlyName(base: string): string | undefined {
+  const match = base.match(/^\s*chapter\s+[ivxlcdm\d]+\s*[:\-_.]\s*(.+?)\s*$/i);
+  if (!match) return undefined;
+  const chapterTitle = match[1]?.trim();
+  if (!chapterTitle) return undefined;
+  return LILITH_CHAPTER_TITLES.has(normaliseTitle(chapterTitle)) ? 'Lilith' : undefined;
+}
+
 /**
  * Strip chapter/track/part/disc markers and trailing numbers from a filename
  * base so that "Sapiens - Chapter 03" and "Sapiens - Chapter 04" reduce to
@@ -77,20 +154,24 @@ function naturalCompare(a: string, b: string): number {
  */
 function stripChapterSuffix(base: string): string {
   let s = base;
-  // Leading track number, e.g. "01 - Title" or "01. Title"
-  s = s.replace(/^\s*\d{1,3}\s*[-_.)\]]\s*/, '');
+  // Leading track numbers, with or without a separator and even attached to the
+  // title word: "01 - Title", "01. Title", "01 1 Title", "01PSALM" -> "Title"/"PSALM".
+  s = s.replace(/^[\s\-_.]*(?:\d+[\s\-_.]*)+/, '');
   let prev = '';
   while (s !== prev) {
     prev = s;
-    // trailing named markers: "Chapter 12", "Track 5", "Part 2", "Disc 1", "L01", "T03", "CD2"
+    // story chapters: digit OR roman numeral — "Chapter 12", "Chapter XLVII", "Part IV"
     s = s.replace(
-      /[\s\-_.]*[([]?\s*(chapter|chap|chp|ch|track|trk|part|pt|disc|disk|cd|side|section|sec|episode|ep|vol|volume|book|bk|l|t|d)\s*\.?\s*\d+\s*[)\]]?\s*$/i,
+      /[\s\-_.]*[([]?\s*(chapter|chap|chp|ch|part|pt|section|sec|episode|ep|book|bk|vol|volume)\s*\.?\s*(?:\d+|[ivxlcdm]+)\s*[)\]]?\s*$/i,
       ''
     );
+    // disc/track codes: digits only — "Track 5", "Disc 1", "L01", "T03", "CD2"
+    s = s.replace(/[\s\-_.]*[([]?\s*(track|trk|disc|disk|cd|side|l|t|d)\s*\.?\s*\d+\s*[)\]]?\s*$/i, '');
     s = s.replace(/[\s\-_.]*[([]\s*\d{1,3}\s*[)\]]\s*$/, ''); // "(03)" "[03]"
     s = s.replace(/[\s\-_.]+\d{1,3}\s*$/, ''); // trailing bare number
   }
-  return s.trim();
+  // tidy leftover edge separators (e.g. "Lilith -" -> "Lilith")
+  return s.replace(/^[\s\-_.]+/, '').replace(/[\s\-_.]+$/, '').trim();
 }
 
 /** True when a name is purely track codes with no real title (e.g. "L01 T01", "CD2 Track 5"). */
@@ -116,83 +197,25 @@ function patternSkeleton(base: string): string {
 }
 
 const BIBLE_BOOKS = [
-  'Genesis',
-  'Exodus',
-  'Leviticus',
-  'Numbers',
-  'Deuteronomy',
-  'Joshua',
-  'Judges',
-  'Ruth',
-  '1 Samuel',
-  '2 Samuel',
-  '1 Kings',
-  '2 Kings',
-  '1 Chronicles',
-  '2 Chronicles',
-  'Ezra',
-  'Nehemiah',
-  'Esther',
-  'Job',
-  'Psalms',
-  'Proverbs',
-  'Ecclesiastes',
-  'Song of Songs',
-  'Isaiah',
-  'Jeremiah',
-  'Lamentations',
-  'Ezekiel',
-  'Daniel',
-  'Hosea',
-  'Joel',
-  'Amos',
-  'Obadiah',
-  'Jonah',
-  'Micah',
-  'Nahum',
-  'Habakkuk',
-  'Zephaniah',
-  'Haggai',
-  'Zechariah',
-  'Malachi',
-  'Matthew',
-  'Mark',
-  'Luke',
-  'John',
-  'Acts',
-  'Romans',
-  '1 Corinthians',
-  '2 Corinthians',
-  'Galatians',
-  'Ephesians',
-  'Philippians',
-  'Colossians',
-  '1 Thessalonians',
-  '2 Thessalonians',
-  '1 Timothy',
-  '2 Timothy',
-  'Titus',
-  'Philemon',
-  'Hebrews',
-  'James',
-  '1 Peter',
-  '2 Peter',
-  '1 John',
-  '2 John',
-  '3 John',
-  'Jude',
-  'Revelation',
+  'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy', 'Joshua', 'Judges', 'Ruth',
+  '1 Samuel', '2 Samuel', '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles', 'Ezra',
+  'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs', 'Ecclesiastes', 'Song of Songs', 'Isaiah',
+  'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah',
+  'Micah', 'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi', 'Matthew', 'Mark',
+  'Luke', 'John', 'Acts', 'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians',
+  'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians', '1 Timothy', '2 Timothy',
+  'Titus', 'Philemon', 'Hebrews', 'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
+  'Jude', 'Revelation',
 ] as const;
 
 const BIBLE_BOOK_ALIASES = new Map<string, number>();
-BIBLE_BOOKS.forEach((book, index) => {
-  BIBLE_BOOK_ALIASES.set(book.toLowerCase(), index + 1);
-});
+BIBLE_BOOKS.forEach((book, index) => BIBLE_BOOK_ALIASES.set(book.toLowerCase(), index + 1));
 BIBLE_BOOK_ALIASES.set('psalm', 19);
 BIBLE_BOOK_ALIASES.set('song of solomon', 22);
 BIBLE_BOOK_ALIASES.set('songs', 22);
-BIBLE_BOOK_ALIASES.set('2 corinthains', 47);
+BIBLE_BOOK_ALIASES.set('2 corinthains', 47); // common misspelling in filenames
 
+/** Detect Bible-book audio files (e.g. "19 19 Psalms"); returns the book ordinal or null. */
 function getBibleBookOrder(filename: string): number | null {
   const base = filename
     .replace(/\.[^.]+$/, '')
@@ -201,7 +224,6 @@ function getBibleBookOrder(filename: string): number | null {
     .trim();
   const leadingNumbers = base.match(/^\d{1,3}(?:\s+\d{1,3})*/)?.[0];
   if (!leadingNumbers) return null;
-
   const ordinals = leadingNumbers.split(/\s+/).map((n) => Number(n));
   const title = base
     .replace(/^\d{1,3}(?:\s+\d{1,3})*\s*/, '')
@@ -210,16 +232,72 @@ function getBibleBookOrder(filename: string): number | null {
     .toLowerCase();
   const ordinal = BIBLE_BOOK_ALIASES.get(title);
   if (!ordinal || !ordinals.includes(ordinal)) return null;
-
   return ordinal;
 }
 
-/** Human-friendly book title derived from a chapter filename. */
-function deriveBookTitle(filename: string): string {
-  if (getBibleBookOrder(filename)) return 'Bible';
+// Single-token Bible book names/abbreviations (letters only, uppercase). Covers
+// the "<BOOK><chapter>" filename scheme, e.g. ACTS11, FCOR1 (1 Cor), 01PSALM.
+const BIBLE_TOKENS = new Set<string>([
+  'GEN', 'GENESIS', 'EXO', 'EXOD', 'EXODUS', 'LEV', 'LEVITICUS', 'NUM', 'NUMB', 'NUMBERS',
+  'DEU', 'DEUT', 'DEUTERONOMY', 'JOS', 'JOSH', 'JOSHUA', 'JDG', 'JUDG', 'JUDGES', 'RUT', 'RUTH',
+  'FSAM', 'FSAMUEL', 'SSAM', 'SSAMUEL', 'FKING', 'FKINGS', 'SKING', 'SKINGS',
+  'FCHR', 'FCHRON', 'FCHRONICLES', 'SCHR', 'SCHRON', 'SCHRONICLES', 'EZR', 'EZRA',
+  'NEH', 'NEHEMIAH', 'EST', 'ESTH', 'ESTHER', 'JOB', 'PS', 'PSA', 'PSLM', 'PSALM', 'PSALMS',
+  'PRO', 'PRV', 'PROV', 'PROVERBS', 'ECC', 'ECCL', 'ECCLES', 'ECCLESIASTES',
+  'SONG', 'SONGS', 'SOS', 'SONGOFSOLOMON', 'SONGOFSONGS', 'ISA', 'ISAIAH', 'JER', 'JEREMIAH',
+  'LAM', 'LAMENT', 'LAMENTATIONS', 'EZE', 'EZK', 'EZEK', 'EZEKIEL', 'DAN', 'DANIEL',
+  'HOS', 'HOSEA', 'JOE', 'JOEL', 'AMO', 'AMOS', 'OBA', 'OBAD', 'OBADIAH', 'JON', 'JNH', 'JONAH',
+  'MIC', 'MICAH', 'NAH', 'NAHUM', 'HAB', 'HABAKKUK', 'ZEP', 'ZEPH', 'ZEPHANIAH',
+  'HAG', 'HAGGAI', 'ZEC', 'ZECH', 'ZECHARIAH', 'MAL', 'MALACHI',
+  'MT', 'MAT', 'MATT', 'MATTHEW', 'MK', 'MRK', 'MARK', 'LK', 'LUK', 'LUKE', 'JN', 'JHN', 'JOHN',
+  'ACT', 'ACTS', 'ROM', 'RMN', 'ROMANS', 'FCOR', 'FCORINTHIANS', 'FCORINTHAINS',
+  'SCOR', 'SCORINTHIANS', 'SCORINTHAINS', 'GAL', 'GALATIANS', 'EPH', 'EPHESIANS',
+  'PHP', 'PHIL', 'PHILIP', 'PHILIPPIANS', 'COL', 'COLOS', 'COLOSSIANS',
+  'FTHES', 'FTHESS', 'FTHESSALONIANS', 'STHES', 'STHESS', 'STHESSALONIANS',
+  'FTIM', 'FTIMOTHY', 'STIM', 'STIMOTHY', 'TIT', 'TITUS', 'PHM', 'PHLM', 'PHILEM', 'PHILEMON',
+  'HEB', 'HEBR', 'HEBREWS', 'JAS', 'JAM', 'JAMES', 'FPET', 'FPTR', 'FPETER', 'SPET', 'SPTR', 'SPETER',
+  'FJN', 'FJHN', 'FJOHN', 'SJN', 'SJHN', 'SJOHN', 'TJN', 'TJHN', 'TJOHN',
+  'JUD', 'JUDE', 'REV', 'RVL', 'REVELATION', 'REVELATIONS',
+]);
 
+/**
+ * True when a filename is a Bible-book audio file. Spaced names (e.g. "029 MARK")
+ * must pass the leading-number == book-ordinal check; single-token names
+ * (e.g. "ACTS11", "FCOR1", "01PSALM") are matched against known book tokens.
+ */
+function isBibleFile(filename: string): boolean {
+  const base = filename.replace(/\.[^.]+$/, '').trim();
+  if (/\s/.test(base)) return getBibleBookOrder(filename) !== null;
+  // Single token: strip leading/trailing chapter digits, keep letters only
+  const core = base.replace(/^\d+/, '').replace(/\d+$/, '').replace(/[^a-z]/gi, '').toUpperCase();
+  return core.length > 0 && BIBLE_TOKENS.has(core);
+}
+
+/** Files named as a single lowercase letter (a, b, c … z) are sequential parts. */
+function isSingleLetterPart(base: string): boolean {
+  return /^[a-z]$/.test(base.trim());
+}
+
+function isActsFile(filename: string): boolean {
+  return /^acts\d*$/i.test(filename.replace(/\.[^.]+$/, '').trim());
+}
+
+function stripLeadingChapterPrefix(base: string): string {
+  return base
+    .replace(/^\s*chapter\s+\d+\s*[-:_.]\s*/i, '')
+    .trim();
+}
+
+/** Human-friendly book title derived from a chapter filename. */
+export function deriveBookTitle(filename: string): string {
+  if (isActsFile(filename)) return 'Acts';
+  if (isBibleFile(filename)) return 'Bible';
   const base = filename.replace(/\.[^.]+$/, '');
-  const stripped = stripChapterSuffix(base);
+  if (isSingleLetterPart(base)) return CS_LEWIS_COMBINED_AUDIOBOOK_TITLE;
+  const knownChapterBook = lilithTitleFromChapterOnlyName(base);
+  if (knownChapterBook) return knownChapterBook;
+  if (isSingleLetterPart(base)) return 'Combined Audiobook (a–z)';
+  const stripped = stripChapterSuffix(stripLeadingChapterPrefix(base));
   if (stripped && /[a-z]/i.test(stripped)) {
     return stripped.replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
   }
@@ -229,11 +307,15 @@ function deriveBookTitle(filename: string): string {
 }
 
 /** Normalised grouping key: files of the same book/playlist share this key. */
-function deriveBookKey(filename: string): string {
-  if (getBibleBookOrder(filename)) return 'bible';
-
+export function deriveBookKey(filename: string): string {
+  if (isActsFile(filename)) return 'acts';
+  if (isBibleFile(filename)) return 'bible';
   const base = filename.replace(/\.[^.]+$/, '');
-  const stripped = stripChapterSuffix(base);
+  if (isSingleLetterPart(base)) return normaliseTitle(CS_LEWIS_COMBINED_AUDIOBOOK_TITLE);
+  const knownChapterBook = lilithTitleFromChapterOnlyName(base);
+  if (knownChapterBook) return normaliseTitle(knownChapterBook);
+  if (isSingleLetterPart(base)) return 'pat:lettered';
+  const stripped = stripChapterSuffix(stripLeadingChapterPrefix(base));
   if (stripped && /[a-z]/i.test(stripped)) {
     return stripped.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   }
@@ -494,6 +576,7 @@ function parseAudiobookProps(props?: Record<string, string>): Partial<AudiobookE
     audioTrack: Number.isFinite(track) ? track : undefined,
     audioPosition: Number.isFinite(pos) ? pos : undefined,
     linkedTextId: props?.m_link_text || undefined,
+    isManualGroup: Boolean(props?.m_audio_group),
   };
 }
 
@@ -552,7 +635,7 @@ export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry
         // so individual chapter files no longer show up as separate audiobooks.
         const groups = new Map<string, Child[]>();
         for (const file of looseAudio) {
-          const key = deriveBookKey(file.name) || file.id;
+          const key = manualAudioGroupKey(file.props) || deriveBookKey(file.name) || file.id;
           const group = groups.get(key);
           if (group) group.push(file);
           else groups.set(key, [file]);
@@ -564,7 +647,7 @@ export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry
           seen.add(rep.id);
           audiobooks.push({
             id: rep.id,
-            title: deriveBookTitle(rep.name),
+            title: audioGroupTitle(rep),
             source: source as LibrarySource,
             isFolder: false,
             ...parseAudiobookProps(rep.props),
@@ -596,9 +679,10 @@ export async function getAudiobookTracks(
   if (!isFolder) {
     // A loose-file audiobook is represented by its first chapter. Gather all of
     // its sibling chapters (same parent folder + same derived book key) as tracks.
-    const file = await drive.files.get({ fileId: id, fields: 'id, name, size, parents' });
+    const file = await drive.files.get({ fileId: id, fields: 'id, name, size, parents, appProperties' });
     const parent = file.data.parents?.[0];
-    const key = deriveBookKey(file.data.name!);
+    const props = file.data.appProperties as Record<string, string> | undefined;
+    const key = manualAudioGroupKey(props) || deriveBookKey(file.data.name!);
 
     if (!parent) {
       return [
@@ -615,13 +699,15 @@ export async function getAudiobookTracks(
     do {
       const response = await drive.files.list({
         q: `'${parent}' in parents and trashed = false`,
-        fields: 'nextPageToken, files(id, name, mimeType, size)',
+        fields: 'nextPageToken, files(id, name, mimeType, size, appProperties)',
         pageSize: 200,
         pageToken: pageToken ?? undefined,
       });
       for (const f of response.data.files || []) {
         if (!isAudioMime(f.mimeType)) continue;
-        if (deriveBookKey(f.name!) !== key) continue;
+        const siblingProps = f.appProperties as Record<string, string> | undefined;
+        const siblingKey = manualAudioGroupKey(siblingProps) || deriveBookKey(f.name!);
+        if (siblingKey !== key) continue;
         siblings.push({
           id: f.id!,
           name: f.name!,
@@ -689,12 +775,100 @@ export async function getAudiobookMeta(
   const drive = google.drive({ version: 'v3', auth });
   const file = await drive.files.get({ fileId: id, fields: 'id, name, mimeType, appProperties' });
   const isFolder = file.data.mimeType === FOLDER_MIME;
-  const title = isFolder ? file.data.name! : deriveBookTitle(file.data.name!);
+  const props = file.data.appProperties as Record<string, string> | undefined;
+  const title = isFolder ? file.data.name! : audioGroupTitle({ name: file.data.name!, props });
   return {
     title,
     isFolder,
-    ...parseAudiobookProps(file.data.appProperties as Record<string, string> | undefined),
+    ...parseAudiobookProps(props),
   };
+}
+
+function makeManualAudioGroupId(title: string): string {
+  const slug = normaliseTitle(title).replace(/\s+/g, '-').slice(0, 80) || 'audio-group';
+  return `${slug}-${Date.now().toString(36)}`;
+}
+
+/** Merge selected loose-file audiobook entries into one named group. */
+export async function groupAudiobooks(
+  accessToken: string,
+  ids: string[],
+  title: string
+): Promise<void> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+  const cleanTitle = title.trim();
+  if (ids.length < 2 || !cleanTitle) throw new Error('A group needs at least two audiobooks and a title.');
+
+  const trackIds = new Set<string>();
+  for (const id of ids) {
+    const meta = await getAudiobookMeta(accessToken, id);
+    if (meta.isFolder) throw new Error('Only loose audio files can be merged.');
+    const tracks = await getAudiobookTracks(accessToken, id, false);
+    for (const track of tracks) trackIds.add(track.id);
+  }
+
+  if (trackIds.size < 2) throw new Error('A group needs at least two audio files.');
+
+  const groupId = makeManualAudioGroupId(cleanTitle);
+  await Promise.all(
+    [...trackIds].map((fileId) =>
+      drive.files.update({
+        fileId,
+        requestBody: {
+          appProperties: {
+            m_audio_group: groupId,
+            m_audio_group_title: cleanTitle,
+          },
+        },
+        fields: 'id',
+      })
+    )
+  );
+}
+
+/** Remove a manual loose-file audiobook grouping created by groupAudiobooks. */
+export async function ungroupAudiobook(accessToken: string, id: string): Promise<void> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+  const file = await drive.files.get({ fileId: id, fields: 'id, name, parents, appProperties, mimeType' });
+  if (file.data.mimeType === FOLDER_MIME) throw new Error('Drive folders cannot be unmerged.');
+  const props = file.data.appProperties as Record<string, string> | undefined;
+  const groupId = props?.m_audio_group;
+  const parent = file.data.parents?.[0];
+  if (!groupId || !parent) throw new Error('This audiobook is not a manual group.');
+
+  const groupedIds: string[] = [];
+  let pageToken: string | null | undefined;
+  do {
+    const response = await drive.files.list({
+      q: `'${parent}' in parents and trashed = false`,
+      fields: 'nextPageToken, files(id, mimeType, appProperties)',
+      pageSize: 200,
+      pageToken: pageToken ?? undefined,
+    });
+    for (const sibling of response.data.files || []) {
+      if (!isAudioMime(sibling.mimeType)) continue;
+      const siblingProps = sibling.appProperties as Record<string, string> | undefined;
+      if (siblingProps?.m_audio_group === groupId) groupedIds.push(sibling.id!);
+    }
+    pageToken = response.data.nextPageToken;
+  } while (pageToken);
+
+  await Promise.all(
+    groupedIds.map((fileId) =>
+      drive.files.update({
+        fileId,
+        requestBody: {
+          appProperties: {
+            m_audio_group: '',
+            m_audio_group_title: '',
+          },
+        },
+        fields: 'id',
+      })
+    )
+  );
 }
 
 /**
