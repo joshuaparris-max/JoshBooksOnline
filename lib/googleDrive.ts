@@ -507,22 +507,29 @@ export async function getAllLibraryFiles(accessToken: string): Promise<BookEntry
   const allBooks: BookEntry[] = [];
   const seenIds = new Set<string>();
 
-  // Fetch from the three fixed folders
-  for (const [source, folderId] of Object.entries(FIXED_FOLDERS)) {
-    try {
-      const books = await listFilesInFolder(
-        accessToken,
-        folderId,
-        source as Exclude<LibrarySource, 'Local Books'>
-      );
-      for (const book of books) {
-        if (!seenIds.has(book.id)) {
-          allBooks.push(book);
-          seenIds.add(book.id);
-        }
+  // Fetch from the three fixed folders in parallel.
+  const fixedFolderResults = await Promise.all(
+    Object.entries(FIXED_FOLDERS).map(async ([source, folderId]) => {
+      try {
+        const books = await listFilesInFolder(
+          accessToken,
+          folderId,
+          source as Exclude<LibrarySource, 'Local Books'>
+        );
+        return { source, books };
+      } catch (error) {
+        console.error(`Failed to fetch from ${source}:`, error);
+        return { source, books: [] as BookEntry[] };
       }
-    } catch (error) {
-      console.error(`Failed to fetch from ${source}:`, error);
+    })
+  );
+
+  for (const { books } of fixedFolderResults) {
+    for (const book of books) {
+      if (!seenIds.has(book.id)) {
+        allBooks.push(book);
+        seenIds.add(book.id);
+      }
     }
   }
 

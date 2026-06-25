@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     }
 
     await updateBookMetadata(session.accessToken, fileId, metadata);
-    clearLibraryCache(session.accessToken);
+    await clearLibraryCache(session.accessToken, session.user?.email ?? undefined);
 
     return Response.json({ ok: true, metadata });
   } catch (error) {

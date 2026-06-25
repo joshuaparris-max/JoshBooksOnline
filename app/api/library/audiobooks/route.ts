@@ -10,19 +10,21 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const email = session.user?.email ?? undefined;
+
   try {
     const url = new URL(request.url);
     const forceRefresh = url.searchParams.get('refresh') === '1';
 
     if (!forceRefresh) {
-      const cached = getCachedAudiobooks(session.accessToken);
+      const cached = await getCachedAudiobooks(session.accessToken, email);
       if (cached) {
         return Response.json(cached);
       }
     }
 
     const audiobooks: AudiobookEntry[] = await getAudiobooks(session.accessToken);
-    setCachedAudiobooks(session.accessToken, audiobooks);
+    await setCachedAudiobooks(session.accessToken, audiobooks, email);
     return Response.json(audiobooks);
   } catch (error) {
     console.error('Failed to fetch audiobooks:', error);

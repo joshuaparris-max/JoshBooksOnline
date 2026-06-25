@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Missing ebookId' }, { status: 400 });
     }
     await linkEbookAudio(session.accessToken, ebookId, audioId ?? null);
-    clearLibraryCache(session.accessToken);
+    await clearLibraryCache(session.accessToken, session.user?.email ?? undefined);
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error('Failed to link:', error);

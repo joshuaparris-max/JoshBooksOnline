@@ -28,7 +28,7 @@ export async function POST(request: Request) {
         return Response.json({ error: 'Select at least two audiobooks and provide a title.' }, { status: 400 });
       }
       await groupAudiobooks(session.accessToken, ids, title);
-      clearLibraryCache(session.accessToken);
+      await clearLibraryCache(session.accessToken, session.user?.email ?? undefined);
       return Response.json({ ok: true });
     }
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
         return Response.json({ error: 'Missing audiobook id.' }, { status: 400 });
       }
       await ungroupAudiobook(session.accessToken, body.id);
-      clearLibraryCache(session.accessToken);
+      await clearLibraryCache(session.accessToken, session.user?.email ?? undefined);
       return Response.json({ ok: true });
     }
 

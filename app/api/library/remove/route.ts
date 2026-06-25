@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     }
 
     await removeBookFromLibrary(session.accessToken, fileId, source);
-    clearLibraryCache(session.accessToken);
+    await clearLibraryCache(session.accessToken, session.user?.email ?? undefined);
 
     return Response.json({ ok: true });
   } catch (error) {

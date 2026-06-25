@@ -13,7 +13,7 @@ import { findYoutubeMatches } from '@/lib/youtubeCatalog';
 import { useCollections } from '@/lib/useCollections';
 import { useYoutubeCatalog } from '@/lib/useYoutubeCatalog';
 import CollectionsManager from '@/components/CollectionsManager';
-import type { BookEntry, BookMetadata, AudiobookEntry, Audiobook } from '@/types/books';
+import type { BookEntry, BookMetadata, AudiobookEntry, Audiobook, LibrarySource } from '@/types/books';
 
 const SOURCE_BADGES: Record<string, string> = {
   'IT PD Ebooks': 'bg-amber-500 text-slate-950',
@@ -619,19 +619,12 @@ export default function LibraryPage() {
     }
   };
 
-  // Lazy-load audiobooks the first time the tab is opened
   useEffect(() => {
-    if (tab === 'audiobooks' && audiobooks === null && !audiobooksLoading) {
+    if (audiobooks === null && !audiobooksLoading && (tab === 'audiobooks' || books !== null)) {
       refreshAudiobooks();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab]);
-
-  // Audiobooks are needed for auto-matching links, so load them once up front too
-  useEffect(() => {
-    if (audiobooks === null && !audiobooksLoading) refreshAudiobooks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tab, books]);
 
   // Item ids in the selected collection (or null when showing everything).
   const activeCollectionSet = useMemo(() => {

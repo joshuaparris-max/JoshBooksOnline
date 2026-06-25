@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    clearLibraryCache(session.accessToken);
+    await clearLibraryCache(session.accessToken, session.user?.email ?? undefined);
 
     return NextResponse.json({
       importedCount: importedFiles.length,

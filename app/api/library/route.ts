@@ -11,19 +11,21 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const email = session.user?.email ?? undefined;
+
   try {
     const url = new URL(request.url);
     const forceRefresh = url.searchParams.get('refresh') === '1';
 
     if (!forceRefresh) {
-      const cached = getCachedLibrary(session.accessToken);
+      const cached = await getCachedLibrary(session.accessToken, email);
       if (cached) {
         return Response.json(cached);
       }
     }
 
     const books: BookEntry[] = await getAllLibraryFiles(session.accessToken);
-    setCachedLibrary(session.accessToken, books);
+    await setCachedLibrary(session.accessToken, books, email);
     return Response.json(books);
   } catch (error) {
     console.error('Failed to fetch library:', error);
