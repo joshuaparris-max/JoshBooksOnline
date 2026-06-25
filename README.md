@@ -63,8 +63,6 @@ If sign-in succeeds but Drive API calls return **"access blocked by administrato
 
 ## Local Setup
 
-## Local Setup
-
 ### 1. Set Environment Variables
 
 Copy `.env.local.example` to `.env.local`:
@@ -110,14 +108,14 @@ app/
     auth/[...nextauth]/    # NextAuth routes
     library/               # GET /api/library (list books)
     library/progress/      # POST /api/library/progress (save progress)
-  page.tsx                 # Sign-in landing page
+  page.tsx                 # Homepage, sign-in controls, and immediate recent-books shell
   layout.tsx               # Root layout with AuthProvider
   providers.tsx            # Client SessionProvider wrapper
 lib/
   googleDrive.ts          # Drive helper functions
 types/
   books.ts                # Shared BookEntry types
-middleware.ts             # Protect /library and /reader routes
+proxy.ts                  # Protect /library and /reader routes
 ```
 
 ## Acceptance Criteria — Phase 1

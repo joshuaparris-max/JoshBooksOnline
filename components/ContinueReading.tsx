@@ -44,11 +44,13 @@ function getInitials(title: string) {
     .slice(0, 2);
 }
 
-export default function ContinueReading() {
+export default function ContinueReading({ enabled = true }: { enabled?: boolean }) {
   const [books, setBooks] = useState<BookEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
+
     let cancelled = false;
     (async () => {
       try {
@@ -69,7 +71,7 @@ export default function ContinueReading() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   const recent = books ? getRecentBooks(books) : [];
 

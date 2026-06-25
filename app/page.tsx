@@ -18,12 +18,6 @@ export default function Home() {
           </p>
         </header>
 
-        {status === 'loading' && (
-          <div className="w-full max-w-6xl rounded-3xl border border-white/10 bg-slate-900/80 p-10 text-center text-slate-400">
-            Loading…
-          </div>
-        )}
-
         {status === 'unauthenticated' && (
           <button
             type="button"
@@ -34,31 +28,37 @@ export default function Home() {
           </button>
         )}
 
-        {isAuthenticated && (
+        {status !== 'unauthenticated' && (
           <div className="flex w-full flex-col items-center gap-8">
             <div className="flex w-full max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-slate-400">
-                Signed in as{' '}
-                <span className="font-medium text-slate-200">{session.user?.email}</span>
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Link
-                  href="/library"
-                  className="inline-flex items-center justify-center rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-500"
-                >
-                  Open library
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => signOut({ callbackUrl: '/' })}
-                  className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/10"
-                >
-                  Sign out
-                </button>
-              </div>
+              {isAuthenticated ? (
+                <>
+                  <p className="text-sm text-slate-400">
+                    Signed in as{' '}
+                    <span className="font-medium text-slate-200">{session.user?.email}</span>
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      href="/library"
+                      className="inline-flex items-center justify-center rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-500"
+                    >
+                      Open library
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => signOut({ callbackUrl: '/' })}
+                      className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/10"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="h-10 w-full animate-pulse rounded-full bg-white/5" aria-label="Loading account" />
+              )}
             </div>
 
-            <ContinueReading />
+            <ContinueReading enabled={isAuthenticated} />
           </div>
         )}
       </div>

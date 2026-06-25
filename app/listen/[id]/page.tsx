@@ -48,10 +48,35 @@ function readYoutubeCatalogState() {
   }
 }
 
+type ManualAudioGroup = { id: string; title: string; memberIds: string[] };
+
+function readLocalAudioGroups(): ManualAudioGroup[] {
+  try {
+    const raw = window.localStorage.getItem('joshbooks-audiogroups');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as ManualAudioGroup[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function readAudioGroups(): Promise<ManualAudioGroup[]> {
+  const local = readLocalAudioGroups();
+  try {
+    const response = await fetch('/api/userdata', { cache: 'no-store' });
+    const { data } = (await response.json()) as { data: { audioGroups?: unknown } | null };
+    if (Array.isArray(data?.audioGroups)) return data.audioGroups as ManualAudioGroup[];
+  } catch {
+    // localStorage fallback is enough
+  }
+  return local;
+}
+
 export default function ListenPage() {
   const params = useParams() as Record<string, string> | null;
   const router = useRouter();
-  const id = params?.id;
+  const id = params?.id ? decodeURIComponent(params.id) : undefined;
   const [audiobook, setAudiobook] = useState<AudiobookEntry | null>(null);
   const [youtubeAudiobook, setYoutubeAudiobook] = useState<Audiobook | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +111,57 @@ export default function ListenPage() {
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
+
+    if (id.startsWith('group:')) {
+      (async () => {
+        try {
+          const groupId = id.replace(/^group:/, '');
+          const groups = await readAudioGroups();
+          const group = groups.find((g) => g.id === groupId);
+          if (!group) throw new Error('missing group');
+
+          const members = await Promise.all(
+            group.memberIds.map(async (memberId) => {
+              const response = await fetch(`/api/library/audiobook/${encodeURIComponent(memberId)}`, {
+                cache: 'no-store',
+              });
+              if (!response.ok) throw new Error('failed');
+              return (await response.json()) as AudiobookEntry;
+            })
+          );
+
+          const tracks = members.flatMap((member) =>
+            (member.tracks ?? []).map((track) => ({
+              ...track,
+              name:
+                member.tracks && member.tracks.length > 1
+                  ? `${member.title} - ${track.name}`
+                  : track.name.replace(/\.[^.]+$/, '') === member.title
+                    ? track.name
+                    : `${member.title} - ${track.name}`,
+            }))
+          );
+
+          if (!cancelled) {
+            setAudiobook({
+              id,
+              title: group.title,
+              source: 'Audiobooks',
+              isFolder: false,
+              isManualGroup: true,
+              tracks,
+            });
+            setYoutubeAudiobook(null);
+          }
+        } catch {
+          if (!cancelled) setError('Unable to load this playlist.');
+        }
+      })();
+
+      return () => {
+        cancelled = true;
+      };
+    }
 
     if (isYoutube) {
       const catalogId = catalogIdFromListenId(id);

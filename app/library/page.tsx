@@ -440,6 +440,14 @@ const DEFAULT_AUDIO_COLUMNS = ['title', 'author', 'published', 'kind', 'source']
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function newManualGroupId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `audio_group_${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
+  }
+}
+
 export default function LibraryPage() {
   const [books, setBooks] = useState<BookEntry[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1064,8 +1072,7 @@ export default function LibraryPage() {
   const clearAudioSelection = () => setSelectedAudioIds(new Set());
 
   const openMergeDialog = () => {
-    const selected = (audiobooks ?? []).filter((book) => selectedAudioIds.has(book.id));
-    const mergeable = selected.filter((book) => !book.isFolder);
+    const mergeable = selectedMergeableAudiobooks;
     if (mergeable.length < 2) {
       setAudioGroupStatus({ loading: false, message: 'Select at least two single-file audiobooks to merge.' });
       return;
@@ -1081,8 +1088,8 @@ export default function LibraryPage() {
     const title = mergeName.trim();
     if (mergeable.length < 2 || !title) return;
 
-    // total steps: one per item (gather/verify) + save + refresh
-    const total = mergeable.length + 2;
+    // total steps: one per item (gather/verify) + save
+    const total = mergeable.length + 1;
     setAudioGroupStatus({ loading: true, message: null });
     setMergeProgress({ done: 0, total, label: 'Preparing…' });
 
@@ -1097,23 +1104,19 @@ export default function LibraryPage() {
         if (data?.isFolder) throw new Error(`"${book.title}" is a folder and can't be merged.`);
       }
 
-      // Phase 2 — create the group on the server
+      // Phase 2 — create the local/userdata playlist without writing to Drive
       setMergeProgress({ done: mergeable.length, total, label: 'Saving playlist…' });
-      const response = await fetch('/api/library/audiobooks/group', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'merge', ids: mergeable.map((book) => book.id), title }),
-      });
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error ?? 'Unable to save the playlist (the audio files may be read-only).');
-      }
+      const memberIds = mergeable.map((book) => book.id);
+      const memberSet = new Set(memberIds);
+      setManualGroups((prev) => [
+        ...prev
+          .map((group) => ({ ...group, memberIds: group.memberIds.filter((id) => !memberSet.has(id)) }))
+          .filter((group) => group.memberIds.length > 0),
+        { id: newManualGroupId(), title, memberIds },
+      ]);
 
-      // Phase 3 — reload so the new playlist appears
-      setMergeProgress({ done: mergeable.length + 1, total, label: 'Refreshing library…' });
+      setMergeProgress({ done: total, total, label: 'Playlist saved' });
       clearAudioSelection();
-      await refreshAudiobooks(true);
-      setMergeProgress({ done: total, total, label: 'Done' });
 
       setMergeDialogOpen(false);
       setMergeProgress(null);
@@ -1128,26 +1131,18 @@ export default function LibraryPage() {
   };
 
   const unmergeSelectedAudiobook = async () => {
-    const selected = (audiobooks ?? []).filter((book) => selectedAudioIds.has(book.id));
+    const selected = selectedAudiobooks;
     const target = selected[0];
-    if (selected.length !== 1 || !target?.isManualGroup) {
+    if (selected.length !== 1 || !isManualGroupEntryId(target?.id ?? '')) {
       setAudioGroupStatus({ loading: false, message: 'Select one merged audiobook to unmerge.' });
       return;
     }
 
     setAudioGroupStatus({ loading: true, message: 'Unmerging audiobook...' });
     try {
-      const response = await fetch('/api/library/audiobooks/group', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'unmerge', id: target.id }),
-      });
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error ?? 'Unable to unmerge audiobook.');
-      }
+      const groupId = target.id.replace(/^group:/, '');
+      setManualGroups((prev) => prev.filter((group) => group.id !== groupId));
       clearAudioSelection();
-      await refreshAudiobooks(true);
       setAudioGroupStatus({ loading: false, message: `Unmerged "${target.title}".` });
     } catch (error) {
       setAudioGroupStatus({

@@ -30,6 +30,11 @@ Last reviewed: June 2026
 - Virtual collections, import via Google Picker, hide/remove from library
 - Online public-domain ebooks (`/read-online`)
 
+### Latest completion
+
+- Homepage renders its complete shell immediately while authentication resolves; recent books load after authentication.
+- Manual audiobook playlists are stored in local/userdata state and play as combined track lists without modifying Drive files.
+
 ## Quality gates
 
 ```bash
