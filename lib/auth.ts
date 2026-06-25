@@ -1,4 +1,4 @@
-import NextAuth, { type NextAuthOptions, type DefaultSession } from 'next-auth';
+import { type NextAuthOptions, type DefaultSession } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
 /**

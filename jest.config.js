@@ -2,7 +2,6 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const nextJest = require('next/jest');
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const createJestConfig = nextJest({
   // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
   dir: './',

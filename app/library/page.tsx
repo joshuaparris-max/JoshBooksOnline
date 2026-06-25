@@ -467,6 +467,7 @@ export default function LibraryPage() {
   const [ebookSource, setEbookSource] = useState<'drive' | 'online'>('drive');
   const collectionsApi = useCollections();
   const youtube = useYoutubeCatalog();
+  const { catalog: youtubeCatalog, hydrated: youtubeHydrated, serverBlob: youtubeServerBlob, setYoutubeLinks } = youtube;
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [folderItem, setFolderItem] = useState<{ id: string; label: string } | null>(null);
@@ -764,7 +765,7 @@ export default function LibraryPage() {
       collections: collectionsApi.collections,
       membership: collectionsApi.membership,
       audioGroups: manualGroups,
-      ...youtube.serverBlob,
+      ...youtubeServerBlob,
     };
     const timer = window.setTimeout(() => {
       fetch('/api/userdata', {
@@ -774,19 +775,19 @@ export default function LibraryPage() {
       }).catch(() => {});
     }, 1200);
     return () => window.clearTimeout(timer);
-  }, [metaOverrides, hiddenIds, links, collectionsApi.collections, collectionsApi.membership, manualGroups, youtube.serverBlob]);
+  }, [metaOverrides, hiddenIds, links, collectionsApi.collections, collectionsApi.membership, manualGroups, youtubeServerBlob]);
 
   // Auto-match YouTube audiobooks via catalogue aliases (unambiguous matches only).
   useEffect(() => {
-    if (!books || !youtube.hydrated) return;
-    youtube.setYoutubeLinks((prev) => {
+    if (!books || !youtubeHydrated) return;
+    setYoutubeLinks((prev) => {
       let changed = false;
       const next = { ...prev };
       for (const b of books) {
         if (next[b.id]) continue;
         const matches = findYoutubeMatches(
           { name: b.name, title: metaOverrides[b.id]?.title ?? b.title },
-          youtube.catalog
+          youtubeCatalog
         );
         if (matches.length === 1) {
           next[b.id] = matches[0].id;
@@ -795,7 +796,7 @@ export default function LibraryPage() {
       }
       return changed ? next : prev;
     });
-  }, [books, youtube.catalog, youtube.hydrated, metaOverrides]);
+  }, [books, youtubeCatalog, youtubeHydrated, setYoutubeLinks, metaOverrides]);
 
   // Auto-match: link an ebook to an audiobook when their titles normalise equal
   // and the match is unambiguous. Explicit links are never overwritten.
@@ -1248,7 +1249,6 @@ export default function LibraryPage() {
     ? audiobooks.filter((a) => !a.metadataSource && !pending[a.id]).length
     : 0;
 
-  const pendingCount = Object.keys(pending).length;
   const fetchTargetCount = books ? books.filter((b) => !b.metadataSource && !pending[b.id]).length : 0;
 
   const toggleSort = (field: SortField) => {
@@ -2061,7 +2061,6 @@ export default function LibraryPage() {
                 return (
                   <article
                     key={book.id}
-                    aria-selected={isAudioSelected}
                     className={`relative flex flex-col rounded-3xl border bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70 ${
                       isAudioSelected
                         ? 'border-sky-500/60 bg-sky-600/10 ring-2 ring-sky-500/60'

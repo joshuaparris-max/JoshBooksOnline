@@ -44,7 +44,7 @@ interface PdfReaderProps {
   onProgress: (progress: number, location: string) => Promise<void>;
 }
 
-export default function PdfReader({ fileId, name, arrayBuffer, initialPage, onProgress }: PdfReaderProps) {
+export default function PdfReader({ name, arrayBuffer, initialPage, onProgress }: PdfReaderProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<(HTMLElement | null)[]>([]);
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
