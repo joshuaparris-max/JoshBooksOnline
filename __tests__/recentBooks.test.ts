@@ -1,4 +1,3 @@
-import { describe, it, expect } from '@jest/globals';
 import type { BookEntry } from '@/types/books';
 import {
   continueLabel,

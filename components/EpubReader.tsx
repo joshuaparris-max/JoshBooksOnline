@@ -40,7 +40,7 @@ const themes = {
 
 const fontSizes = ['90%', '100%', '110%', '120%'] as const;
 
-export default function EpubReader({ fileId, name, arrayBuffer, initialLocation, onProgress }: EpubReaderProps) {
+export default function EpubReader({ name, arrayBuffer, initialLocation, onProgress }: EpubReaderProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const bookRef = useRef<any>(null);
   const renditionRef = useRef<any>(null);
@@ -106,7 +106,7 @@ export default function EpubReader({ fileId, name, arrayBuffer, initialLocation,
     rendition.themes.select(currentTheme);
     rendition.themes.fontSize(fontSizes[fontSize]);
 
-    const displayPromise = book.ready
+    book.ready
       .then(() => book.locations.generate(1600))
       .then(() => {
         setIsReady(true);
