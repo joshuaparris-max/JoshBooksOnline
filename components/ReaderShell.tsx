@@ -39,7 +39,10 @@ function getLinkedAudio(fileId: string, metadata: DriveFileMetadata | null): str
 export default function ReaderShell({ fileId, EpubReader, PdfReader, TxtReader, DocxReader }: ReaderShellProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const goToLibrary = () => router.push('/library');
+  const goToLibrary = () => {
+    if (window.history.length > 1) router.back();
+    else router.push('/library');
+  };
   const [metadata, setMetadata] = useState<DriveFileMetadata | null>(null);
   const [arrayBuffer, setArrayBuffer] = useState<ArrayBuffer | null>(null);
   const [loading, setLoading] = useState(true);
