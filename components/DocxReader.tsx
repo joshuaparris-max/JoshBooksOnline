@@ -77,7 +77,9 @@ export default function DocxReader({ name, arrayBuffer, initialLocation, onProgr
   const onProgressRef = useRef(onProgress);
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fontSize, setFontSize] = useState<number>(1);
+  const [fontSize, setFontSize] = useState<number>(() => {
+    try { return parseInt(window.localStorage.getItem('bookshelf-reader-fontSize') ?? '1', 10) || 1; } catch { return 1; }
+  });
   const [theme, setTheme] = useReaderTheme();
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -221,7 +223,7 @@ export default function DocxReader({ name, arrayBuffer, initialLocation, onProgr
             <button
               key={index}
               type="button"
-              onClick={() => setFontSize(index)}
+              onClick={() => { setFontSize(index); try { window.localStorage.setItem('bookshelf-reader-fontSize', String(index)); } catch {} }}
               className={`rounded-full px-3 py-1 transition ${fontSize === index ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
             >
               {['Small', 'Normal', 'Large', 'XL'][index]}

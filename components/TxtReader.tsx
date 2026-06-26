@@ -22,7 +22,9 @@ export default function TxtReader({ name, arrayBuffer, initialLocation, onProgre
   const containerRef = useRef<HTMLDivElement | null>(null);
   const saveTimeout = useRef<number | null>(null);
   const onProgressRef = useRef(onProgress);
-  const [fontSize, setFontSize] = useState<number>(1);
+  const [fontSize, setFontSize] = useState<number>(() => {
+    try { return parseInt(window.localStorage.getItem('bookshelf-reader-fontSize') ?? '1', 10) || 1; } catch { return 1; }
+  });
   const [theme, setTheme] = useReaderTheme();
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -176,7 +178,7 @@ export default function TxtReader({ name, arrayBuffer, initialLocation, onProgre
             <button
               key={index}
               type="button"
-              onClick={() => setFontSize(index)}
+              onClick={() => { setFontSize(index); try { window.localStorage.setItem('bookshelf-reader-fontSize', String(index)); } catch {} }}
               className={`rounded-full px-3 py-1 transition ${fontSize === index ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
             >
               {['Small', 'Normal', 'Large', 'XL'][index]}
