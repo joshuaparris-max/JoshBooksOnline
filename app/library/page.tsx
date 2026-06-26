@@ -1630,14 +1630,18 @@ export default function LibraryPage() {
     'joshbooks-pdf-zoom',
   ];
 
-  // Press "/" to focus the global search input
+  // Press "/" to focus the global search input; Escape to clear and blur it
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== '/') return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      e.preventDefault();
-      searchInputRef.current?.focus();
+      if (e.key === '/') {
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+        setSearch('');
+        searchInputRef.current?.blur();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
