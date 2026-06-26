@@ -54,6 +54,8 @@ Prioritised upgrades that would materially improve JoshBooks without changing th
 
 Status: item 10 is implemented as `/admin` for authenticated safe environment checks, catalogue counts, and live-QA guidance. Future expansion can add Drive connectivity probes, cache status, and recent API failure history.
 
+Status: item 9 is implemented as canonical `/media/[kind]/[id]` detail pages for Drive ebooks, Drive audiobooks, movies, online ebooks, and YouTube audiobooks. Library cards and unified search now route through the detail layer before opening readers, players, Drive, or YouTube.
+
 1. **Unified media search** — one search surface across ebooks, audiobooks, online audiobooks, online ebooks, and movies, with quick filters by media type.
 2. **Movie playback page** — open Drive movies inside JoshBooks with an embedded player page, progress tracking, and a clean fallback link to Google Drive.
 3. **Resume hub** — expand Continue Reading into a Continue Watching / Continue Listening / Continue Reading panel covering all media types.

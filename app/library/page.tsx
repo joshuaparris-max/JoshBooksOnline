@@ -1391,6 +1391,77 @@ export default function LibraryPage() {
   // Render columns in the canonical TABLE_COLUMNS order, keeping only visible ones.
   const activeColumns = TABLE_COLUMNS.filter((col) => col.locked || visibleColumns.includes(col.key));
 
+  const STATIC_KEYS = [
+    'joshbooks-meta',
+    'joshbooks-hidden',
+    'joshbooks-links',
+    'joshbooks-audiogroups',
+    'joshbooks-youtube-links',
+    'joshbooks-youtube-removed',
+    'joshbooks-youtube-edits',
+    'joshbooks-youtube-custom',
+    'joshbooks-view',
+    'joshbooks-sort-field',
+    'joshbooks-sort-dir',
+    'joshbooks-columns',
+    'joshbooks-reader-theme',
+  ];
+
+  const exportUserdata = () => {
+    try {
+      const data: Record<string, unknown> = { _version: 1, _exported: new Date().toISOString() };
+      for (const key of STATIC_KEYS) {
+        const val = window.localStorage.getItem(key);
+        if (val !== null) data[key] = JSON.parse(val);
+      }
+      // Prefix-keyed movie progress
+      const movieProgressEntries: Record<string, number> = {};
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k?.startsWith('joshbooks-watch-progress:')) {
+          movieProgressEntries[k] = parseInt(window.localStorage.getItem(k) ?? '0', 10);
+        }
+      }
+      if (Object.keys(movieProgressEntries).length) data['_watch_progress'] = movieProgressEntries;
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `joshbooks-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // ignore
+    }
+  };
+
+  const importUserdataRef = useRef<HTMLInputElement | null>(null);
+
+  const handleImportUserdata = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result as string) as Record<string, unknown>;
+        for (const key of STATIC_KEYS) {
+          if (key in data) window.localStorage.setItem(key, JSON.stringify(data[key]));
+        }
+        const watchProgress = data['_watch_progress'] as Record<string, number> | undefined;
+        if (watchProgress && typeof watchProgress === 'object') {
+          for (const [k, v] of Object.entries(watchProgress)) {
+            window.localStorage.setItem(k, String(v));
+          }
+        }
+        window.location.reload();
+      } catch {
+        alert('Failed to import — the file may be invalid or corrupted.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 p-6 sm:p-10">
       <div className="mx-auto max-w-7xl space-y-6">
