@@ -571,5 +571,213 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "notes": "Combined preview of two essays/works."
+  },
+  {
+    "id": "cybersecurity-beginners-guide",
+    "title": "Cybersecurity: The Beginner's Guide",
+    "author": "Dr Erdal Ozkaya",
+    "youtubeUrl": "https://www.youtube.com/watch?v=3YAPyrheGSw",
+    "catalogueMatches": [
+      "Cybersecurity The Beginner's Guide",
+      "Cybersecurity Beginners Guide"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "Author-posted YouTube audiobook",
+    "rightsNote": "Search result description identifies the audiobook as posted by the author.",
+    "notes": "Covers core cybersecurity concepts, threats, and defences — ideal for IT professionals entering the security field."
+  },
+  {
+    "id": "designing-data-intensive-applications-kleppmann",
+    "title": "Designing Data-Intensive Applications",
+    "author": "Martin Kleppmann",
+    "youtubeUrl": "https://www.youtube.com/watch?v=4oc_JAYTl4c",
+    "catalogueMatches": [
+      "Designing Data-Intensive Applications",
+      "Data-Intensive Applications",
+      "Martin Kleppmann"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "High-value distributed systems and data architecture title."
+  },
+  {
+    "id": "site-reliability-engineering-google",
+    "title": "Site Reliability Engineering: How Google Runs Production Systems",
+    "author": "Betsy Beyer, Chris Jones, Jennifer Petoff, and Niall Richard Murphy",
+    "youtubeUrl": "https://www.youtube.com/watch?v=mlQEEpSXBNc",
+    "catalogueMatches": [
+      "Site Reliability Engineering",
+      "How Google Runs Production Systems",
+      "SRE"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "Core SRE operations, reliability, incident, and production engineering reference."
+  },
+  {
+    "id": "software-architecture-hard-parts",
+    "title": "Software Architecture: The Hard Parts",
+    "author": "Neal Ford, Mark Richards, Pramod Sadalage, and Zhamak Dehghani",
+    "youtubeUrl": "https://www.youtube.com/watch?v=j9p0dLwhWVc",
+    "catalogueMatches": [
+      "Software Architecture The Hard Parts",
+      "Software Architecture",
+      "Architecture Hard Parts"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "Advanced architecture trade-offs, decomposition, data ownership, and distributed systems decisions."
+  },
+  {
+    "id": "fundamentals-software-architecture",
+    "title": "Fundamentals of Software Architecture",
+    "author": "Mark Richards and Neal Ford",
+    "youtubeUrl": "https://www.youtube.com/watch?v=xVtkhK2KUXg",
+    "catalogueMatches": [
+      "Fundamentals of Software Architecture",
+      "Software Architecture",
+      "Mark Richards",
+      "Neal Ford"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "Practical introduction to architecture styles, quality attributes, and architecture thinking."
+  },
+  {
+    "id": "clean-architecture-uncle-bob",
+    "title": "Clean Architecture",
+    "author": "Robert C. Martin",
+    "youtubeUrl": "https://www.youtube.com/watch?v=WUvwAggG2_k",
+    "catalogueMatches": [
+      "Clean Architecture",
+      "Robert C Martin",
+      "Uncle Bob"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "Software structure, boundaries, dependency direction, and maintainability."
+  },
+  {
+    "id": "software-engineering-at-google",
+    "title": "Software Engineering at Google",
+    "author": "Titus Winters, Tom Manshreck, and Hyrum Wright",
+    "youtubeUrl": "https://www.youtube.com/watch?v=7tyIe0Bq82M",
+    "catalogueMatches": [
+      "Software Engineering at Google",
+      "Lessons Learned from Programming Over Time",
+      "Google Software Engineering"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "Engineering practices for large, long-lived software systems."
+  },
+  {
+    "id": "database-internals-petrov",
+    "title": "Database Internals",
+    "author": "Alex Petrov",
+    "youtubeUrl": "https://www.youtube.com/watch?v=VCuegVsymac",
+    "catalogueMatches": [
+      "Database Internals",
+      "Alex Petrov",
+      "Database Storage Engines"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "Deep dive into storage engines, distributed systems, and database implementation."
+  },
+  {
+    "id": "building-microservices-newman",
+    "title": "Building Microservices",
+    "author": "Sam Newman",
+    "youtubeUrl": "https://www.youtube.com/watch?v=4RkaJuuYbK0",
+    "catalogueMatches": [
+      "Building Microservices",
+      "Microservices",
+      "Sam Newman"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "Designing, operating, and evolving fine-grained services."
+  },
+  {
+    "id": "monolith-to-microservices-newman",
+    "title": "Monolith to Microservices",
+    "author": "Sam Newman",
+    "youtubeUrl": "https://www.youtube.com/watch?v=l5BuwL9UddM",
+    "catalogueMatches": [
+      "Monolith to Microservices",
+      "Microservices",
+      "Sam Newman"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "Practical guidance for splitting and evolving legacy systems."
+  },
+  {
+    "id": "kubernetes-patterns",
+    "title": "Kubernetes Patterns",
+    "author": "Bilgin Ibryam and Roland Huß",
+    "youtubeUrl": "https://www.youtube.com/watch?v=n9xhMccRaf0",
+    "catalogueMatches": [
+      "Kubernetes Patterns",
+      "Kubernetes",
+      "Cloud Native Patterns"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "Patterns and paradigms for scalable, reliable Kubernetes systems."
+  },
+  {
+    "id": "lean-enterprise-humble",
+    "title": "Lean Enterprise",
+    "author": "Jez Humble, Joanne Molesky, and Barry O'Reilly",
+    "youtubeUrl": "https://www.youtube.com/watch?v=dvJT00Qf3RA",
+    "catalogueMatches": [
+      "Lean Enterprise",
+      "High Performance Organizations",
+      "Jez Humble"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "Lean, DevOps, and product delivery practices for technology organizations."
+  },
+  {
+    "id": "staff-engineers-path-reilly",
+    "title": "The Staff Engineer's Path",
+    "author": "Tanya Reilly",
+    "youtubeUrl": "https://www.youtube.com/watch?v=7-51768eflU",
+    "catalogueMatches": [
+      "The Staff Engineer's Path",
+      "Staff Engineer",
+      "Tanya Reilly"
+    ],
+    "availabilityType": "official_preview",
+    "displayLabel": "Official audiobook preview",
+    "source": "Google Play Books",
+    "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
+    "notes": "Engineering leadership and senior individual-contributor growth."
   }
 ]
