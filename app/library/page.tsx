@@ -1316,6 +1316,25 @@ export default function LibraryPage() {
     });
   }, [search]);
 
+  // Unified search results — only active when a query is typed
+  type UnifiedResult =
+    | { kind: 'ebook'; item: BookEntry }
+    | { kind: 'audiobook'; item: AudiobookEntry }
+    | { kind: 'movie'; item: (typeof MOVIES)[number] }
+    | { kind: 'online-ebook'; item: (typeof ONLINE_EBOOKS)[number] }
+    | { kind: 'online-audiobook'; item: Audiobook };
+
+  const unifiedResults = useMemo((): UnifiedResult[] => {
+    if (!search.trim()) return [];
+    return [
+      ...sortedBooks.map((item) => ({ kind: 'ebook' as const, item })),
+      ...filteredAudiobooks.map((item) => ({ kind: 'audiobook' as const, item })),
+      ...filteredMovies.map((item) => ({ kind: 'movie' as const, item })),
+      ...filteredOnlineEbooks.map((item) => ({ kind: 'online-ebook' as const, item })),
+      ...filteredOnline.map((item) => ({ kind: 'online-audiobook' as const, item })),
+    ];
+  }, [search, sortedBooks, filteredAudiobooks, filteredMovies, filteredOnlineEbooks, filteredOnline]);
+
   const selectedAudiobooks = filteredAudiobooks.filter((book) => selectedAudioIds.has(book.id));
   const selectedMergeableAudiobooks = selectedAudiobooks.filter(
     (book) => !book.isFolder && !isManualGroupEntryId(book.id)
@@ -1423,7 +1442,18 @@ export default function LibraryPage() {
             </div>
           </div>
 
-          <div className="mt-6 flex items-center gap-2">
+          {/* Global search — visible above tabs, triggers unified results view */}
+          <div className="mt-6">
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search everything — ebooks, audiobooks, movies…"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
+            />
+          </div>
+
+          <div className={`mt-4 flex items-center gap-2 ${search.trim() ? 'opacity-40 pointer-events-none' : ''}`}>
             <button
               type="button"
               onClick={() => setTab('ebooks')}
@@ -1843,7 +1873,119 @@ export default function LibraryPage() {
           </section>
         )}
 
-        {tab === 'ebooks' && ebookSource === 'online' && (
+        {/* ── Unified search results ── shown instead of tab content when a query is active */}
+        {search.trim() && (
+          <section className="space-y-3">
+            {unifiedResults.length === 0 ? (
+              <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-10 text-center text-slate-400">
+                <p className="text-xl font-medium">No results for &ldquo;{search}&rdquo;</p>
+                <p className="mt-2 text-sm">Try a different term or clear the search to browse by tab.</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-slate-500">{unifiedResults.length} result{unifiedResults.length !== 1 ? 's' : ''} across all media</p>
+                {unifiedResults.map((result) => {
+                  if (result.kind === 'ebook') {
+                    const book = result.item;
+                    return (
+                      <Link
+                        key={`ebook-${book.id}`}
+                        href={`/reader/${book.id}`}
+                        className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-4 transition hover:border-slate-500/40 hover:bg-slate-800/70"
+                      >
+                        <span className="shrink-0 text-xl">📚</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-white">{metaOverrides[book.id]?.title ?? book.title ?? book.name}</p>
+                          {metaOverrides[book.id]?.authors?.length ? (
+                            <p className="truncate text-sm text-slate-400">{metaOverrides[book.id].authors?.join(', ')}</p>
+                          ) : null}
+                        </div>
+                        <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-slate-400">Ebook</span>
+                      </Link>
+                    );
+                  }
+                  if (result.kind === 'audiobook') {
+                    const ab = result.item;
+                    return (
+                      <Link
+                        key={`audiobook-${ab.id}`}
+                        href={`/listen/${encodeURIComponent(ab.id)}`}
+                        className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-4 transition hover:border-slate-500/40 hover:bg-slate-800/70"
+                      >
+                        <span className="shrink-0 text-xl">🎧</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-white">{metaOverrides[ab.id]?.title ?? ab.title}</p>
+                          {metaOverrides[ab.id]?.authors?.length ? (
+                            <p className="truncate text-sm text-slate-400">{metaOverrides[ab.id].authors?.join(', ')}</p>
+                          ) : null}
+                        </div>
+                        <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-slate-400">Audiobook</span>
+                      </Link>
+                    );
+                  }
+                  if (result.kind === 'movie') {
+                    const movie = result.item;
+                    return (
+                      <a
+                        key={`movie-${movie.id}`}
+                        href={movie.driveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-4 transition hover:border-slate-500/40 hover:bg-slate-800/70"
+                      >
+                        <span className="shrink-0 text-xl">🎬</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-white">{movie.title}</p>
+                          {movie.year && <p className="text-sm text-slate-400">{movie.year}{movie.collection ? ` · ${movie.collection}` : ''}</p>}
+                        </div>
+                        <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-slate-400">Movie</span>
+                      </a>
+                    );
+                  }
+                  if (result.kind === 'online-ebook') {
+                    const book = result.item;
+                    return (
+                      <Link
+                        key={`online-ebook-${book.id}`}
+                        href={`/read-online?url=${encodeURIComponent(book.url)}&format=${book.format}&title=${encodeURIComponent(book.title)}`}
+                        className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-4 transition hover:border-slate-500/40 hover:bg-slate-800/70"
+                      >
+                        <span className="shrink-0 text-xl">📖</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-white">{book.title}</p>
+                          <p className="truncate text-sm text-slate-400">{book.author}</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-emerald-600/20 px-2.5 py-0.5 text-xs text-emerald-300">Free online</span>
+                      </Link>
+                    );
+                  }
+                  if (result.kind === 'online-audiobook') {
+                    const ab = result.item;
+                    return (
+                      <a
+                        key={`online-ab-${ab.id}`}
+                        href={ab.youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-4 transition hover:border-slate-500/40 hover:bg-slate-800/70"
+                      >
+                        <span className="shrink-0 text-xl">▶️</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-white">{ab.title}</p>
+                          <p className="truncate text-sm text-slate-400">{ab.author}</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-sky-600/20 px-2.5 py-0.5 text-xs text-sky-300">YouTube</span>
+                      </a>
+                    );
+                  }
+                  return null;
+                })}
+              </>
+            )}
+          </section>
+        )}
+
+        {!search.trim() && tab === 'ebooks' && ebookSource === 'online' && (
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredOnlineEbooks.map((book) => (
               <Link
@@ -1875,7 +2017,7 @@ export default function LibraryPage() {
           </section>
         )}
 
-        {tab === 'movies' && (
+        {!search.trim() && tab === 'movies' && (
           filteredMovies.length === 0 ? (
             <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-10 text-center text-slate-400">
               <p className="text-xl font-medium">No movies match your search.</p>
@@ -1917,7 +2059,7 @@ export default function LibraryPage() {
           )
         )}
 
-        {tab === 'ebooks' && ebookSource === 'drive' && (loading ? (
+        {!search.trim() && tab === 'ebooks' && ebookSource === 'drive' && (loading ? (
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }, (_, index) => (
               <div key={index} className="animate-pulse rounded-3xl border border-white/10 bg-slate-900/80 p-6">
@@ -2200,7 +2342,7 @@ export default function LibraryPage() {
           </section>
         ))}
 
-        {tab === 'audiobooks' && audioSource === 'online' && (
+        {!search.trim() && tab === 'audiobooks' && audioSource === 'online' && (
           !youtube.hydrated ? (
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }, (_, index) => (
@@ -2226,7 +2368,7 @@ export default function LibraryPage() {
           )
         )}
 
-        {tab === 'audiobooks' && audioSource === 'drive' &&
+        {!search.trim() && tab === 'audiobooks' && audioSource === 'drive' &&
           (audiobooksLoading ? (
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }, (_, index) => (
