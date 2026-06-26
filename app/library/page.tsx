@@ -519,6 +519,8 @@ export default function LibraryPage() {
   const [editingAudio, setEditingAudio] = useState<AudiobookEntry | null>(null);
   const [confirmDeleteAudio, setConfirmDeleteAudio] = useState<AudiobookEntry | null>(null);
   const [selectedAudioIds, setSelectedAudioIds] = useState<Set<string>>(new Set());
+  const [bulkIds, setBulkIds] = useState<Set<string>>(new Set());
+  const [bulkCollectionId, setBulkCollectionId] = useState('');
   const [audioGroupStatus, setAudioGroupStatus] = useState<{ loading: boolean; message: string | null }>({
     loading: false,
     message: null,
@@ -1302,19 +1304,70 @@ export default function LibraryPage() {
     const list = query
       ? MOVIES.filter((movie) => {
           return (
-            movie.title.toLowerCase().includes(query) ||
-            movie.year?.toString().includes(query) ||
-            movie.collection?.toLowerCase().includes(query)
+            !hiddenIds.has(movie.id) &&
+            (movie.title.toLowerCase().includes(query) ||
+              movie.year?.toString().includes(query) ||
+              Boolean(movie.collection?.toLowerCase().includes(query)))
           );
         })
-      : MOVIES;
+      : MOVIES.filter((movie) => !hiddenIds.has(movie.id));
 
     return [...list].sort((a, b) => {
       const collectionCompare = (a.collection ?? '').localeCompare(b.collection ?? '');
       if (collectionCompare !== 0) return collectionCompare;
       return a.title.localeCompare(b.title);
     });
-  }, [search]);
+  }, [search, hiddenIds]);
+
+  const bulkCandidates = useMemo(() => {
+    if (tab === 'ebooks' && ebookSource === 'drive') {
+      return sortedBooks.map((book) => ({ id: book.id, label: displayTitle(book), kind: 'ebook' as const }));
+    }
+    if (tab === 'audiobooks' && audioSource === 'drive') {
+      return filteredAudiobooks.map((book) => ({ id: book.id, label: book.title, kind: 'audiobook' as const }));
+    }
+    if (tab === 'movies') {
+      return filteredMovies.map((movie) => ({ id: movie.id, label: movie.title, kind: 'movie' as const }));
+    }
+    return [];
+  }, [audioSource, ebookSource, filteredAudiobooks, filteredMovies, sortedBooks, tab]);
+
+  const selectedBulkCandidates = bulkCandidates.filter((item) => bulkIds.has(item.id));
+  const allBulkSelected = bulkCandidates.length > 0 && bulkCandidates.every((item) => bulkIds.has(item.id));
+
+  const selectVisibleBulkItems = () => {
+    setBulkIds(new Set(bulkCandidates.map((item) => item.id)));
+  };
+
+  const clearBulkSelection = () => {
+    setBulkIds(new Set());
+  };
+
+  const bulkHideSelected = () => {
+    if (selectedBulkCandidates.length === 0) return;
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      selectedBulkCandidates.forEach((item) => next.add(item.id));
+      return next;
+    });
+    clearBulkSelection();
+  };
+
+  const bulkCreateFolder = () => {
+    const name = window.prompt('Folder name');
+    if (!name?.trim()) return;
+    const id = collectionsApi.createCollection(name.trim());
+    setBulkCollectionId(id);
+  };
+
+  const bulkAddToFolder = () => {
+    if (!bulkCollectionId || selectedBulkCandidates.length === 0) return;
+    const existing = collectionsApi.membership[bulkCollectionId] ?? [];
+    selectedBulkCandidates.forEach((item) => {
+      if (!existing.includes(item.id)) collectionsApi.toggleItem(bulkCollectionId, item.id);
+    });
+    clearBulkSelection();
+  };
 
   // Unified search results — only active when a query is typed
   type UnifiedResult =
@@ -1587,6 +1640,57 @@ export default function LibraryPage() {
                 className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${audioSource === 'online' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
               >
                 Online (YouTube)
+              </button>
+            </div>
+          )}
+
+          {!search.trim() && bulkCandidates.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/70 p-3">
+              <span className="text-sm text-slate-400">
+                Bulk edit: {selectedBulkCandidates.length} selected
+              </span>
+              <button
+                type="button"
+                onClick={allBulkSelected ? clearBulkSelection : selectVisibleBulkItems}
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-white/10"
+              >
+                {allBulkSelected ? 'Clear visible' : `Select visible (${bulkCandidates.length})`}
+              </button>
+              <select
+                value={bulkCollectionId}
+                onChange={(event) => setBulkCollectionId(event.target.value)}
+                className="rounded-full border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-slate-100 outline-none focus:border-sky-500"
+                aria-label="Bulk folder"
+              >
+                <option value="">Choose folder</option>
+                {collectionsApi.collections.map((collection) => (
+                  <option key={collection.id} value={collection.id}>
+                    {collection.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={bulkCreateFolder}
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-white/10"
+              >
+                New folder
+              </button>
+              <button
+                type="button"
+                onClick={bulkAddToFolder}
+                disabled={!bulkCollectionId || selectedBulkCandidates.length === 0}
+                className="rounded-full bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+              >
+                Add to folder
+              </button>
+              <button
+                type="button"
+                onClick={bulkHideSelected}
+                disabled={selectedBulkCandidates.length === 0}
+                className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Hide selected
               </button>
             </div>
           )}
