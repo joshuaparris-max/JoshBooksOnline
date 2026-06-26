@@ -35,7 +35,10 @@ function validateAudiobooks() {
     if (!entry.id || typeof entry.id !== 'string') fail('Audiobook entry missing string id.');
     if (!entry.title || typeof entry.title !== 'string') fail(`Audiobook ${entry.id} missing title.`);
     if (!entry.author || typeof entry.author !== 'string') fail(`Audiobook ${entry.id} missing author.`);
-    if (!/^https:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z0-9_-]+/.test(entry.youtubeUrl ?? '')) {
+    const youtubeUrl = entry.youtubeUrl ?? '';
+    const isWatchUrl = /^https:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z0-9_-]+/.test(youtubeUrl);
+    const isPlaylistUrl = /^https:\/\/(www\.)?youtube\.com\/playlist\?list=[A-Za-z0-9_-]+/.test(youtubeUrl);
+    if (!isWatchUrl && !isPlaylistUrl) {
       fail(`Audiobook ${entry.id} has an invalid YouTube URL.`);
     }
     if (!Array.isArray(entry.catalogueMatches) || entry.catalogueMatches.length === 0) {

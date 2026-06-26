@@ -126,6 +126,12 @@ describe('Audiobooks', () => {
       expect(isValidYoutubeUrl('https://example.com/invalid')).toBe(false);
       expect(isValidYoutubeUrl('https://www.youtube.com/watch?v=abc123')).toBe(true);
     });
+
+    it('should accept playlist URLs', () => {
+      expect(
+        isValidYoutubeUrl('https://www.youtube.com/playlist?list=PLBZnw-3zC8P9UBALE-Zi7ZS5dzM8CbGnS')
+      ).toBe(true);
+    });
   });
 
   describe('Duplicate Prevention', () => {

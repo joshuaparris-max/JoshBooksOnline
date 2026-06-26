@@ -606,7 +606,7 @@
     "id": "phoenix-project-gene-kim",
     "title": "The Phoenix Project",
     "author": "Gene Kim, Kevin Behr & George Spafford",
-    "youtubeUrl": "https://www.youtube.com/watch?v=84ZGIVm2H9Y",
+    "youtubeUrl": "https://www.youtube.com/watch?v=Fm2bUdLHcvg",
     "catalogueMatches": [
       "The Phoenix Project",
       "Phoenix Project"
@@ -621,7 +621,7 @@
     "id": "devops-handbook-kim",
     "title": "The DevOps Handbook",
     "author": "Gene Kim, Jez Humble, Patrick Debois & John Willis",
-    "youtubeUrl": "https://www.youtube.com/watch?v=pAAu7oRo7dk",
+    "youtubeUrl": "https://www.youtube.com/watch?v=ySWnEJ6lxeg",
     "catalogueMatches": [
       "The DevOps Handbook",
       "DevOps Handbook"
@@ -997,9 +997,9 @@
   },
   {
     "id": "az-900-azure-fundamentals-john-savill",
-    "title": "AZ-900 Azure Fundamentals Study Cram — John Savill",
+    "title": "AZ-900 Azure Fundamentals Study Cram 2026 — John Savill",
     "author": "John Savill",
-    "youtubeUrl": "https://www.youtube.com/watch?v=tQp1YkB2Tgs",
+    "youtubeUrl": "https://www.youtube.com/watch?v=luhAq9o-15Q",
     "catalogueMatches": [
       "AZ-900 Azure Fundamentals",
       "John Savill"
@@ -1022,5 +1022,191 @@
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
     "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "openstax-intro-computer-science",
+    "title": "Introduction to Computer Science",
+    "author": "OpenStax",
+    "youtubeUrl": "https://www.youtube.com/playlist?list=PLBZnw-3zC8P9UBALE-Zi7ZS5dzM8CbGnS",
+    "catalogueMatches": [
+      "Introduction to Computer Science",
+      "OpenStax Computer Science",
+      "Computer Science Textbook"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook playlist (YouTube)",
+    "source": "OpenStax audiobook playlist",
+    "rightsNote": "OpenStax textbook is free; YouTube playlist availability not independently verified.",
+    "notes": "Covers computing, algorithms, programming, systems, networks, databases, software engineering, cloud/web apps and cybersecurity."
+  },
+  {
+    "id": "openstax-workplace-software-skills",
+    "title": "Workplace Software and Skills",
+    "author": "OpenStax",
+    "youtubeUrl": "https://www.youtube.com/playlist?list=PLBZnw-3zC8P8XCH5ExHrjSDIQbnwAi6a3",
+    "catalogueMatches": [
+      "Workplace Software and Skills",
+      "OpenStax Workplace Software",
+      "Microsoft 365 Google Workspace"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook playlist (YouTube)",
+    "source": "OpenStax audiobook playlist",
+    "rightsNote": "OpenStax textbook is free; YouTube playlist availability not independently verified.",
+    "notes": "Workplace IT and admin skills: Microsoft 365, Google Workspace, spreadsheets, documents, presentations and databases."
+  },
+  {
+    "id": "cathedral-and-bazaar-raymond",
+    "title": "The Cathedral and the Bazaar",
+    "author": "Eric S. Raymond",
+    "youtubeUrl": "https://www.youtube.com/playlist?list=PL1a38XXThqSZhrPLWqqPkFubQyAokvZ4-",
+    "catalogueMatches": [
+      "The Cathedral and the Bazaar",
+      "Cathedral and the Bazaar",
+      "Eric S Raymond"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook playlist (YouTube)",
+    "source": "YouTube audiobook playlist",
+    "rightsNote": "Original text available under the Open Publication License; recording rights not independently verified.",
+    "notes": "Classic essay collection on open-source, Linux and software culture."
+  },
+  {
+    "id": "passages-life-philosopher-babbage",
+    "title": "Passages from the Life of a Philosopher",
+    "author": "Charles Babbage",
+    "youtubeUrl": "https://www.youtube.com/watch?v=ezn8Kxa5T2w",
+    "catalogueMatches": [
+      "Passages from the Life of a Philosopher",
+      "Charles Babbage",
+      "Difference Engine"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks on YouTube",
+    "rightsNote": "Public-domain text and LibriVox recording.",
+    "notes": "Computing history memoir covering the Difference Engine, Analytical Engine and early computer thinking. About 15 hours; this link is part 1 of 3."
+  },
+  {
+    "id": "story-of-electricity-munro",
+    "title": "The Story of Electricity",
+    "author": "John Munro",
+    "youtubeUrl": "https://www.youtube.com/watch?v=BHFHAIX4SgA",
+    "catalogueMatches": [
+      "The Story of Electricity",
+      "Story of Electricity",
+      "John Munro"
+    ],
+    "availabilityType": "full_public_domain",
+    "displayLabel": "Full public-domain audiobook",
+    "source": "LibriVox Audiobooks on YouTube, read by Ruth Golding",
+    "rightsNote": "Public-domain text and LibriVox recording.",
+    "notes": "History of electricity, communications, telegraph, telephone, power and early electrical systems. About 6 hours 27 minutes."
+  },
+  {
+    "id": "hacker-crackdown-sterling",
+    "title": "The Hacker Crackdown: Law and Disorder on the Electronic Frontier",
+    "author": "Bruce Sterling",
+    "youtubeUrl": "https://www.youtube.com/watch?v=cdJJq-zSUPY",
+    "catalogueMatches": [
+      "The Hacker Crackdown",
+      "Hacker Crackdown",
+      "Bruce Sterling"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "command-line-heroes-red-hat",
+    "title": "Command Line Heroes",
+    "author": "Red Hat",
+    "youtubeUrl": "https://www.youtube.com/playlist?list=PLbMP1JcGBmSEc7apGMyben07sJJYrcXiT",
+    "catalogueMatches": [
+      "Command Line Heroes",
+      "Red Hat podcast"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Audio series playlist (YouTube)",
+    "source": "Red Hat Command Line Heroes",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "Red Hat podcast/audio series on open source and computing history."
+  },
+  {
+    "id": "command-line-heroes-season-1",
+    "title": "Command Line Heroes — Season 1",
+    "author": "Red Hat",
+    "youtubeUrl": "https://www.youtube.com/playlist?list=PLxmsQA-zi_gCVySjp0_U880TJIXGRG0ij",
+    "catalogueMatches": [
+      "Command Line Heroes Season 1",
+      "Command Line Heroes S1"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Audio series playlist (YouTube)",
+    "source": "Red Hat Command Line Heroes",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "darknet-diaries-official",
+    "title": "Darknet Diaries",
+    "author": "Jack Rhysider",
+    "youtubeUrl": "https://www.youtube.com/playlist?list=PLtN43kak3fFEEDNo0ks9QVKYfQpT2yUEo",
+    "catalogueMatches": [
+      "Darknet Diaries",
+      "Jack Rhysider"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Podcast playlist (YouTube)",
+    "source": "Darknet Diaries official YouTube playlist",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "True stories from the dark side of the internet — cybersecurity and hacking narratives."
+  },
+  {
+    "id": "practical-networking-fundamentals-playlist",
+    "title": "Practical Networking — Networking Fundamentals",
+    "author": "Practical Networking",
+    "youtubeUrl": "https://www.youtube.com/playlist?list=PLIFyRwBY_4bRLmKfP1KnZA6rZbRHtxmXi",
+    "catalogueMatches": [
+      "Practical Networking",
+      "Networking Fundamentals Practical Networking"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Course playlist (YouTube)",
+    "source": "Practical Networking",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "Structured networking fundamentals course playlist."
+  },
+  {
+    "id": "google-it-support-foundations-playlist",
+    "title": "Google IT Support Certificate — Foundations of IT Support",
+    "author": "Google / Coursera",
+    "youtubeUrl": "https://www.youtube.com/playlist?list=PLTZYG7bZ1u6pQJShZs9iV0aJNzsqTm4Mx",
+    "catalogueMatches": [
+      "Google IT Support Foundations",
+      "Foundations of IT Support",
+      "Google IT Support Certificate"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Course playlist (YouTube)",
+    "source": "YouTube course playlist",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "Foundations of IT Support module from the Google IT Support Certificate."
+  },
+  {
+    "id": "professor-messer-comptia-a-plus-220-1201",
+    "title": "CompTIA A+ 220-1201 — Professor Messer",
+    "author": "Professor Messer",
+    "youtubeUrl": "https://www.youtube.com/playlist?list=PLG49S3nxzAnnes8ZGI-OBlKEukHCX46N8",
+    "catalogueMatches": [
+      "Professor Messer CompTIA A+",
+      "CompTIA A+ 220-1201 Professor Messer",
+      "220-1201"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Course playlist (YouTube)",
+    "source": "Professor Messer",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "Professor Messer's CompTIA A+ 220-1201 training playlist."
   }
 ]

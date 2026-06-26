@@ -68,6 +68,21 @@ export function extractYouTubeVideoId(url: string): string | null {
   return match ? match[1] : null;
 }
 
+export function extractYouTubePlaylistId(url: string): string | null {
+  const match = url.match(/[?&]list=([^&\n?#]+)/);
+  return match ? match[1] : null;
+}
+
+export function getYoutubeEmbedUrl(url: string): string | null {
+  if (/youtube\.com\/playlist\?list=/.test(url)) {
+    const playlistId = extractYouTubePlaylistId(url);
+    return playlistId ? `https://www.youtube.com/embed/videoseries?list=${playlistId}` : null;
+  }
+
+  const videoId = extractYouTubeVideoId(url);
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+}
+
 export function isValidYoutubeUrl(url: string): boolean {
-  return extractYouTubeVideoId(url) !== null;
+  return getYoutubeEmbedUrl(url) !== null;
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { Audiobook } from '@/types/books';
+import { getYoutubeEmbedUrl } from '@/lib/youtubeCatalog';
 
 interface AudiobookCardProps {
   audiobook: Audiobook;
@@ -26,15 +27,10 @@ function getInitials(name: string) {
     .slice(0, 2);
 }
 
-function extractYouTubeId(url: string): string | null {
-  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
-  return match ? match[1] : null;
-}
-
 export function AudiobookCard({ audiobook, onRemove, onEdit }: AudiobookCardProps) {
   const [showPlayer, setShowPlayer] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const youtubeId = extractYouTubeId(audiobook.youtubeUrl);
+  const embedUrl = getYoutubeEmbedUrl(audiobook.youtubeUrl);
 
   const typeColor =
     audiobook.availabilityType === 'full_public_domain'
@@ -163,11 +159,11 @@ export function AudiobookCard({ audiobook, onRemove, onEdit }: AudiobookCardProp
                     </a>
                   </div>
                 </div>
-              ) : youtubeId ? (
+              ) : embedUrl ? (
                 <iframe
                   width="100%"
                   height="500"
-                  src={`https://www.youtube.com/embed/${youtubeId}`}
+                  src={embedUrl}
                   title={audiobook.title}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
