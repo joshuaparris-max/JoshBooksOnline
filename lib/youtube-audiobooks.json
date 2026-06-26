@@ -839,5 +839,188 @@
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
     "notes": "Engineering leadership and senior individual-contributor growth."
+  },
+  {
+    "id": "practical-help-desk-it-fundamentals",
+    "title": "Practical Help Desk — Learn IT Fundamentals in 9 Hours",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=2MvT63eZfp0",
+    "catalogueMatches": [
+      "Practical Help Desk",
+      "Learn IT Fundamentals"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "active-directory-training-entry-level-help-desk",
+    "title": "Active Directory Training for Entry Level Help Desk",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=zrCNGzwLjcU",
+    "catalogueMatches": [
+      "Active Directory Training",
+      "Entry Level Help Desk"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "crash-course-active-directory-dhcp-dns",
+    "title": "Crash Course: Active Directory, DHCP & DNS for Entry Level Tech Support",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=sndVKp6o_7M",
+    "catalogueMatches": [
+      "Crash Course Active Directory",
+      "DHCP DNS",
+      "Entry Level Tech Support"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "microsoft-365-certified-fundamentals-ms-900",
+    "title": "Microsoft 365 Certified Fundamentals — MS-900 Full Course",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=1n4B5ewretY",
+    "catalogueMatches": [
+      "Microsoft 365 Certified Fundamentals",
+      "MS-900 Full Course"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "powershell-for-beginners-full-course",
+    "title": "PowerShell for Beginners — Full Course",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=UVUd9_k9C6A",
+    "catalogueMatches": [
+      "PowerShell for Beginners",
+      "PowerShell Full Course"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "computer-networking-fundamentals-course",
+    "title": "Computer Networking Fundamentals Course",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=fQbBPa0ADvs",
+    "catalogueMatches": [
+      "Computer Networking Fundamentals",
+      "Networking Fundamentals Course"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "ibm-it-support-complete-course",
+    "title": "IBM IT Support — Complete Course / IT Support Technician",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=BNbPsiCGQzw",
+    "catalogueMatches": [
+      "IBM IT Support Complete Course",
+      "IT Support Technician"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "google-it-support-certification-full-course",
+    "title": "Google IT Support Certification Full Course",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=hSEws_py5tQ",
+    "catalogueMatches": [
+      "Google IT Support Certification",
+      "IT Support Full Course"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "comptia-a-plus-full-course-31-hours",
+    "title": "CompTIA A+ Full Course — 31+ Hours",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=1CZXXNKAY5o",
+    "catalogueMatches": [
+      "CompTIA A+ Full Course",
+      "31+ Hours"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "comptia-a-plus-220-1201-full-course-2025",
+    "title": "CompTIA A+ 220-1201 Full Course — 2025",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=TpvftblvOzc",
+    "catalogueMatches": [
+      "CompTIA A+ 220-1201",
+      "2025"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "comptia-a-plus-220-1202-full-course-2026",
+    "title": "CompTIA A+ 220-1202 Full Course — 2026",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=9yHaxAsouvU",
+    "catalogueMatches": [
+      "CompTIA A+ 220-1202",
+      "2026"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "az-900-azure-fundamentals-john-savill",
+    "title": "AZ-900 Azure Fundamentals Study Cram — John Savill",
+    "author": "John Savill",
+    "youtubeUrl": "https://www.youtube.com/watch?v=tQp1YkB2Tgs",
+    "catalogueMatches": [
+      "AZ-900 Azure Fundamentals",
+      "John Savill"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "itil-4-foundation-training-full-course",
+    "title": "ITIL 4 Foundation Training — Full Course",
+    "author": "Avance / MSP",
+    "youtubeUrl": "https://www.youtube.com/watch?v=A5VRuC72G_c",
+    "catalogueMatches": [
+      "ITIL 4 Foundation Training",
+      "ITIL 4 Full Course"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube audiobook",
+    "rightsNote": "Availability and recording rights not independently verified."
   }
 ]
