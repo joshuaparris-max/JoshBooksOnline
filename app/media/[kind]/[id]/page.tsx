@@ -255,7 +255,16 @@ export default function MediaDetailPage() {
         ]
       : detail.kind === 'audiobook'
         ? [
-            ['Type', detail.item.isManualGroup ? 'Merged group' : detail.item.isFolder ? 'Folder audiobook' : 'Single audio file'],
+            [
+              'Type',
+              detail.item.isManualGroup
+                ? 'Merged group'
+                : (detail.item.tracks?.length ?? 0) > 1
+                  ? 'Multi-track audiobook'
+                  : detail.item.isFolder
+                    ? 'Folder audiobook'
+                    : 'Single audio file',
+            ],
             ['Tracks', detail.item.tracks?.length?.toString()],
             ['Source', detail.item.source],
             ['Published', detail.item.publishedDate],
@@ -337,6 +346,29 @@ export default function MediaDetailPage() {
                   </div>
                 ))}
             </dl>
+
+            {detail.kind === 'audiobook' && (detail.item.tracks?.length ?? 0) > 1 && (
+              <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                  Chapters
+                </h2>
+                <ol className="mt-3 max-h-96 space-y-1 overflow-y-auto">
+                  {detail.item.tracks?.map((track, index) => (
+                    <li key={track.id}>
+                      <Link
+                        href={`/listen/${encodeURIComponent(detail.item.id)}?track=${index}`}
+                        className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10 hover:text-white"
+                      >
+                        <span className="w-7 shrink-0 text-right text-xs text-slate-500">
+                          {index + 1}
+                        </span>
+                        <span className="truncate">{track.name.replace(/\.[^.]+$/, '')}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
 
             {'description' in detail.item && detail.item.description && (
               <p className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-300">{detail.item.description}</p>

@@ -34,11 +34,24 @@ function getSavedRate(): number {
   }
 }
 
-export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }) {
+export default function AudioPlayer({
+  audiobook,
+  initialTrack,
+}: {
+  audiobook: AudiobookEntry;
+  initialTrack?: number;
+}) {
   const tracks = audiobook.tracks ?? [];
+  const requestedTrack =
+    initialTrack !== undefined && initialTrack >= 0 && initialTrack < tracks.length
+      ? initialTrack
+      : undefined;
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [index, setIndex] = useState(
-    audiobook.audioTrack !== undefined && audiobook.audioTrack < tracks.length ? audiobook.audioTrack : 0
+    requestedTrack ??
+      (audiobook.audioTrack !== undefined && audiobook.audioTrack < tracks.length
+        ? audiobook.audioTrack
+        : 0)
   );
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -61,7 +74,7 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
         const { progress } = (await response.json()) as {
           progress: { track?: number; position?: number } | null;
         };
-        if (!cancelled && progress) {
+        if (!cancelled && progress && requestedTrack === undefined) {
           if (typeof progress.track === 'number' && progress.track < tracks.length) setIndex(progress.track);
           if (typeof progress.position === 'number') resumePos.current = progress.position;
         }
@@ -75,7 +88,7 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audiobook.id]);
+  }, [audiobook.id, requestedTrack]);
 
   // Load the current track's stream; resume position applies on first load.
   useEffect(() => {

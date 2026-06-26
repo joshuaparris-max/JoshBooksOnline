@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import type { Audiobook, AudiobookEntry } from '@/types/books';
 import {
@@ -81,6 +81,7 @@ async function fetchJson<T>(url: string): Promise<T> {
 
 export default function ListenPage() {
   const params = useParams() as Record<string, string> | null;
+  const searchParams = useSearchParams();
   const router = useRouter();
   const id = params?.id ? decodeURIComponent(params.id) : undefined;
   const [audiobook, setAudiobook] = useState<AudiobookEntry | null>(null);
@@ -89,6 +90,8 @@ export default function ListenPage() {
   const [linkedTextId, setLinkedTextId] = useState<string | undefined>(undefined);
 
   const isYoutube = id ? isYoutubeListenId(id) : false;
+  const requestedTrack = Number(searchParams.get('track'));
+  const initialTrack = Number.isInteger(requestedTrack) && requestedTrack >= 0 ? requestedTrack : undefined;
 
   // Resolve linked text edition from Drive links or YouTube links
   useEffect(() => {
@@ -250,7 +253,7 @@ export default function ListenPage() {
           </div>
         ) : (
           <>
-            <AudioPlayer audiobook={audiobook} />
+            <AudioPlayer audiobook={audiobook} initialTrack={initialTrack} />
             {textEditionId && (
               <Link
                 href={`/reader/${textEditionId}`}
