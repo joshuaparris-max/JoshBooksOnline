@@ -2569,6 +2569,11 @@ export default function LibraryPage() {
                       <span className="inline-flex items-center rounded-full bg-white/5 px-2.5 py-0.5 text-slate-300">
                         Google Drive
                       </span>
+                      {(movieProgress[movie.driveFileId] ?? 0) > 5 && (
+                        <span className="inline-flex items-center rounded-full bg-sky-600/20 px-2.5 py-0.5 text-sky-300">
+                          ▶ {Math.round((movieProgress[movie.driveFileId] ?? 0) / 60)}m in
+                        </span>
+                      )}
                     </div>
                   </div>
                 </Link>
