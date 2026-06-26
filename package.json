@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "jest",
     "typecheck": "tsc --noEmit",
+    "validate:catalogues": "node scripts/validate-catalogues.mjs",
     "sync-local-books": "powershell -ExecutionPolicy ByPass -File scripts/sync-local-books.ps1"
   },
   "dependencies": {

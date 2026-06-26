@@ -18,7 +18,7 @@ Last reviewed: June 2026
 - Requires `KV_REST_API_URL` + `KV_REST_API_TOKEN` on Vercel for cross-device sync
 
 ### YouTube audiobooks
-- Bundled catalog in `lib/youtube-audiobooks.json` (56 entries)
+- Bundled catalog in `lib/youtube-audiobooks.json` (60 entries)
 - Catalogue alias matching to Drive ebook filenames
 - Editable / removable links (userdata + localStorage)
 - Multi-match picker when several YouTube sources apply
@@ -35,7 +35,7 @@ Last reviewed: June 2026
 - Homepage renders its complete shell immediately while authentication resolves; recent books load after authentication.
 - Manual audiobook playlists are stored in local/userdata state and play as combined track lists without modifying Drive files.
 - Library includes a Movies tab with 48 bundled Google Drive movie links, including Harry Potter and Pirates of the Caribbean collections.
-- YouTube audiobook catalogue includes 13 curated IT additions covering cybersecurity, SRE, architecture, databases, Kubernetes, microservices, DevOps, and engineering leadership.
+- YouTube audiobook catalogue includes curated IT additions covering full YouTube audiobooks, cybersecurity, SRE, architecture, databases, Kubernetes, microservices, DevOps, and engineering leadership.
 
 ## Quality gates
 
@@ -43,6 +43,7 @@ Last reviewed: June 2026
 npm run lint
 npm run typecheck
 npm test
+npm run validate:catalogues
 npm run build
 ```
 

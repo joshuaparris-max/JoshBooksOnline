@@ -588,6 +588,66 @@
     "notes": "Covers core cybersecurity concepts, threats, and defences — ideal for IT professionals entering the security field."
   },
   {
+    "id": "pragmatic-programmer-thomas-hunt",
+    "title": "The Pragmatic Programmer",
+    "author": "David Thomas & Andrew Hunt",
+    "youtubeUrl": "https://www.youtube.com/watch?v=mMvq7c1bMUo",
+    "catalogueMatches": [
+      "The Pragmatic Programmer",
+      "Pragmatic Programmer"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "Classic software craftsmanship guide for developers — covers tooling, practices, and career advice."
+  },
+  {
+    "id": "phoenix-project-gene-kim",
+    "title": "The Phoenix Project",
+    "author": "Gene Kim, Kevin Behr & George Spafford",
+    "youtubeUrl": "https://www.youtube.com/watch?v=84ZGIVm2H9Y",
+    "catalogueMatches": [
+      "The Phoenix Project",
+      "Phoenix Project"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "A novel about IT, DevOps, and business transformation — essential reading for IT professionals."
+  },
+  {
+    "id": "devops-handbook-kim",
+    "title": "The DevOps Handbook",
+    "author": "Gene Kim, Jez Humble, Patrick Debois & John Willis",
+    "youtubeUrl": "https://www.youtube.com/watch?v=pAAu7oRo7dk",
+    "catalogueMatches": [
+      "The DevOps Handbook",
+      "DevOps Handbook"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "2nd edition — covers DevOps principles, CI/CD, automation, and how to transform IT organisations."
+  },
+  {
+    "id": "zero-to-one-thiel",
+    "title": "Zero to One",
+    "author": "Peter Thiel & Blake Masters",
+    "youtubeUrl": "https://www.youtube.com/watch?v=SvqoD5Jx54w",
+    "catalogueMatches": [
+      "Zero to One",
+      "Zero to One: Notes on Startups"
+    ],
+    "availabilityType": "unknown",
+    "displayLabel": "Full audiobook (YouTube)",
+    "source": "YouTube",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "Notes on startups and how to build the future — widely read in tech and entrepreneurship circles."
+  },
+  {
     "id": "designing-data-intensive-applications-kleppmann",
     "title": "Designing Data-Intensive Applications",
     "author": "Martin Kleppmann",
