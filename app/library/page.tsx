@@ -1630,6 +1630,19 @@ export default function LibraryPage() {
     'joshbooks-pdf-zoom',
   ];
 
+  // Press "/" to focus the global search input
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '/') return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const exportUserdata = () => {
     try {
       const data: Record<string, unknown> = { _version: 1, _exported: new Date().toISOString() };
@@ -1660,6 +1673,7 @@ export default function LibraryPage() {
   };
 
   const importUserdataRef = useRef<HTMLInputElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleImportUserdata = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1828,10 +1842,11 @@ export default function LibraryPage() {
           {/* Global search — visible above tabs, triggers unified results view */}
           <div className="relative mt-6">
             <input
+              ref={searchInputRef}
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search everything — ebooks, audiobooks, movies…"
+              placeholder="Search everything — ebooks, audiobooks, movies… (press / to focus)"
               className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 pr-10 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
             />
             {search && (
