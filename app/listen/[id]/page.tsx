@@ -73,6 +73,19 @@ async function readAudioGroups(): Promise<ManualAudioGroup[]> {
   return local;
 }
 
+async function fetchJsonWithTimeout<T>(url: string, timeoutMs = 3000): Promise<T> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+    if (!response.ok) throw new Error('failed');
+    return (await response.json()) as T;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 export default function ListenPage() {
   const params = useParams() as Record<string, string> | null;
   const router = useRouter();
@@ -122,11 +135,9 @@ export default function ListenPage() {
 
           const results = await Promise.allSettled(
             group.memberIds.map(async (memberId) => {
-              const response = await fetch(`/api/library/audiobook/${encodeURIComponent(memberId)}`, {
-                cache: 'no-store',
-              });
-              if (!response.ok) throw new Error('failed');
-              return (await response.json()) as AudiobookEntry;
+              return fetchJsonWithTimeout<AudiobookEntry>(
+                `/api/library/audiobook/${encodeURIComponent(memberId)}`
+              );
             })
           );
           const members = results
@@ -186,9 +197,7 @@ export default function ListenPage() {
 
     (async () => {
       try {
-        const response = await fetch(`/api/library/audiobook/${id}`, { cache: 'no-store' });
-        if (!response.ok) throw new Error('failed');
-        const data = (await response.json()) as AudiobookEntry;
+        const data = await fetchJsonWithTimeout<AudiobookEntry>(`/api/library/audiobook/${id}`);
         if (!cancelled) {
           setAudiobook(data);
           setYoutubeAudiobook(null);

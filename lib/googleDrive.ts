@@ -477,17 +477,32 @@ export async function listFilesInFolder(
 
   do {
     const response = await drive.files.list({
-      q: `'${folderId}' in parents and trashed = false and (${SUPPORTED_MIME_QUERY})`,
+      q: `'${folderId}' in parents and trashed = false and (${SUPPORTED_MIME_QUERY} or mimeType = '${SHORTCUT_MIME}')`,
       fields:
-        'nextPageToken, files(id, name, mimeType, size, modifiedTime, thumbnailLink, appProperties)',
+        'nextPageToken, files(id, name, mimeType, size, modifiedTime, thumbnailLink, appProperties, shortcutDetails)',
       pageSize: 100,
       pageToken: pageToken ?? undefined,
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
     });
 
     const files = response.data.files || [];
     for (const file of files) {
-      const format = getMimeTypeFormat(file.mimeType!);
+      // For shortcuts, use the target's mimeType and id
+      const effectiveMimeType =
+        file.mimeType === SHORTCUT_MIME
+          ? (file.shortcutDetails as { targetMimeType?: string } | undefined)?.targetMimeType ?? ''
+          : file.mimeType!;
+      const effectiveId =
+        file.mimeType === SHORTCUT_MIME
+          ? (file.shortcutDetails as { targetId?: string } | undefined)?.targetId ?? file.id!
+          : file.id!;
+
+      const format = getMimeTypeFormat(effectiveMimeType);
       if (!format) continue; // Skip unsupported formats
+
+      // Use effective id for dedup check (avoid showing both shortcut and original)
+      if (books.some((b) => b.id === effectiveId)) continue;
 
       // Skip books the user has removed from the library (hidden, file left in Drive)
       if ((file.appProperties as Record<string, string> | undefined)?.m_hidden === '1') continue;
@@ -497,9 +512,9 @@ export async function listFilesInFolder(
       );
 
       books.push({
-        id: file.id!,
+        id: effectiveId,
         name: file.name!,
-        mimeType: file.mimeType!,
+        mimeType: effectiveMimeType,
         size: file.size ? parseInt(file.size as string, 10) : 0,
         modifiedTime: file.modifiedTime!,
         thumbnailLink: file.thumbnailLink ?? undefined,
