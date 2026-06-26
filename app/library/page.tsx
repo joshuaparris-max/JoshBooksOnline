@@ -1818,12 +1818,12 @@ export default function LibraryPage() {
           {resumeItems.length > 0 && (
             <div className="mt-6">
               <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Continue</p>
-              <div className="flex gap-3 overflow-x-auto pb-2">
+              <div className="grid grid-cols-2 gap-3 sm:flex sm:overflow-x-auto sm:pb-2">
                 {resumeItems.map((item) => (
                   <Link
                     key={`${item.kind}-${item.id}`}
                     href={item.href}
-                    className="group flex w-44 shrink-0 flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900 p-3 transition hover:border-slate-500/40 hover:bg-slate-800"
+                    className="group flex sm:w-44 sm:shrink-0 flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900 p-3 transition hover:border-slate-500/40 hover:bg-slate-800"
                   >
                     <p className="text-xs text-slate-500 uppercase tracking-wide">
                       {item.kind === 'ebook' ? '📚 Ebook' : item.kind === 'audiobook' ? '🎧 Audio' : '🎬 Movie'}
