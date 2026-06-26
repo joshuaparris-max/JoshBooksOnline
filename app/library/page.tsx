@@ -9,11 +9,12 @@ import { AudiobookCard } from '@/components/AudiobookCard';
 import YouTubeAudiobookEditor from '@/components/YouTubeAudiobookEditor';
 import EbookAudioLinks from '@/components/EbookAudioLinks';
 import { ONLINE_EBOOKS } from '@/lib/onlineEbooks';
+import { MOVIES } from '@/lib/movies';
 import { findYoutubeMatches } from '@/lib/youtubeCatalog';
 import { useCollections } from '@/lib/useCollections';
 import { useYoutubeCatalog } from '@/lib/useYoutubeCatalog';
 import CollectionsManager from '@/components/CollectionsManager';
-import type { BookEntry, BookMetadata, AudiobookEntry, Audiobook, LibrarySource } from '@/types/books';
+import type { BookEntry, BookMetadata, AudiobookEntry, Audiobook, LibrarySource, MovieEntry } from '@/types/books';
 
 const SOURCE_BADGES: Record<string, string> = {
   'IT PD Ebooks': 'bg-amber-500 text-slate-950',
@@ -211,6 +212,18 @@ function Cover({ book, className }: { book: BookEntry; className: string }) {
       style={{ backgroundColor: getColorFromTitle(title) }}
     >
       {getInitials(title)}
+    </div>
+  );
+}
+
+function MoviePoster({ movie }: { movie: MovieEntry }) {
+  return (
+    <div
+      className="flex h-32 w-24 shrink-0 items-center justify-center rounded-2xl text-center text-xl font-semibold text-white"
+      style={{ backgroundColor: getColorFromTitle(movie.title) }}
+      aria-hidden="true"
+    >
+      {getInitials(movie.title)}
     </div>
   );
 }
@@ -471,7 +484,7 @@ export default function LibraryPage() {
   const [confirmDelete, setConfirmDelete] = useState<BookEntry | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
-  const [tab, setTab] = useState<'ebooks' | 'audiobooks'>('ebooks');
+  const [tab, setTab] = useState<'ebooks' | 'audiobooks' | 'movies'>('ebooks');
   const [ebookSource, setEbookSource] = useState<'drive' | 'online'>('drive');
   const collectionsApi = useCollections();
   const youtube = useYoutubeCatalog();
@@ -1208,6 +1221,25 @@ export default function LibraryPage() {
     return [...list].sort((a, b) => compareAudiobooks(a, b, audioSortField, audioSortDir));
   }, [audiobooksWithGroups, search, hiddenIds, audioSortField, audioSortDir, metaOverrides, passesCollection]);
 
+  const filteredMovies = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const list = query
+      ? MOVIES.filter((movie) => {
+          return (
+            movie.title.toLowerCase().includes(query) ||
+            movie.year?.toString().includes(query) ||
+            movie.collection?.toLowerCase().includes(query)
+          );
+        })
+      : MOVIES;
+
+    return [...list].sort((a, b) => {
+      const collectionCompare = (a.collection ?? '').localeCompare(b.collection ?? '');
+      if (collectionCompare !== 0) return collectionCompare;
+      return a.title.localeCompare(b.title);
+    });
+  }, [search]);
+
   const selectedAudiobooks = filteredAudiobooks.filter((book) => selectedAudioIds.has(book.id));
   const selectedMergeableAudiobooks = selectedAudiobooks.filter(
     (book) => !book.isFolder && !isManualGroupEntryId(book.id)
@@ -1331,7 +1363,15 @@ export default function LibraryPage() {
               🎧 Audiobooks
             </button>
 
-            <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTab('movies')}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'movies' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+            >
+              Movies
+            </button>
+
+            <div className={`ml-auto items-center gap-2 ${tab === 'movies' ? 'hidden' : 'flex'}`}>
               <button
                 type="button"
                 onClick={() => {
@@ -1671,6 +1711,21 @@ export default function LibraryPage() {
             </div>
           </div>
           )}
+
+          {tab === 'movies' && (
+            <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search movies by title, year, or collection"
+                className="w-full flex-1 rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
+              />
+              <div className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-400">
+                {filteredMovies.length} movies
+              </div>
+            </div>
+          )}
         </section>
 
         {(importStatus.type !== 'idle' || enrich.message) && (
@@ -1725,6 +1780,48 @@ export default function LibraryPage() {
               </Link>
             ))}
           </section>
+        )}
+
+        {tab === 'movies' && (
+          filteredMovies.length === 0 ? (
+            <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-10 text-center text-slate-400">
+              <p className="text-xl font-medium">No movies match your search.</p>
+              <p className="mt-2">Try a title, year, or collection name.</p>
+            </section>
+          ) : (
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {filteredMovies.map((movie) => (
+                <a
+                  key={movie.id}
+                  href={movie.driveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex gap-4 rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70"
+                >
+                  <MoviePoster movie={movie} />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="line-clamp-2 text-lg font-semibold text-white group-hover:text-sky-300">
+                      {movie.title}
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-400">
+                      {movie.year ? movie.year : 'Movie'}
+                    </p>
+                    {movie.collection && (
+                      <p className="mt-1 text-xs text-slate-500">{movie.collection}</p>
+                    )}
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                      <span className="inline-flex items-center rounded-full bg-fuchsia-600/20 px-2.5 py-0.5 text-fuchsia-200">
+                        Movie
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-white/5 px-2.5 py-0.5 text-slate-300">
+                        Google Drive
+                      </span>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </section>
+          )
         )}
 
         {tab === 'ebooks' && ebookSource === 'drive' && (loading ? (

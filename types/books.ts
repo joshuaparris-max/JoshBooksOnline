@@ -36,6 +36,16 @@ export interface OnlineEbook {
   category: 'Classic literature' | 'Sci-fi & fantasy' | 'Philosophy & nonfiction' | 'Christian & faith';
 }
 
+/** A curated movie file stored in Google Drive and opened externally. */
+export interface MovieEntry {
+  id: string;
+  title: string;
+  year?: number;
+  driveFileId: string;
+  driveUrl: string;
+  collection?: string;
+}
+
 /** A single audio file within an audiobook. */
 export interface AudioTrack {
   /** Drive file id of the audio track */
