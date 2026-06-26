@@ -1890,7 +1890,7 @@ export default function LibraryPage() {
                     return (
                       <Link
                         key={`ebook-${book.id}`}
-                        href={`/reader/${book.id}`}
+                        href={`/media/ebook/${book.id}`}
                         className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-4 transition hover:border-slate-500/40 hover:bg-slate-800/70"
                       >
                         <span className="shrink-0 text-xl">📚</span>
@@ -1909,7 +1909,7 @@ export default function LibraryPage() {
                     return (
                       <Link
                         key={`audiobook-${ab.id}`}
-                        href={`/listen/${encodeURIComponent(ab.id)}`}
+                        href={`/media/audiobook/${encodeURIComponent(ab.id)}`}
                         className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-4 transition hover:border-slate-500/40 hover:bg-slate-800/70"
                       >
                         <span className="shrink-0 text-xl">🎧</span>
@@ -1926,11 +1926,9 @@ export default function LibraryPage() {
                   if (result.kind === 'movie') {
                     const movie = result.item;
                     return (
-                      <a
+                      <Link
                         key={`movie-${movie.id}`}
-                        href={movie.driveUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`/media/movie/${movie.id}`}
                         className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-4 transition hover:border-slate-500/40 hover:bg-slate-800/70"
                       >
                         <span className="shrink-0 text-xl">🎬</span>
@@ -1939,7 +1937,7 @@ export default function LibraryPage() {
                           {movie.year && <p className="text-sm text-slate-400">{movie.year}{movie.collection ? ` · ${movie.collection}` : ''}</p>}
                         </div>
                         <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-slate-400">Movie</span>
-                      </a>
+                      </Link>
                     );
                   }
                   if (result.kind === 'online-ebook') {
@@ -1947,7 +1945,7 @@ export default function LibraryPage() {
                     return (
                       <Link
                         key={`online-ebook-${book.id}`}
-                        href={`/read-online?url=${encodeURIComponent(book.url)}&format=${book.format}&title=${encodeURIComponent(book.title)}`}
+                        href={`/media/online-ebook/${book.id}`}
                         className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-4 transition hover:border-slate-500/40 hover:bg-slate-800/70"
                       >
                         <span className="shrink-0 text-xl">📖</span>
@@ -1962,11 +1960,9 @@ export default function LibraryPage() {
                   if (result.kind === 'online-audiobook') {
                     const ab = result.item;
                     return (
-                      <a
+                      <Link
                         key={`online-ab-${ab.id}`}
-                        href={ab.youtubeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`/media/online-audiobook/${ab.id}`}
                         className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-4 transition hover:border-slate-500/40 hover:bg-slate-800/70"
                       >
                         <span className="shrink-0 text-xl">▶️</span>
@@ -1975,7 +1971,7 @@ export default function LibraryPage() {
                           <p className="truncate text-sm text-slate-400">{ab.author}</p>
                         </div>
                         <span className="shrink-0 rounded-full bg-sky-600/20 px-2.5 py-0.5 text-xs text-sky-300">YouTube</span>
-                      </a>
+                      </Link>
                     );
                   }
                   return null;
@@ -1990,7 +1986,7 @@ export default function LibraryPage() {
             {filteredOnlineEbooks.map((book) => (
               <Link
                 key={book.id}
-                href={`/read-online?url=${encodeURIComponent(book.url)}&format=${book.format}&title=${encodeURIComponent(book.title)}`}
+                href={`/media/online-ebook/${book.id}`}
                 className="group flex gap-4 rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70"
               >
                 {book.coverUrl ? (
