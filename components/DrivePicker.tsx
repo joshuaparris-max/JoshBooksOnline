@@ -20,15 +20,18 @@ declare global {
     google?: {
       picker: {
         Action: {
-          ACTION: string;
           CANCEL: string;
-          PICKED_INCLUDE: string;
+          PICKED: string;
         };
         Response: {
+          ACTION: string;
           DOCUMENTS: string;
         };
+        ViewId: {
+          DOCS: string;
+        };
         PickerBuilder: new () => any;
-        DocsView: new () => any;
+        DocsView: new (viewId?: string) => any;
       };
     };
   }
@@ -65,13 +68,20 @@ export function DrivePicker({
         throw new Error('Google Picker API not available');
       }
 
+      const view = new google.picker.DocsView()
+        .setIncludeFolders(true)
+        .setSelectFolderEnabled(true)
+        .setOwnedByMe(false);
+
+      // For audio imports, filter the picker view to only show audio files and folders
+      if (target === 'audiobooks') {
+        (view as any).setMimeTypes(
+          'audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/m4a,audio/m4b,audio/aac,audio/ogg,audio/wav,audio/flac,application/vnd.google-apps.folder'
+        );
+      }
+
       const picker = new google.picker.PickerBuilder()
-        .addView(
-          new google.picker.DocsView()
-            .setIncludeFolders(true)
-            .setSelectFolderEnabled(true)
-            .setOwnedByMe(true)
-        )
+        .addView(view)
         .setOAuthToken(session.accessToken)
         .setDeveloperKey(process.env.NEXT_PUBLIC_GOOGLE_API_KEY)
         .setCallback(handlePickerCallback)
@@ -90,14 +100,14 @@ export function DrivePicker({
     const google = window.google;
     if (!google?.picker) return;
 
-    const action = data[google.picker.Action.ACTION];
-    const docs = data[google.picker.Response.DOCUMENTS] || [];
+    // Use the real Picker API response keys (google.picker.Response.ACTION = "action",
+    // google.picker.Response.DOCUMENTS = "docs"). Accessing via string is more reliable
+    // than the typed constants since the TS declaration can drift from the runtime API.
+    const action: string | undefined = data[google.picker.Response.ACTION] ?? data.action;
+    const docs: any[] = data[google.picker.Response.DOCUMENTS] ?? data.docs ?? [];
 
-    if (action === google.picker.Action.CANCEL) {
-      return;
-    }
-
-    if (action !== google.picker.Action.PICKED_INCLUDE) {
+    // Ignore non-pick events (e.g. the "loaded" event that fires when the picker first opens)
+    if (action !== 'picked' && action !== google.picker.Action.PICKED) {
       return;
     }
 
