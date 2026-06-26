@@ -59,14 +59,47 @@ const AUDIO_MIME_TYPES = new Set([
 ]);
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder';
+const SHORTCUT_MIME = 'application/vnd.google-apps.shortcut';
+
+const AUDIO_FILE_EXTENSIONS = new Set([
+  '.mp3',
+  '.m4a',
+  '.m4b',
+  '.aac',
+  '.ogg',
+  '.wav',
+  '.flac',
+  '.opus',
+]);
+
+function hasAudioExtension(fileName: string): boolean {
+  const dot = fileName.lastIndexOf('.');
+  if (dot === -1) return false;
+  return AUDIO_FILE_EXTENSIONS.has(fileName.slice(dot).toLowerCase());
+}
 
 function isAudioMime(mimeType?: string | null): boolean {
   if (!mimeType) return false;
   return AUDIO_MIME_TYPES.has(mimeType) || mimeType.startsWith('audio/');
 }
 
-export function isAudioMimeType(mimeType: string): boolean {
-  return isAudioMime(mimeType);
+function classifyAudiobookChildMime(
+  mimeType: string | null | undefined,
+  shortcutTargetMime?: string | null
+): 'folder' | 'audio' | null {
+  if (mimeType === FOLDER_MIME) return 'folder';
+  if (isAudioMime(mimeType)) return 'audio';
+  if (mimeType === SHORTCUT_MIME) {
+    if (shortcutTargetMime === FOLDER_MIME) return 'folder';
+    if (isAudioMime(shortcutTargetMime)) return 'audio';
+  }
+  return null;
+}
+
+export function isAudioMimeType(mimeType: string, fileName?: string): boolean {
+  if (isAudioMime(mimeType)) return true;
+  if (fileName) return hasAudioExtension(fileName);
+  return false;
 }
 
 /** Natural sort so "Track 2" comes before "Track 10". */
@@ -613,17 +646,24 @@ export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry
         do {
           const response = await drive.files.list({
             q: `'${rootId}' in parents and trashed = false`,
-            fields: 'nextPageToken, files(id, name, mimeType, appProperties)',
+            fields:
+              'nextPageToken, files(id, name, mimeType, appProperties, shortcutDetails)',
             pageSize: 200,
             pageToken: pageToken ?? undefined,
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true,
           });
 
           for (const file of response.data.files || []) {
             const props = file.appProperties as Record<string, string> | undefined;
             if (props?.m_hidden === '1') continue;
             const child: Child = { id: file.id!, name: file.name!, props };
-            if (file.mimeType === FOLDER_MIME) folders.push(child);
-            else if (isAudioMime(file.mimeType)) looseAudio.push(child);
+            const kind = classifyAudiobookChildMime(
+              file.mimeType,
+              file.shortcutDetails?.targetMimeType
+            );
+            if (kind === 'folder') folders.push(child);
+            else if (kind === 'audio') looseAudio.push(child);
           }
 
           pageToken = response.data.nextPageToken;
@@ -690,15 +730,23 @@ export async function getAudiobookTracks(
   if (!isFolder) {
     // A loose-file audiobook is represented by its first chapter. Gather all of
     // its sibling chapters (same parent folder + same derived book key) as tracks.
-    const file = await drive.files.get({ fileId: id, fields: 'id, name, size, parents, appProperties' });
+    const file = await drive.files.get({
+      fileId: id,
+      fields: 'id, name, size, parents, appProperties, mimeType, shortcutDetails',
+      supportsAllDrives: true,
+    });
     const parent = file.data.parents?.[0];
     const props = file.data.appProperties as Record<string, string> | undefined;
     const key = manualAudioGroupKey(props) || deriveBookKey(file.data.name!);
+    const streamId =
+      file.data.mimeType === SHORTCUT_MIME && file.data.shortcutDetails?.targetId
+        ? file.data.shortcutDetails.targetId
+        : file.data.id!;
 
     if (!parent) {
       return [
         {
-          id: file.data.id!,
+          id: streamId,
           name: file.data.name!,
           size: file.data.size ? parseInt(file.data.size as string, 10) : 0,
         },
@@ -710,17 +758,28 @@ export async function getAudiobookTracks(
     do {
       const response = await drive.files.list({
         q: `'${parent}' in parents and trashed = false`,
-        fields: 'nextPageToken, files(id, name, mimeType, size, appProperties)',
+        fields:
+          'nextPageToken, files(id, name, mimeType, size, appProperties, shortcutDetails)',
         pageSize: 200,
         pageToken: pageToken ?? undefined,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
       });
       for (const f of response.data.files || []) {
-        if (!isAudioMime(f.mimeType)) continue;
+        const kind = classifyAudiobookChildMime(
+          f.mimeType,
+          f.shortcutDetails?.targetMimeType
+        );
+        if (kind !== 'audio') continue;
         const siblingProps = f.appProperties as Record<string, string> | undefined;
         const siblingKey = manualAudioGroupKey(siblingProps) || deriveBookKey(f.name!);
         if (siblingKey !== key) continue;
+        const siblingStreamId =
+          f.mimeType === SHORTCUT_MIME && f.shortcutDetails?.targetId
+            ? f.shortcutDetails.targetId
+            : f.id!;
         siblings.push({
-          id: f.id!,
+          id: siblingStreamId,
           name: f.name!,
           size: f.size ? parseInt(f.size as string, 10) : 0,
         });
@@ -733,11 +792,24 @@ export async function getAudiobookTracks(
       ? siblings
       : [
           {
-            id: file.data.id!,
+            id: streamId,
             name: file.data.name!,
             size: file.data.size ? parseInt(file.data.size as string, 10) : 0,
           },
         ];
+  }
+
+  let folderId = id;
+  const folderEntry = await drive.files.get({
+    fileId: id,
+    fields: 'mimeType, shortcutDetails',
+    supportsAllDrives: true,
+  });
+  if (
+    folderEntry.data.mimeType === SHORTCUT_MIME &&
+    folderEntry.data.shortcutDetails?.targetId
+  ) {
+    folderId = folderEntry.data.shortcutDetails.targetId;
   }
 
   const tracks: AudioTrack[] = [];
@@ -745,17 +817,31 @@ export async function getAudiobookTracks(
   let pageToken: string | null | undefined;
   do {
     const response = await drive.files.list({
-      q: `'${id}' in parents and trashed = false`,
-      fields: 'nextPageToken, files(id, name, mimeType, size)',
+      q: `'${folderId}' in parents and trashed = false`,
+      fields: 'nextPageToken, files(id, name, mimeType, size, shortcutDetails)',
       pageSize: 200,
       pageToken: pageToken ?? undefined,
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
     });
     for (const file of response.data.files || []) {
-      if (file.mimeType === FOLDER_MIME) {
-        subFolders.push({ id: file.id!, name: file.name! });
-      } else if (isAudioMime(file.mimeType)) {
+      const kind = classifyAudiobookChildMime(
+        file.mimeType,
+        file.shortcutDetails?.targetMimeType
+      );
+      if (kind === 'folder') {
+        const nestedFolderId =
+          file.mimeType === SHORTCUT_MIME && file.shortcutDetails?.targetId
+            ? file.shortcutDetails.targetId
+            : file.id!;
+        subFolders.push({ id: nestedFolderId, name: file.name! });
+      } else if (kind === 'audio') {
+        const streamId =
+          file.mimeType === SHORTCUT_MIME && file.shortcutDetails?.targetId
+            ? file.shortcutDetails.targetId
+            : file.id!;
         tracks.push({
-          id: file.id!,
+          id: streamId,
           name: file.name!,
           size: file.size ? parseInt(file.size as string, 10) : 0,
         });
@@ -784,8 +870,15 @@ export async function getAudiobookMeta(
 ): Promise<{ title: string; isFolder: boolean } & Partial<AudiobookEntry>> {
   const auth = getOAuthClient(accessToken);
   const drive = google.drive({ version: 'v3', auth });
-  const file = await drive.files.get({ fileId: id, fields: 'id, name, mimeType, appProperties' });
-  const isFolder = file.data.mimeType === FOLDER_MIME;
+  const file = await drive.files.get({
+    fileId: id,
+    fields: 'id, name, mimeType, appProperties, shortcutDetails',
+    supportsAllDrives: true,
+  });
+  const isFolder =
+    file.data.mimeType === FOLDER_MIME ||
+    (file.data.mimeType === SHORTCUT_MIME &&
+      file.data.shortcutDetails?.targetMimeType === FOLDER_MIME);
   const props = file.data.appProperties as Record<string, string> | undefined;
   const title = isFolder ? file.data.name! : audioGroupTitle({ name: file.data.name!, props });
   return {
@@ -1131,28 +1224,83 @@ async function addFileToLibraryFolder(
   try {
     const fileInfo = await drive.files.get({
       fileId,
-      fields: 'parents',
+      fields: 'id, name, mimeType, parents',
+      supportsAllDrives: true,
     });
 
-    const currentParents = (fileInfo.data.parents || []).join(',');
-    if (currentParents.includes(folderId)) {
+    const name = fileInfo.data.name!;
+    const mimeType = fileInfo.data.mimeType!;
+    const parents = fileInfo.data.parents || [];
+
+    if (parents.includes(folderId)) {
       return true;
     }
 
-    await drive.files.update({
-      fileId,
-      addParents: folderId,
-      fields: 'id, parents',
-    });
+    // Files with no parent can be placed directly in the library folder.
+    if (parents.length === 0) {
+      await drive.files.update({
+        fileId,
+        addParents: folderId,
+        supportsAllDrives: true,
+        fields: 'id, parents',
+      });
+      return true;
+    }
 
-    return true;
+    // Drive no longer supports multiple parents — link via shortcut instead.
+    try {
+      await drive.files.create({
+        requestBody: {
+          name,
+          mimeType: SHORTCUT_MIME,
+          parents: [folderId],
+          shortcutDetails: {
+            targetId: fileId,
+            targetMimeType: mimeType,
+          },
+        },
+        supportsAllDrives: true,
+        fields: 'id',
+      });
+      return true;
+    } catch (shortcutError) {
+      console.warn(`Shortcut failed for ${fileId}, trying copy:`, shortcutError);
+      await drive.files.copy({
+        fileId,
+        requestBody: {
+          name,
+          parents: [folderId],
+        },
+        supportsAllDrives: true,
+        fields: 'id',
+      });
+      return true;
+    }
   } catch (error) {
     console.error(`Failed to add file ${fileId} to folder ${folderId}:`, error);
     return false;
   }
 }
 
-type DriveChild = { id: string; name: string; mimeType: string };
+type DriveChild = {
+  id: string;
+  name: string;
+  mimeType: string;
+  shortcutTargetMime?: string;
+  shortcutTargetId?: string;
+};
+
+function folderChildTargetId(child: DriveChild): string | null {
+  if (child.mimeType === FOLDER_MIME) return child.id;
+  if (
+    child.mimeType === SHORTCUT_MIME &&
+    child.shortcutTargetMime === FOLDER_MIME &&
+    child.shortcutTargetId
+  ) {
+    return child.shortcutTargetId;
+  }
+  return null;
+}
 
 async function listImmediateFolderChildren(
   accessToken: string,
@@ -1166,13 +1314,21 @@ async function listImmediateFolderChildren(
   do {
     const response = await drive.files.list({
       q: `'${folderId}' in parents and trashed = false`,
-      fields: 'nextPageToken, files(id, name, mimeType)',
+      fields: 'nextPageToken, files(id, name, mimeType, shortcutDetails)',
       pageSize: 200,
       pageToken: pageToken ?? undefined,
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
     });
 
     for (const file of response.data.files || []) {
-      children.push({ id: file.id!, name: file.name!, mimeType: file.mimeType! });
+      children.push({
+        id: file.id!,
+        name: file.name!,
+        mimeType: file.mimeType!,
+        shortcutTargetMime: file.shortcutDetails?.targetMimeType ?? undefined,
+        shortcutTargetId: file.shortcutDetails?.targetId ?? undefined,
+      });
     }
 
     pageToken = response.data.nextPageToken;
@@ -1184,9 +1340,12 @@ async function listImmediateFolderChildren(
 async function folderContainsAudioRecursive(accessToken: string, folderId: string): Promise<boolean> {
   const children = await listImmediateFolderChildren(accessToken, folderId);
   for (const child of children) {
-    if (isAudioMime(child.mimeType)) return true;
-    if (child.mimeType === FOLDER_MIME) {
-      if (await folderContainsAudioRecursive(accessToken, child.id)) return true;
+    if (classifyAudiobookChildMime(child.mimeType, child.shortcutTargetMime) === 'audio') {
+      return true;
+    }
+    const folderTargetId = folderChildTargetId(child);
+    if (folderTargetId) {
+      if (await folderContainsAudioRecursive(accessToken, folderTargetId)) return true;
     }
   }
   return false;
@@ -1201,7 +1360,7 @@ export async function importAudioFileToAudiobooks(
 ): Promise<{ ok: boolean; reason?: string }> {
   const metadata = await getFileMetadata(accessToken, fileId);
   if (!metadata) return { ok: false, reason: 'Could not retrieve file metadata' };
-  if (!isAudioMime(metadata.mimeType)) {
+  if (!isAudioMimeType(metadata.mimeType, metadata.name)) {
     return { ok: false, reason: `Unsupported audio format: ${metadata.mimeType}` };
   }
 
@@ -1223,14 +1382,17 @@ export async function importAudioFolderToAudiobooks(
   }
 
   const children = await listImmediateFolderChildren(accessToken, folderId);
-  const subfolders = children.filter((child) => child.mimeType === FOLDER_MIME);
-  const looseAudio = children.filter((child) => isAudioMime(child.mimeType));
+  const subfolders = children.filter((child) => folderChildTargetId(child) !== null);
+  const looseAudio = children.filter(
+    (child) => classifyAudiobookChildMime(child.mimeType, child.shortcutTargetMime) === 'audio'
+  );
 
   if (subfolders.length > 0 && looseAudio.length === 0) {
     let importedCount = 0;
     for (const subfolder of subfolders) {
-      if (!(await folderContainsAudioRecursive(accessToken, subfolder.id))) continue;
-      const linked = await addFileToAudiobooksFolder(accessToken, subfolder.id);
+      const subfolderId = folderChildTargetId(subfolder)!;
+      if (!(await folderContainsAudioRecursive(accessToken, subfolderId))) continue;
+      const linked = await addFileToAudiobooksFolder(accessToken, subfolderId);
       if (linked) importedCount += 1;
     }
     if (importedCount > 0) return { importedCount };

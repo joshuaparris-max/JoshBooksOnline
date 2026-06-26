@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
           }
 
           const ebookFormat = getMimeTypeFormat(metadata.mimeType);
-          const isAudio = isAudioMimeType(metadata.mimeType);
+          const isAudio = isAudioMimeType(metadata.mimeType, metadata.name);
 
           if (isAudio && importAudiobooks) {
             const audioResult = await importAudioFileToAudiobooks(session.accessToken, item.id);

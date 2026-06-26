@@ -12,7 +12,7 @@ import {
   mergeYoutubeCatalog,
 } from '@/lib/youtubeCatalog';
 import type { Audiobook } from '@/types/books';
-import { deriveBookKey, deriveBookTitle } from '@/lib/googleDrive';
+import { deriveBookKey, deriveBookTitle, isAudioMimeType } from '@/lib/googleDrive';
 
 describe('Catalogue matching', () => {
   it('normalises filenames and aliases consistently', () => {
@@ -107,6 +107,18 @@ describe('YouTube catalog helpers', () => {
 });
 
 describe('Audiobooks', () => {
+  describe('Audio mime detection', () => {
+    it('recognises common audio mime types', () => {
+      expect(isAudioMimeType('audio/mpeg')).toBe(true);
+      expect(isAudioMimeType('audio/mp4')).toBe(true);
+    });
+
+    it('recognises mp3 files by extension when Drive uses octet-stream', () => {
+      expect(isAudioMimeType('application/octet-stream', 'chapter-01.mp3')).toBe(true);
+      expect(isAudioMimeType('application/octet-stream', 'notes.txt')).toBe(false);
+    });
+  });
+
   describe('Drive Audiobook Grouping', () => {
     it('should group standalone Lilith chapter files into one audiobook', () => {
       const filenames = [
