@@ -29,6 +29,7 @@ Last reviewed: June 2026
 - Ebook ↔ audiobook linking (Drive + YouTube)
 - Virtual collections, import via Google Picker, hide/remove from library
 - Online public-domain ebooks (`/read-online`)
+- Authenticated admin diagnostics page (`/admin`)
 
 ### Latest completion
 
@@ -50,6 +51,8 @@ npm run build
 ## Upgrade backlog
 
 Prioritised upgrades that would materially improve JoshBooks without changing the core single-user design:
+
+Status: item 10 is implemented as `/admin` for authenticated safe environment checks, catalogue counts, and live-QA guidance. Future expansion can add Drive connectivity probes, cache status, and recent API failure history.
 
 1. **Unified media search** — one search surface across ebooks, audiobooks, online audiobooks, online ebooks, and movies, with quick filters by media type.
 2. **Movie playback page** — open Drive movies inside JoshBooks with an embedded player page, progress tracking, and a clean fallback link to Google Drive.
