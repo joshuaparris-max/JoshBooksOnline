@@ -55,7 +55,25 @@ function WatchInner() {
 
   useEffect(() => {
     resumeApplied.current = false;
+    lastSavedTime.current = 0;
     setError(null);
+  }, [fileId]);
+
+  // Save on page exit so position isn't lost if user navigates away mid-movie
+  useEffect(() => {
+    const onExit = () => {
+      const video = videoRef.current;
+      if (!video || video.currentTime < 5) return;
+      try {
+        window.localStorage.setItem(PROGRESS_KEY(fileId), String(Math.floor(video.currentTime)));
+      } catch { /* ignore */ }
+    };
+    window.addEventListener('pagehide', onExit);
+    window.addEventListener('beforeunload', onExit);
+    return () => {
+      window.removeEventListener('pagehide', onExit);
+      window.removeEventListener('beforeunload', onExit);
+    };
   }, [fileId]);
 
   const streamUrl = `/api/stream/${encodeURIComponent(fileId)}`;

@@ -126,6 +126,17 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
     }).catch(() => {});
   };
 
+  // Save on page exit so position isn't lost if user navigates away mid-track
+  useEffect(() => {
+    const onExit = () => save(true);
+    window.addEventListener('pagehide', onExit);
+    window.addEventListener('beforeunload', onExit);
+    return () => {
+      window.removeEventListener('pagehide', onExit);
+      window.removeEventListener('beforeunload', onExit);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Keyboard shortcuts: Space = play/pause, ←/→ = skip 30s, ,/. = prev/next track
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
