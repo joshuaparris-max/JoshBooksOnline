@@ -54,7 +54,7 @@ function ReadOnlineInner() {
 
   const back = (
     <button
-      onClick={() => router.push('/library')}
+      onClick={() => { if (window.history.length > 1) router.back(); else router.push('/library'); }}
       className="fixed left-4 top-4 z-50 rounded-full bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
     >
       Back to library
