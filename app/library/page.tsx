@@ -2398,10 +2398,24 @@ export default function LibraryPage() {
                     .filter(Boolean)
                     .join(', ')}
                 </p>
-                {unifiedResults.map((result) => {
+                {unifiedResults.flatMap((result, idx) => {
+                  const GROUP_LABELS: Record<string, string> = {
+                    ebook: '📚 Ebooks',
+                    audiobook: '🎧 Audiobooks',
+                    movie: '🎬 Movies',
+                    'online-ebook': '📖 Free Online Ebooks',
+                    'online-audiobook': '▶️ YouTube Audiobooks',
+                  };
+                  const showHeader = idx === 0 || unifiedResults[idx - 1]?.kind !== result.kind;
+                  const header = showHeader ? (
+                    <p key={`hdr-${result.kind}`} className={`px-1 text-xs font-semibold uppercase tracking-widest text-slate-500 ${idx > 0 ? 'mt-5' : ''}`}>
+                      {GROUP_LABELS[result.kind]}
+                    </p>
+                  ) : null;
+                  let card: React.ReactNode = null;
                   if (result.kind === 'ebook') {
                     const book = result.item;
-                    return (
+                    card = (
                       <Link
                         key={`ebook-${book.id}`}
                         href={`/media/ebook/${book.id}`}
@@ -2417,10 +2431,9 @@ export default function LibraryPage() {
                         <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-slate-400">Ebook</span>
                       </Link>
                     );
-                  }
-                  if (result.kind === 'audiobook') {
+                  } else if (result.kind === 'audiobook') {
                     const ab = result.item;
-                    return (
+                    card = (
                       <Link
                         key={`audiobook-${ab.id}`}
                         href={`/media/audiobook/${encodeURIComponent(ab.id)}`}
@@ -2436,10 +2449,9 @@ export default function LibraryPage() {
                         <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-slate-400">Audiobook</span>
                       </Link>
                     );
-                  }
-                  if (result.kind === 'movie') {
+                  } else if (result.kind === 'movie') {
                     const movie = result.item;
-                    return (
+                    card = (
                       <Link
                         key={`movie-${movie.id}`}
                         href={`/media/movie/${movie.id}`}
@@ -2453,10 +2465,9 @@ export default function LibraryPage() {
                         <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-slate-400">Movie</span>
                       </Link>
                     );
-                  }
-                  if (result.kind === 'online-ebook') {
+                  } else if (result.kind === 'online-ebook') {
                     const book = result.item;
-                    return (
+                    card = (
                       <Link
                         key={`online-ebook-${book.id}`}
                         href={`/media/online-ebook/${book.id}`}
@@ -2470,10 +2481,9 @@ export default function LibraryPage() {
                         <span className="shrink-0 rounded-full bg-emerald-600/20 px-2.5 py-0.5 text-xs text-emerald-300">Free online</span>
                       </Link>
                     );
-                  }
-                  if (result.kind === 'online-audiobook') {
+                  } else if (result.kind === 'online-audiobook') {
                     const ab = result.item;
-                    return (
+                    card = (
                       <Link
                         key={`online-ab-${ab.id}`}
                         href={`/media/online-audiobook/${ab.id}`}
@@ -2488,7 +2498,7 @@ export default function LibraryPage() {
                       </Link>
                     );
                   }
-                  return null;
+                  return [header, card].filter(Boolean);
                 })}
               </>
             )}
