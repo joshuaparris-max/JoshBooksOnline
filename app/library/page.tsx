@@ -521,6 +521,11 @@ export default function LibraryPage() {
   const [selectedAudioIds, setSelectedAudioIds] = useState<Set<string>>(new Set());
   const [bulkIds, setBulkIds] = useState<Set<string>>(new Set());
   const [bulkCollectionId, setBulkCollectionId] = useState('');
+  const [cacheStatus, setCacheStatus] = useState({
+    online: true,
+    localDataKeys: 0,
+    browserCacheSupported: false,
+  });
   const [audioGroupStatus, setAudioGroupStatus] = useState<{ loading: boolean; message: string | null }>({
     loading: false,
     message: null,
@@ -605,6 +610,36 @@ export default function LibraryPage() {
         // ignore malformed stored value
       }
     }
+  }, []);
+
+  useEffect(() => {
+    const updateCacheStatus = () => {
+      let localDataKeys = 0;
+      try {
+        for (let index = 0; index < window.localStorage.length; index += 1) {
+          const key = window.localStorage.key(index);
+          if (key?.startsWith('joshbooks-') || key?.startsWith('bookshelf-')) localDataKeys += 1;
+        }
+      } catch {
+        localDataKeys = 0;
+      }
+
+      setCacheStatus({
+        online: navigator.onLine,
+        localDataKeys,
+        browserCacheSupported: 'caches' in window,
+      });
+    };
+
+    updateCacheStatus();
+    window.addEventListener('online', updateCacheStatus);
+    window.addEventListener('offline', updateCacheStatus);
+    window.addEventListener('storage', updateCacheStatus);
+    return () => {
+      window.removeEventListener('online', updateCacheStatus);
+      window.removeEventListener('offline', updateCacheStatus);
+      window.removeEventListener('storage', updateCacheStatus);
+    };
   }, []);
 
   useEffect(() => {
@@ -1563,6 +1598,35 @@ export default function LibraryPage() {
               >
                 Sign out
               </button>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 text-sm md:grid-cols-3">
+            <div
+              className={`rounded-2xl border p-4 ${
+                cacheStatus.online
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100'
+                  : 'border-amber-500/30 bg-amber-500/10 text-amber-100'
+              }`}
+            >
+              <p className="font-semibold">{cacheStatus.online ? 'Online' : 'Offline'}</p>
+              <p className="mt-1 text-xs opacity-80">
+                {cacheStatus.online ? 'Drive, YouTube, and online ebooks can load.' : 'Media that streams from Drive, YouTube, or Gutenberg needs network access.'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-slate-300">
+              <p className="font-semibold text-white">Local app data</p>
+              <p className="mt-1 text-xs text-slate-400">
+                {cacheStatus.localDataKeys} saved setting/progress item{cacheStatus.localDataKeys === 1 ? '' : 's'} found on this browser.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-slate-300">
+              <p className="font-semibold text-white">Reader cache</p>
+              <p className="mt-1 text-xs text-slate-400">
+                {cacheStatus.browserCacheSupported
+                  ? 'Browser cache is available for fetched reader assets; media streams still need access to their source.'
+                  : 'This browser does not expose Cache Storage to the app.'}
+              </p>
             </div>
           </div>
 
