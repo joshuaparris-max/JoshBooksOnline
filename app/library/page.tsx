@@ -1626,6 +1626,8 @@ export default function LibraryPage() {
     'joshbooks-audio-sort-field',
     'joshbooks-audio-sort-dir',
     'joshbooks-audio-speed',
+    'bookshelf-reader-fontSize',
+    'joshbooks-smart-folders',
   ];
 
   const exportUserdata = () => {
