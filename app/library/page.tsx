@@ -1731,6 +1731,29 @@ export default function LibraryPage() {
               </button>
               <button
                 type="button"
+                onClick={exportUserdata}
+                title="Download a backup of all your settings, progress, and metadata"
+                className="inline-flex items-center justify-center rounded-full bg-slate-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+              >
+                Export data
+              </button>
+              <button
+                type="button"
+                onClick={() => importUserdataRef.current?.click()}
+                title="Restore settings, progress, and metadata from a backup file"
+                className="inline-flex items-center justify-center rounded-full bg-slate-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+              >
+                Import data
+              </button>
+              <input
+                ref={importUserdataRef}
+                type="file"
+                accept=".json"
+                onChange={handleImportUserdata}
+                className="hidden"
+              />
+              <button
+                type="button"
                 onClick={() => signOut({ callbackUrl: '/' })}
                 className="inline-flex items-center justify-center rounded-full bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-500"
               >
