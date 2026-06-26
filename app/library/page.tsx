@@ -1814,14 +1814,14 @@ export default function LibraryPage() {
               onClick={() => setTab('ebooks')}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'ebooks' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
             >
-              📚 Ebooks
+              📚 Ebooks{books ? <span className="ml-1.5 rounded-full bg-black/15 px-1.5 py-0.5 text-xs font-normal">{sortedBooks.length}</span> : null}
             </button>
             <button
               type="button"
               onClick={() => setTab('audiobooks')}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'audiobooks' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
             >
-              🎧 Audiobooks
+              🎧 Audiobooks{audiobooks ? <span className="ml-1.5 rounded-full bg-black/15 px-1.5 py-0.5 text-xs font-normal">{filteredAudiobooks.length}</span> : null}
             </button>
 
             <button
@@ -1829,7 +1829,7 @@ export default function LibraryPage() {
               onClick={() => setTab('movies')}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'movies' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
             >
-              Movies
+              🎬 Movies<span className="ml-1.5 rounded-full bg-black/15 px-1.5 py-0.5 text-xs font-normal">{filteredMovies.length}</span>
             </button>
 
             <div className={`ml-auto items-center gap-2 ${tab === 'movies' ? 'hidden' : 'flex'}`}>
