@@ -2362,7 +2362,22 @@ export default function LibraryPage() {
               </div>
             ) : (
               <>
-                <p className="text-sm text-slate-500">{unifiedResults.length} result{unifiedResults.length !== 1 ? 's' : ''} across all media</p>
+                <p className="text-sm text-slate-500">
+                  {unifiedResults.length} result{unifiedResults.length !== 1 ? 's' : ''} —{' '}
+                  {[
+                    { kind: 'ebook', label: 'ebook' },
+                    { kind: 'audiobook', label: 'audiobook' },
+                    { kind: 'movie', label: 'movie' },
+                    { kind: 'online-ebook', label: 'online ebook' },
+                    { kind: 'online-audiobook', label: 'YouTube' },
+                  ]
+                    .map(({ kind, label }) => {
+                      const n = unifiedResults.filter((r) => r.kind === kind).length;
+                      return n > 0 ? `${n} ${label}${n !== 1 ? 's' : ''}` : null;
+                    })
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
                 {unifiedResults.map((result) => {
                   if (result.kind === 'ebook') {
                     const book = result.item;
