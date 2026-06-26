@@ -2026,11 +2026,9 @@ export default function LibraryPage() {
           ) : (
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filteredMovies.map((movie) => (
-                <a
+                <Link
                   key={movie.id}
-                  href={movie.driveUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={`/media/movie/${movie.id}`}
                   className="group flex gap-4 rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70"
                 >
                   <MoviePoster movie={movie} />
@@ -2053,7 +2051,7 @@ export default function LibraryPage() {
                       </span>
                     </div>
                   </div>
-                </a>
+                </Link>
               ))}
             </section>
           )
@@ -2194,6 +2192,12 @@ export default function LibraryPage() {
                         }}
                       />
                       <div className="flex gap-2">
+                        <Link
+                          href={`/media/ebook/${book.id}`}
+                          className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                        >
+                          Details
+                        </Link>
                         <button
                           type="button"
                           onClick={() => setEditingBook(book)}
@@ -2308,6 +2312,13 @@ export default function LibraryPage() {
                             }}
                             compact
                           />
+                          <Link
+                            href={`/media/ebook/${book.id}`}
+                            title="View details"
+                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10"
+                          >
+                            Details
+                          </Link>
                           <button
                             type="button"
                             onClick={() => setEditingBook(book)}
@@ -2478,6 +2489,12 @@ export default function LibraryPage() {
                             </Link>
                           )}
                           <div className="flex gap-2">
+                            <Link
+                              href={`/media/audiobook/${book.id}`}
+                              className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                            >
+                              Details
+                            </Link>
                             <button
                               type="button"
                               onClick={() => setEditingAudio(book)}
