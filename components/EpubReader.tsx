@@ -295,7 +295,7 @@ export default function EpubReader({ name, arrayBuffer, initialLocation, onProgr
             onClick={() => setShowToolbar((value) => !value)}
             className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm transition hover:bg-white/10"
           >
-            Toggle Controls
+            {showToolbar ? 'Hide controls' : 'Show controls'}
           </button>
         </div>
       </div>
