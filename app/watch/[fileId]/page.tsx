@@ -16,6 +16,7 @@ function WatchInner() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const resumeApplied = useRef(false);
+  const lastSavedTime = useRef(0);
 
   // Restore saved position on first play
   const handleCanPlay = () => {
@@ -34,12 +35,15 @@ function WatchInner() {
     }
   };
 
-  // Save position periodically
+  // Save position every ~10s (not every frame)
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video) return;
+    const now = video.currentTime;
+    if (Math.abs(now - lastSavedTime.current) < 10) return;
+    lastSavedTime.current = now;
     try {
-      window.localStorage.setItem(PROGRESS_KEY(fileId), String(Math.floor(video.currentTime)));
+      window.localStorage.setItem(PROGRESS_KEY(fileId), String(Math.floor(now)));
     } catch {
       // ignore
     }
@@ -62,7 +66,7 @@ function WatchInner() {
       <div className="flex items-center gap-3 px-4 py-3">
         <button
           type="button"
-          onClick={() => router.push('/library')}
+          onClick={() => { if (window.history.length > 1) router.back(); else router.push('/library'); }}
           className="shrink-0 rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-white/20"
         >
           ← Back
