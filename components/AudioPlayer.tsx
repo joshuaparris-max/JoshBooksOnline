@@ -108,6 +108,24 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
     try { window.localStorage.setItem(RATE_KEY, String(rate)); } catch { /* ignore */ }
   }, [rate]);
 
+  const save = (force = false) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const now = Date.now();
+    if (!force && now - lastSave.current < 8000) return;
+    lastSave.current = now;
+    // Cross-device resume (Redis); best-effort Drive sync too.
+    const body = JSON.stringify({ id: audiobook.id, track: index, position: Math.floor(audio.currentTime) });
+    fetch('/api/audio-progress', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }).catch(
+      () => {}
+    );
+    fetch('/api/library/audio-progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    }).catch(() => {});
+  };
+
   // Keyboard shortcuts: Space = play/pause, ←/→ = skip 30s, ,/. = prev/next track
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
@@ -142,24 +160,6 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [togglePlay, tracks.length]);
-
-  const save = (force = false) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const now = Date.now();
-    if (!force && now - lastSave.current < 8000) return;
-    lastSave.current = now;
-    // Cross-device resume (Redis); best-effort Drive sync too.
-    const body = JSON.stringify({ id: audiobook.id, track: index, position: Math.floor(audio.currentTime) });
-    fetch('/api/audio-progress', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }).catch(
-      () => {}
-    );
-    fetch('/api/library/audio-progress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    }).catch(() => {});
-  };
 
   const skip = (delta: number) => {
     const audio = audioRef.current;

@@ -1605,7 +1605,6 @@ export default function LibraryPage() {
       }));
     items.push(...movieResumes);
     return items;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [books, audiobooks, movieProgress, hiddenIds]);
 
   const STATIC_KEYS = [
