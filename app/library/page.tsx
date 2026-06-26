@@ -2616,23 +2616,23 @@ export default function LibraryPage() {
             <p className="mt-2">Try a broader search or refresh the library.</p>
           </section>
         ) : viewMode === 'grid' ? (
-          <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <section className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
             {sortedBooks.map((book) => (
               <article
                 key={book.id}
-                className="group flex flex-col rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70 hover:shadow-black/20"
+                className="group flex flex-col rounded-2xl sm:rounded-3xl border border-white/10 bg-slate-900/80 p-3 sm:p-6 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70 hover:shadow-black/20"
               >
-                <Link href={`/reader/${book.id}`} className="flex gap-4">
-                  <Cover book={book} className="h-28 w-20 shrink-0 overflow-hidden rounded-2xl text-2xl" />
+                <Link href={`/reader/${book.id}`} className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                  <Cover book={book} className="aspect-[2/3] w-full overflow-hidden rounded-xl text-2xl sm:aspect-auto sm:h-28 sm:w-20 sm:shrink-0 sm:rounded-2xl" />
                   <div className="min-w-0 flex-1">
-                    <h2 className="line-clamp-2 text-lg font-semibold text-white">{displayTitle(book)}</h2>
+                    <h2 className="line-clamp-2 text-xs font-semibold leading-tight text-white sm:text-lg">{displayTitle(book)}</h2>
                     {displayAuthors(book) && (
-                      <p className="mt-1 truncate text-sm text-slate-300">{displayAuthors(book)}</p>
+                      <p className="hidden sm:block mt-1 truncate text-sm text-slate-300">{displayAuthors(book)}</p>
                     )}
                     {book.publishedDate && (
-                      <p className="mt-0.5 text-xs text-slate-500">{book.publishedDate}</p>
+                      <p className="hidden sm:block mt-0.5 text-xs text-slate-500">{book.publishedDate}</p>
                     )}
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                    <div className="hidden sm:flex mt-2 flex-wrap gap-2 text-xs">
                       <span className={`inline-flex items-center rounded-full px-3 py-1 ${SOURCE_BADGES[book.source] ?? 'bg-slate-500 text-white'}`}>
                         {book.source}
                       </span>
@@ -2642,8 +2642,14 @@ export default function LibraryPage() {
                     </div>
                   </div>
                 </Link>
+                {/* Mobile: compact progress bar only */}
+                <div className="sm:hidden mt-2">
+                  <div className="h-1 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-1 rounded-full bg-sky-500" style={{ width: `${Math.max(0, Math.min(100, book.readingProgress))}%` }} />
+                  </div>
+                </div>
 
-                <div className="mt-5 space-y-4 text-slate-300">
+                <div className="hidden sm:block mt-5 space-y-4 text-slate-300">
                   <div className="grid gap-2 text-sm">
                     <div className="flex items-center justify-between text-slate-400">
                       <span>Size</span>
@@ -2942,21 +2948,21 @@ export default function LibraryPage() {
               </p>
             </section>
           ) : viewMode === 'grid' ? (
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filteredAudiobooks.map((book) => {
                 const suggestion = pending[book.id];
                 const isAudioSelected = selectedAudioIds.has(book.id);
                 return (
                   <article
                     key={book.id}
-                    className={`relative flex flex-col rounded-3xl border bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70 ${
+                    className={`relative flex flex-col rounded-2xl sm:rounded-3xl border bg-slate-900/80 p-3 sm:p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70 ${
                       isAudioSelected
                         ? 'border-sky-500/60 bg-sky-600/10 ring-2 ring-sky-500/60'
                         : 'border-white/10'
                     }`}
                   >
                     <label
-                      className={`absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border ${
+                      className={`absolute right-2 top-2 sm:right-4 sm:top-4 flex h-7 w-7 sm:h-9 sm:w-9 cursor-pointer items-center justify-center rounded-full border ${
                         isAudioSelected ? 'border-sky-400 bg-sky-600/30' : 'border-white/10 bg-slate-950/90'
                       }`}
                     >
@@ -2968,31 +2974,31 @@ export default function LibraryPage() {
                         aria-label={`Select ${book.title}`}
                       />
                     </label>
-                    <Link href={`/listen/${book.id}`} className="flex items-center gap-4">
+                    <Link href={`/listen/${book.id}`} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                       {book.coverUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={book.coverUrl} alt="" className="h-20 w-14 shrink-0 rounded-xl object-cover" />
+                        <img src={book.coverUrl} alt="" className="aspect-[2/3] w-full rounded-xl object-cover sm:aspect-auto sm:h-20 sm:w-14 sm:shrink-0" />
                       ) : (
-                        <div className="flex h-20 w-14 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-2xl">
+                        <div className="flex aspect-[2/3] w-full items-center justify-center rounded-xl bg-sky-600 text-3xl sm:aspect-auto sm:h-20 sm:w-14 sm:shrink-0">
                           🎧
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <h2 className="line-clamp-2 font-semibold text-white">{book.title}</h2>
-                        {book.authors && <p className="truncate text-sm text-slate-400">{book.authors.join(', ')}</p>}
-                        {book.publishedDate && <p className="text-xs text-slate-500">{book.publishedDate}</p>}
-                        <p className="mt-1 text-xs text-slate-500">
+                        <h2 className="line-clamp-2 text-xs font-semibold leading-tight text-white sm:text-base">{book.title}</h2>
+                        {book.authors && <p className="hidden sm:block truncate text-sm text-slate-400">{book.authors.join(', ')}</p>}
+                        {book.publishedDate && <p className="hidden sm:block text-xs text-slate-500">{book.publishedDate}</p>}
+                        <p className="hidden sm:block mt-1 text-xs text-slate-500">
                           {book.isFolder ? 'Audiobook' : book.isManualGroup ? 'Merged group' : 'Single file'} · {book.source}
                         </p>
                         {book.audioPosition !== undefined && book.audioPosition > 0 && (
-                          <span className="mt-2 inline-block rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-300">
+                          <span className="mt-1 inline-block rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-300">
                             Resume
                           </span>
                         )}
                       </div>
                     </Link>
 
-                    <div className="mt-4">
+                    <div className="hidden sm:block mt-4">
                       {suggestion ? (
                         <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3">
                           <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">Suggested — review</p>
