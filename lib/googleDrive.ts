@@ -1171,6 +1171,7 @@ export async function getFileMetadata(
     const response = await drive.files.get({
       fileId,
       fields: 'id, name, mimeType, size, modifiedTime',
+      supportsAllDrives: true,
     });
 
     if (!response.data) {

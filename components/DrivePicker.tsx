@@ -70,15 +70,7 @@ export function DrivePicker({
 
       const view = new google.picker.DocsView()
         .setIncludeFolders(true)
-        .setSelectFolderEnabled(true)
-        .setOwnedByMe(false);
-
-      // For audio imports, filter the picker view to only show audio files and folders
-      if (target === 'audiobooks') {
-        (view as any).setMimeTypes(
-          'audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/m4a,audio/m4b,audio/aac,audio/ogg,audio/wav,audio/flac,application/vnd.google-apps.folder'
-        );
-      }
+        .setSelectFolderEnabled(true);
 
       const picker = new google.picker.PickerBuilder()
         .addView(view)
