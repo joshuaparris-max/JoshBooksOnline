@@ -59,6 +59,11 @@ export default function PdfReader({ name, arrayBuffer, initialPage, onProgress }
   const [activeMatch, setActiveMatch] = useState(0);
   const [searching, setSearching] = useState(false);
   const pageTextCache = useRef<Map<number, PageTextData>>(new Map());
+  const ZOOM_STEPS = [50, 75, 100, 125, 150, 175, 200];
+  const [zoomIndex, setZoomIndex] = useState<number>(() => {
+    try { return parseInt(window.localStorage.getItem('joshbooks-pdf-zoom') ?? '2', 10) || 2; } catch { return 2; }
+  });
+  const zoom = ZOOM_STEPS[zoomIndex] ?? 100;
 
   const pages = useMemo(() => Array.from({ length: numPages }, (_, i) => i + 1), [numPages]);
 
@@ -435,11 +440,30 @@ export default function PdfReader({ name, arrayBuffer, initialPage, onProgress }
           <span>
             Page <strong>{currentPage}</strong> / {numPages || '...'}
           </span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => { const next = Math.max(0, zoomIndex - 1); setZoomIndex(next); try { window.localStorage.setItem('joshbooks-pdf-zoom', String(next)); } catch {} }}
+              disabled={zoomIndex === 0}
+              className="rounded-full bg-slate-800 px-2 py-1 text-sm transition hover:bg-slate-700 disabled:opacity-40"
+            >
+              −
+            </button>
+            <span className="min-w-[3rem] text-center text-sm">{zoom}%</span>
+            <button
+              type="button"
+              onClick={() => { const next = Math.min(ZOOM_STEPS.length - 1, zoomIndex + 1); setZoomIndex(next); try { window.localStorage.setItem('joshbooks-pdf-zoom', String(next)); } catch {} }}
+              disabled={zoomIndex === ZOOM_STEPS.length - 1}
+              className="rounded-full bg-slate-800 px-2 py-1 text-sm transition hover:bg-slate-700 disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="h-[96px] md:h-[88px]" />
-      <div ref={containerRef} className="space-y-8 px-4 pb-16 pt-4 md:px-8">
+      <div ref={containerRef} className="space-y-8 px-4 pb-16 pt-4 md:px-8" style={{ zoom: zoom / 100 }}>
         {numPages === 0 ? (
           <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-8 text-center">
             <p>Loading PDF…</p>
