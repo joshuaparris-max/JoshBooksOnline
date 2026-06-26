@@ -14,6 +14,7 @@ import { MOVIES } from '@/lib/movies';
 import { findYoutubeMatches } from '@/lib/youtubeCatalog';
 import { useCollections } from '@/lib/useCollections';
 import { useYoutubeCatalog } from '@/lib/useYoutubeCatalog';
+import { useSmartFolders, matchesSmartFolder } from '@/lib/useSmartFolders';
 import CollectionsManager from '@/components/CollectionsManager';
 import type { BookEntry, BookMetadata, AudiobookEntry, Audiobook, LibrarySource, MovieEntry } from '@/types/books';
 
@@ -502,9 +503,11 @@ export default function LibraryPage() {
   const [tab, setTab] = useState<'ebooks' | 'audiobooks' | 'movies'>('ebooks');
   const [ebookSource, setEbookSource] = useState<'drive' | 'online'>('drive');
   const collectionsApi = useCollections();
+  const smartFoldersApi = useSmartFolders();
   const youtube = useYoutubeCatalog();
   const { catalog: youtubeCatalog, hydrated: youtubeHydrated, serverBlob: youtubeServerBlob, setYoutubeLinks } = youtube;
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+  const [selectedSmartFolderId, setSelectedSmartFolderId] = useState<string | null>(null);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [folderItem, setFolderItem] = useState<{ id: string; label: string } | null>(null);
   const [audiobooks, setAudiobooks] = useState<AudiobookEntry[] | null>(null);
@@ -710,13 +713,22 @@ export default function LibraryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCollectionId, collectionsApi.collectionItemIds]);
 
+  const activeSmartFolder = useMemo(
+    () => (selectedSmartFolderId ? smartFoldersApi.folders.find((f) => f.id === selectedSmartFolderId) ?? null : null),
+    [selectedSmartFolderId, smartFoldersApi.folders]
+  );
+
   const passesCollection = useCallback(
-    (id: string) => {
+    (id: string, item?: BookEntry | AudiobookEntry, kind?: 'ebook' | 'audiobook') => {
+      // Smart folder filter takes precedence when active
+      if (activeSmartFolder && item && kind) {
+        return matchesSmartFolder(activeSmartFolder, item, kind);
+      }
       if (!selectedCollectionId) return true;
       if (selectedCollectionId === '__unfiled__') return !collectionsApi.allFiledItemIds.has(id);
       return activeCollectionSet ? activeCollectionSet.has(id) : true;
     },
-    [selectedCollectionId, activeCollectionSet, collectionsApi.allFiledItemIds]
+    [selectedCollectionId, activeCollectionSet, collectionsApi.allFiledItemIds, activeSmartFolder]
   );
 
   const filteredOnline = useMemo(() => {
@@ -1282,7 +1294,7 @@ export default function LibraryPage() {
     if (!books) return [];
     const query = search.trim().toLowerCase();
     const visible = books
-      .filter((book) => !hiddenIds.has(book.id) && passesCollection(book.id))
+      .filter((book) => !hiddenIds.has(book.id) && passesCollection(book.id, book, 'ebook'))
       .map((book) => (metaOverrides[book.id] ? { ...book, ...metaOverrides[book.id] } : book));
 
     const filtered = query
@@ -1321,7 +1333,7 @@ export default function LibraryPage() {
     if (!audiobooksWithGroups) return [];
     const query = search.trim().toLowerCase();
     const visible = audiobooksWithGroups
-      .filter((a) => !hiddenIds.has(a.id) && passesCollection(a.id))
+      .filter((a) => !hiddenIds.has(a.id) && passesCollection(a.id, a, 'audiobook'))
       .map((a) => (metaOverrides[a.id] ? { ...a, ...metaOverrides[a.id] } : a));
     const list = query
       ? visible.filter(
@@ -1682,6 +1694,14 @@ export default function LibraryPage() {
                     ? 'Unfiled'
                     : collectionsApi.collections.find((c) => c.id === selectedCollectionId)?.name ?? 'Folder'}
                   <button type="button" onClick={() => setSelectedCollectionId(null)} title="Clear filter">
+                    ✕
+                  </button>
+                </span>
+              )}
+              {selectedSmartFolderId && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-violet-600/20 px-3 py-1.5 text-sm text-violet-200">
+                  ✦ {smartFoldersApi.folders.find((f) => f.id === selectedSmartFolderId)?.name ?? 'Smart folder'}
+                  <button type="button" onClick={() => setSelectedSmartFolderId(null)} title="Clear filter">
                     ✕
                   </button>
                 </span>
@@ -3088,9 +3108,17 @@ export default function LibraryPage() {
       {collectionsOpen && (
         <CollectionsManager
           api={collectionsApi}
+          smartFoldersApi={smartFoldersApi}
           selectedId={selectedCollectionId}
+          selectedSmartId={selectedSmartFolderId}
           onSelect={(id) => {
             setSelectedCollectionId(id);
+            setSelectedSmartFolderId(null);
+            setCollectionsOpen(false);
+          }}
+          onSelectSmart={(id) => {
+            setSelectedSmartFolderId(id);
+            setSelectedCollectionId(null);
             setCollectionsOpen(false);
           }}
           onClose={() => setCollectionsOpen(false)}
