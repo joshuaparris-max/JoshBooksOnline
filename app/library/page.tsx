@@ -1630,17 +1630,22 @@ export default function LibraryPage() {
     'joshbooks-pdf-zoom',
   ];
 
-  // Press "/" to focus the global search input; Escape to clear and blur it
+  // Press "/" to focus search; Escape to clear; 1/2/3 to switch tabs
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
       if (e.key === '/') {
-        const tag = (e.target as HTMLElement)?.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        if (inInput) return;
         e.preventDefault();
         searchInputRef.current?.focus();
       } else if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
         setSearch('');
         searchInputRef.current?.blur();
+      } else if (!inInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (e.key === '1') setTab('ebooks');
+        else if (e.key === '2') setTab('audiobooks');
+        else if (e.key === '3') setTab('movies');
       }
     };
     window.addEventListener('keydown', onKey);
