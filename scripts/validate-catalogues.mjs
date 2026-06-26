@@ -90,9 +90,24 @@ function validateMovies() {
   return movies.length;
 }
 
+function validateDocsCounts(audiobookCount, movieCount) {
+  const file = path.join(root, 'docs', 'copilot.md');
+  const docs = fs.readFileSync(file, 'utf8');
+  const audiobookLine = `lib/youtube-audiobooks.json\` (${audiobookCount} entries)`;
+  const movieLine = `Movies tab with ${movieCount} bundled Google Drive movie links`;
+
+  if (!docs.includes(audiobookLine)) {
+    fail(`docs/copilot.md has a stale audiobook catalogue count. Expected ${audiobookCount}.`);
+  }
+  if (!docs.includes(movieLine)) {
+    fail(`docs/copilot.md has a stale movie catalogue count. Expected ${movieCount}.`);
+  }
+}
+
 try {
   const audiobookCount = validateAudiobooks();
   const movieCount = validateMovies();
+  validateDocsCounts(audiobookCount, movieCount);
   console.log(`Catalogue validation passed: ${audiobookCount} audiobooks, ${movieCount} movies.`);
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);

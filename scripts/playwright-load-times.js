@@ -16,7 +16,7 @@ async function run() {
     let finalUrl = url;
     let error = null;
     try {
-      const response = await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
+      const response = await page.goto(url, { waitUntil: 'load', timeout: 60000 });
       const duration = Date.now() - start;
       status = response?.status() ?? null;
       finalUrl = page.url();
