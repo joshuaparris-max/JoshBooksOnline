@@ -1416,6 +1416,32 @@ export default function LibraryPage() {
     clearBulkSelection();
   };
 
+  const bulkRemoveSelected = () => {
+    if (selectedBulkCandidates.length === 0) return;
+    if (!window.confirm(`Remove ${selectedBulkCandidates.length} item${selectedBulkCandidates.length === 1 ? '' : 's'} from your library? This cannot be undone.`)) return;
+    selectedBulkCandidates.forEach((item) => {
+      if (item.kind === 'ebook') {
+        const book = (books ?? []).find((b) => b.id === item.id);
+        if (book) removeBook(book);
+      } else if (item.kind === 'audiobook') {
+        const ab = (audiobooks ?? []).find((a) => a.id === item.id);
+        if (ab) removeAudiobook(ab);
+      }
+    });
+    clearBulkSelection();
+  };
+
+  const bulkHideAudiobooks = () => {
+    const selectedAudios = [...selectedAudioIds];
+    if (selectedAudios.length === 0) return;
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      selectedAudios.forEach((id) => next.add(id));
+      return next;
+    });
+    setSelectedAudioIds(new Set());
+  };
+
   // Unified search results — only active when a query is typed
   type UnifiedResult =
     | { kind: 'ebook'; item: BookEntry }
@@ -1776,6 +1802,14 @@ export default function LibraryPage() {
               >
                 Hide selected
               </button>
+              <button
+                type="button"
+                onClick={bulkRemoveSelected}
+                disabled={selectedBulkCandidates.length === 0}
+                className="rounded-full border border-rose-700/40 bg-rose-700/10 px-3 py-1.5 text-xs font-semibold text-rose-300 transition hover:bg-rose-700/20 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Remove selected
+              </button>
             </div>
           )}
 
@@ -1847,14 +1881,24 @@ export default function LibraryPage() {
                 </button>
 
                 {selectedAudioIds.size > 0 && (
-                  <button
-                    type="button"
-                    onClick={clearAudioSelection}
-                    disabled={audioGroupStatus.loading}
-                    className="rounded-full border border-white/10 bg-slate-950 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
-                  >
-                    Clear
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={bulkHideAudiobooks}
+                      disabled={audioGroupStatus.loading}
+                      className="rounded-full border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-500/20 disabled:opacity-50"
+                    >
+                      Hide ({selectedAudioIds.size})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearAudioSelection}
+                      disabled={audioGroupStatus.loading}
+                      className="rounded-full border border-white/10 bg-slate-950 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      Clear
+                    </button>
+                  </>
                 )}
 
                 <div className="flex items-center gap-2">
