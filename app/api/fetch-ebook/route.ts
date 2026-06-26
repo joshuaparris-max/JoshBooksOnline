@@ -8,6 +8,28 @@ const ALLOWED_HOSTS = new Set([
   'standardebooks.org',
   'www.standardebooks.org',
 ]);
+const MAX_REDIRECTS = 5;
+
+function isAllowedTarget(target: URL) {
+  return target.protocol === 'https:' && ALLOWED_HOSTS.has(target.hostname);
+}
+
+async function fetchAllowedEbook(initialTarget: URL) {
+  let target = initialTarget;
+  for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
+    if (!isAllowedTarget(target)) throw new Error('Host not allowed');
+    const response = await fetch(target.toString(), {
+      headers: { 'User-Agent': 'JoshBooksOnline/1.0 (+reader)' },
+      redirect: 'manual',
+    });
+    if (response.status < 300 || response.status >= 400) return response;
+
+    const location = response.headers.get('location');
+    if (!location || redirects === MAX_REDIRECTS) throw new Error('Invalid redirect');
+    target = new URL(location, target);
+  }
+  throw new Error('Too many redirects');
+}
 
 /**
  * GET /api/fetch-ebook?url=<whitelisted ebook url>
@@ -23,15 +45,12 @@ export async function GET(request: Request) {
   } catch {
     return new Response('Invalid url', { status: 400 });
   }
-  if (target.protocol !== 'https:' || !ALLOWED_HOSTS.has(target.hostname)) {
+  if (!isAllowedTarget(target)) {
     return new Response('Host not allowed', { status: 403 });
   }
 
   try {
-    const upstream = await fetch(target.toString(), {
-      headers: { 'User-Agent': 'JoshBooksOnline/1.0 (+reader)' },
-      redirect: 'follow',
-    });
+    const upstream = await fetchAllowedEbook(target);
     if (!upstream.ok) {
       return new Response(`Upstream ${upstream.status}`, { status: upstream.status });
     }

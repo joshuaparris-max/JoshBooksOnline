@@ -23,8 +23,6 @@ interface DriveSuggestion {
   hint: string;
 }
 
-type Suggestion = YtSuggestion | DriveSuggestion;
-
 // ── Algorithm ──────────────────────────────────────────────────────────────
 
 function normalise(s: string) {

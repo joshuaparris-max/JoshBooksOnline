@@ -2,7 +2,7 @@ import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Proxy protects /library and /reader routes.
+ * Protect every route that reads the user's Drive library or personal data.
  * Unauthenticated users are redirected to the home page sign-in flow.
  */
 export async function proxy(request: NextRequest) {
@@ -16,5 +16,14 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/library/:path*', '/media/:path*', '/reader/:path*'],
+  matcher: [
+    '/admin/:path*',
+    '/audiobooks/:path*',
+    '/library/:path*',
+    '/listen/:path*',
+    '/media/:path*',
+    '/reader/:path*',
+    '/suggestions/:path*',
+    '/watch/:path*',
+  ],
 };

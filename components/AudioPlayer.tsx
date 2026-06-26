@@ -75,7 +75,13 @@ export default function AudioPlayer({
           progress: { track?: number; position?: number } | null;
         };
         if (!cancelled && progress && requestedTrack === undefined) {
-          if (typeof progress.track === 'number' && progress.track < tracks.length) setIndex(progress.track);
+          if (
+            typeof progress.track === 'number' &&
+            progress.track >= 0 &&
+            progress.track < tracks.length
+          ) {
+            setIndex(progress.track);
+          }
           if (typeof progress.position === 'number') resumePos.current = progress.position;
         }
       } catch {
@@ -121,7 +127,7 @@ export default function AudioPlayer({
     try { window.localStorage.setItem(RATE_KEY, String(rate)); } catch { /* ignore */ }
   }, [rate]);
 
-  const save = (force = false) => {
+  const save = useCallback((force = false) => {
     const audio = audioRef.current;
     if (!audio) return;
     const now = Date.now();
@@ -137,7 +143,7 @@ export default function AudioPlayer({
       headers: { 'Content-Type': 'application/json' },
       body,
     }).catch(() => {});
-  };
+  }, [audiobook.id, index]);
 
   // Save on page exit via sendBeacon (fire-and-forget, doesn't block navigation or affect session)
   useEffect(() => {
@@ -151,7 +157,7 @@ export default function AudioPlayer({
     };
     window.addEventListener('pagehide', onExit);
     return () => window.removeEventListener('pagehide', onExit);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [audiobook.id, index]);
 
   // Keyboard shortcuts: Space = play/pause, ←/→ = skip 30s, ,/. = prev/next track
   const togglePlay = useCallback(() => {
@@ -159,7 +165,7 @@ export default function AudioPlayer({
     if (!audio) return;
     if (audio.paused) { audio.play().catch(() => {}); setPlaying(true); }
     else { audio.pause(); setPlaying(false); save(true); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [save]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
