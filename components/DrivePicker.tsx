@@ -2,14 +2,19 @@
 
 import { useSession } from 'next-auth/react';
 import { useState } from 'react';
+import type { DriveImportResult } from '@/lib/driveImportMessages';
+
+export type DriveImportTarget = 'auto' | 'ebooks' | 'audiobooks';
 
 interface DrivePickerProps {
   onImportStart: () => void;
-  onImportComplete: (count: number) => void;
+  onImportComplete: (result: DriveImportResult) => void;
   onImportError: (error: string) => void;
+  /** Where imported files should land. Defaults to auto (ebooks + audio). */
+  target?: DriveImportTarget;
+  label?: string;
 }
 
-// Type augmentation for Google Picker API
 declare global {
   interface Window {
     google?: {
@@ -29,11 +34,13 @@ declare global {
   }
 }
 
-/**
- * Component to handle Google Drive file/folder picker integration
- * Opens the official Google Picker API UI for browsing Drive files
- */
-export function DrivePicker({ onImportStart, onImportComplete, onImportError }: DrivePickerProps) {
+export function DrivePicker({
+  onImportStart,
+  onImportComplete,
+  onImportError,
+  target = 'auto',
+  label = 'Import from Drive',
+}: DrivePickerProps) {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
 
@@ -51,7 +58,6 @@ export function DrivePicker({ onImportStart, onImportComplete, onImportError }: 
     setLoading(true);
 
     try {
-      // Load the Google Picker API script dynamically
       await loadGooglePickerScript();
 
       const google = window.google;
@@ -59,12 +65,12 @@ export function DrivePicker({ onImportStart, onImportComplete, onImportError }: 
         throw new Error('Google Picker API not available');
       }
 
-      // Build the Picker UI with Drive view
       const picker = new google.picker.PickerBuilder()
-        .addView(new google.picker.DocsView()
-          .setIncludeFolders(true)
-          .setSelectFolderEnabled(true)
-          .setOwnedByMe(true)
+        .addView(
+          new google.picker.DocsView()
+            .setIncludeFolders(true)
+            .setSelectFolderEnabled(true)
+            .setOwnedByMe(true)
         )
         .setOAuthToken(session.accessToken)
         .setDeveloperKey(process.env.NEXT_PUBLIC_GOOGLE_API_KEY)
@@ -103,7 +109,6 @@ export function DrivePicker({ onImportStart, onImportComplete, onImportError }: 
     onImportStart();
 
     try {
-      // Extract file/folder IDs from selected items
       const selectedIds = docs.map((doc: any) => ({
         id: doc.id,
         name: doc.name,
@@ -111,11 +116,10 @@ export function DrivePicker({ onImportStart, onImportComplete, onImportError }: 
         type: doc.mimeType === 'application/vnd.google-apps.folder' ? 'folder' : 'file',
       }));
 
-      // Call the import API route
       const response = await fetch('/api/library/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: selectedIds }),
+        body: JSON.stringify({ items: selectedIds, target }),
       });
 
       if (!response.ok) {
@@ -123,8 +127,12 @@ export function DrivePicker({ onImportStart, onImportComplete, onImportError }: 
         throw new Error(error.error || 'Failed to import files');
       }
 
-      const result = await response.json();
-      onImportComplete(result.importedCount || 0);
+      const result = (await response.json()) as DriveImportResult;
+      onImportComplete({
+        importedCount: result.importedCount ?? 0,
+        importedAudiobookCount: result.importedAudiobookCount ?? 0,
+        errors: result.errors ?? [],
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Import failed';
       onImportError(message);
@@ -137,17 +145,13 @@ export function DrivePicker({ onImportStart, onImportComplete, onImportError }: 
       disabled={loading || !session}
       className="inline-flex items-center justify-center px-4 py-3 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
     >
-      {loading ? 'Opening picker...' : 'Import from Drive'}
+      {loading ? 'Opening picker...' : label}
     </button>
   );
 }
 
-/**
- * Load the Google Picker API script dynamically if not already loaded
- */
 function loadGooglePickerScript(): Promise<void> {
   return new Promise((resolve, reject) => {
-    // Check if already loaded
     if (window.google?.picker) {
       resolve();
       return;

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { DrivePicker } from '@/components/DrivePicker';
+import { formatDriveImportMessage, type DriveImportResult } from '@/lib/driveImportMessages';
 import MetadataEditor from '@/components/MetadataEditor';
 import { AudiobookCard } from '@/components/AudiobookCard';
 import YouTubeAudiobookEditor from '@/components/YouTubeAudiobookEditor';
@@ -879,15 +880,17 @@ export default function LibraryPage() {
     setImportStatus({ type: 'loading', message: 'Importing files...' });
   };
 
-  const handleImportComplete = (count: number) => {
+  const handleImportComplete = (result: DriveImportResult) => {
+    const total = result.importedCount + result.importedAudiobookCount;
     setImportStatus({
-      type: 'success',
-      message: `Successfully imported ${count} file${count !== 1 ? 's' : ''}.`,
+      type: total > 0 ? 'success' : 'error',
+      message: formatDriveImportMessage(result),
     });
     setTimeout(() => {
       setImportStatus({ type: 'idle', message: '' });
-      refreshLibrary(true);
-    }, 2000);
+      if (result.importedCount > 0) refreshLibrary(true);
+      if (result.importedAudiobookCount > 0) refreshAudiobooks(true);
+    }, 4000);
   };
 
   const handleImportError = (errorMessage: string) => {
@@ -1425,6 +1428,14 @@ export default function LibraryPage() {
               />
 
               <div className={`flex flex-wrap items-center gap-3 ${audioSource === 'online' ? 'hidden' : ''}`}>
+                <DrivePicker
+                  onImportStart={handleImportStart}
+                  onImportComplete={handleImportComplete}
+                  onImportError={handleImportError}
+                  target="audiobooks"
+                  label="Import MP3 from Drive"
+                />
+
                 <button
                   type="button"
                   onClick={fetchAllAudioMetadata}
@@ -2143,7 +2154,9 @@ export default function LibraryPage() {
           ) : filteredAudiobooks.length === 0 ? (
             <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-10 text-center text-slate-400">
               <p className="text-xl font-medium">No audiobooks found.</p>
-              <p className="mt-2">Add audio to your Audiobooks or Outlander Drive folders, then refresh.</p>
+              <p className="mt-2">
+                Use Import MP3 from Drive above, or add audio to your Audiobooks / Outlander folders, then refresh.
+              </p>
             </section>
           ) : viewMode === 'grid' ? (
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

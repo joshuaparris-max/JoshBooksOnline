@@ -65,6 +65,10 @@ function isAudioMime(mimeType?: string | null): boolean {
   return AUDIO_MIME_TYPES.has(mimeType) || mimeType.startsWith('audio/');
 }
 
+export function isAudioMimeType(mimeType: string): boolean {
+  return isAudioMime(mimeType);
+}
+
 /** Natural sort so "Track 2" comes before "Track 10". */
 function naturalCompare(a: string, b: string): number {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
@@ -1101,36 +1105,142 @@ export async function addFileToUnsorted(
   accessToken: string,
   fileId: string
 ): Promise<boolean> {
+  return addFileToLibraryFolder(accessToken, fileId, FIXED_FOLDERS.Unsorted);
+}
+
+/**
+ * Link a file or folder into the Audiobooks library folder so it appears under
+ * My Drive audiobooks (immediate children become catalogue entries).
+ */
+export async function addFileToAudiobooksFolder(
+  accessToken: string,
+  fileId: string,
+  source: keyof typeof AUDIOBOOK_FOLDERS = 'Audiobooks'
+): Promise<boolean> {
+  return addFileToLibraryFolder(accessToken, fileId, AUDIOBOOK_FOLDERS[source]);
+}
+
+async function addFileToLibraryFolder(
+  accessToken: string,
+  fileId: string,
+  folderId: string
+): Promise<boolean> {
   const auth = getOAuthClient(accessToken);
   const drive = google.drive({ version: 'v3', auth });
 
   try {
-    // Get current parents
     const fileInfo = await drive.files.get({
       fileId,
       fields: 'parents',
     });
 
     const currentParents = (fileInfo.data.parents || []).join(',');
-    const unsortedFolderId = FIXED_FOLDERS['Unsorted'];
-
-    // Check if already in Unsorted
-    if (currentParents.includes(unsortedFolderId)) {
+    if (currentParents.includes(folderId)) {
       return true;
     }
 
-    // Add Unsorted as a parent (file can have multiple parents in Drive)
     await drive.files.update({
       fileId,
-      addParents: unsortedFolderId,
+      addParents: folderId,
       fields: 'id, parents',
     });
 
     return true;
   } catch (error) {
-    console.error(`Failed to add file ${fileId} to Unsorted folder:`, error);
+    console.error(`Failed to add file ${fileId} to folder ${folderId}:`, error);
     return false;
   }
+}
+
+type DriveChild = { id: string; name: string; mimeType: string };
+
+async function listImmediateFolderChildren(
+  accessToken: string,
+  folderId: string
+): Promise<DriveChild[]> {
+  const auth = getOAuthClient(accessToken);
+  const drive = google.drive({ version: 'v3', auth });
+  const children: DriveChild[] = [];
+  let pageToken: string | null | undefined;
+
+  do {
+    const response = await drive.files.list({
+      q: `'${folderId}' in parents and trashed = false`,
+      fields: 'nextPageToken, files(id, name, mimeType)',
+      pageSize: 200,
+      pageToken: pageToken ?? undefined,
+    });
+
+    for (const file of response.data.files || []) {
+      children.push({ id: file.id!, name: file.name!, mimeType: file.mimeType! });
+    }
+
+    pageToken = response.data.nextPageToken;
+  } while (pageToken);
+
+  return children;
+}
+
+async function folderContainsAudioRecursive(accessToken: string, folderId: string): Promise<boolean> {
+  const children = await listImmediateFolderChildren(accessToken, folderId);
+  for (const child of children) {
+    if (isAudioMime(child.mimeType)) return true;
+    if (child.mimeType === FOLDER_MIME) {
+      if (await folderContainsAudioRecursive(accessToken, child.id)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Import one audio file into the Audiobooks folder.
+ */
+export async function importAudioFileToAudiobooks(
+  accessToken: string,
+  fileId: string
+): Promise<{ ok: boolean; reason?: string }> {
+  const metadata = await getFileMetadata(accessToken, fileId);
+  if (!metadata) return { ok: false, reason: 'Could not retrieve file metadata' };
+  if (!isAudioMime(metadata.mimeType)) {
+    return { ok: false, reason: `Unsupported audio format: ${metadata.mimeType}` };
+  }
+
+  const linked = await addFileToAudiobooksFolder(accessToken, fileId);
+  return linked ? { ok: true } : { ok: false, reason: 'Could not add file to Audiobooks folder' };
+}
+
+/**
+ * Import a Drive folder into Audiobooks. Book collections (subfolders only) are
+ * linked individually; single-book folders are linked as one unit.
+ */
+export async function importAudioFolderToAudiobooks(
+  accessToken: string,
+  folderId: string
+): Promise<{ importedCount: number; reason?: string }> {
+  const hasAudio = await folderContainsAudioRecursive(accessToken, folderId);
+  if (!hasAudio) {
+    return { importedCount: 0, reason: 'No audio files found in folder' };
+  }
+
+  const children = await listImmediateFolderChildren(accessToken, folderId);
+  const subfolders = children.filter((child) => child.mimeType === FOLDER_MIME);
+  const looseAudio = children.filter((child) => isAudioMime(child.mimeType));
+
+  if (subfolders.length > 0 && looseAudio.length === 0) {
+    let importedCount = 0;
+    for (const subfolder of subfolders) {
+      if (!(await folderContainsAudioRecursive(accessToken, subfolder.id))) continue;
+      const linked = await addFileToAudiobooksFolder(accessToken, subfolder.id);
+      if (linked) importedCount += 1;
+    }
+    if (importedCount > 0) return { importedCount };
+
+    const linked = await addFileToAudiobooksFolder(accessToken, folderId);
+    return linked ? { importedCount: 1 } : { importedCount: 0, reason: 'Could not add folder to Audiobooks' };
+  }
+
+  const linked = await addFileToAudiobooksFolder(accessToken, folderId);
+  return linked ? { importedCount: 1 } : { importedCount: 0, reason: 'Could not add folder to Audiobooks' };
 }
 
 /**
