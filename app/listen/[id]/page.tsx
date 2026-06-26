@@ -227,7 +227,7 @@ export default function ListenPage() {
       <div className="mx-auto max-w-2xl space-y-6">
         <button
           type="button"
-          onClick={() => router.push('/library')}
+          onClick={() => { if (window.history.length > 1) router.back(); else router.push('/library'); }}
           className="rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
         >
           ← Back to library
