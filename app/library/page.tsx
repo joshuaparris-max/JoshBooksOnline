@@ -1635,7 +1635,8 @@ export default function LibraryPage() {
       const data: Record<string, unknown> = { _version: 1, _exported: new Date().toISOString() };
       for (const key of STATIC_KEYS) {
         const val = window.localStorage.getItem(key);
-        if (val !== null) data[key] = JSON.parse(val);
+        if (val === null) continue;
+        try { data[key] = JSON.parse(val); } catch { data[key] = val; }
       }
       // Prefix-keyed movie progress
       const movieProgressEntries: Record<string, number> = {};
@@ -1668,7 +1669,9 @@ export default function LibraryPage() {
       try {
         const data = JSON.parse(reader.result as string) as Record<string, unknown>;
         for (const key of STATIC_KEYS) {
-          if (key in data) window.localStorage.setItem(key, JSON.stringify(data[key]));
+          if (!(key in data)) continue;
+          const val = data[key];
+          window.localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
         }
         const watchProgress = data['_watch_progress'] as Record<string, number> | undefined;
         if (watchProgress && typeof watchProgress === 'object') {
