@@ -1800,14 +1800,24 @@ export default function LibraryPage() {
           )}
 
           {/* Global search — visible above tabs, triggers unified results view */}
-          <div className="mt-6">
+          <div className="relative mt-6">
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search everything — ebooks, audiobooks, movies…"
-              className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 pr-10 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition hover:text-white"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           <div className={`mt-4 flex items-center gap-2 ${search.trim() ? 'opacity-40 pointer-events-none' : ''}`}>
