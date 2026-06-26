@@ -554,6 +554,7 @@ export default function LibraryPage() {
     type: 'idle',
     message: '',
   });
+  const [movieProgress, setMovieProgress] = useState<Record<string, number>>({});
 
   // Restore persisted view + sort preferences
   useEffect(() => {
@@ -620,6 +621,22 @@ export default function LibraryPage() {
       } catch {
         // ignore malformed stored value
       }
+    }
+
+    // Load movie progress from localStorage (keyed by driveFileId)
+    try {
+      const mp: Record<string, number> = {};
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k?.startsWith('joshbooks-watch-progress:')) {
+          const driveFileId = k.slice('joshbooks-watch-progress:'.length);
+          const val = parseInt(window.localStorage.getItem(k) ?? '0', 10);
+          if (val > 5) mp[driveFileId] = val;
+        }
+      }
+      setMovieProgress(mp);
+    } catch {
+      // ignore
     }
   }, []);
 
@@ -1543,6 +1560,54 @@ export default function LibraryPage() {
   // Render columns in the canonical TABLE_COLUMNS order, keeping only visible ones.
   const activeColumns = TABLE_COLUMNS.filter((col) => col.locked || visibleColumns.includes(col.key));
 
+  type ResumeItem =
+    | { kind: 'ebook'; id: string; title: string; progress: number; href: string }
+    | { kind: 'audiobook'; id: string; title: string; positionSec: number; href: string }
+    | { kind: 'movie'; id: string; title: string; positionSec: number; href: string };
+
+  const resumeItems = useMemo((): ResumeItem[] => {
+    const items: ResumeItem[] = [];
+    // In-progress ebooks sorted by lastOpened desc, progress between 1–99%
+    const ebookResumes = (books ?? [])
+      .filter((b) => b.readingProgress > 0 && b.readingProgress < 100 && !hiddenIds.has(b.id))
+      .sort((a, b) => (b.lastOpened ?? '').localeCompare(a.lastOpened ?? ''))
+      .slice(0, 5)
+      .map((b): ResumeItem => ({
+        kind: 'ebook',
+        id: b.id,
+        title: displayTitle(b),
+        progress: b.readingProgress,
+        href: `/reader/${b.id}`,
+      }));
+    items.push(...ebookResumes);
+    // In-progress audiobooks
+    const abResumes = (audiobooks ?? [])
+      .filter((a) => (a.audioPosition ?? 0) > 5 && !hiddenIds.has(a.id))
+      .slice(0, 5)
+      .map((a): ResumeItem => ({
+        kind: 'audiobook',
+        id: a.id,
+        title: a.title,
+        positionSec: a.audioPosition ?? 0,
+        href: `/listen/${a.id}`,
+      }));
+    items.push(...abResumes);
+    // In-progress movies (progress keyed by driveFileId in localStorage)
+    const movieResumes = MOVIES
+      .filter((m) => (movieProgress[m.driveFileId] ?? 0) > 5)
+      .slice(0, 5)
+      .map((m): ResumeItem => ({
+        kind: 'movie',
+        id: m.id,
+        title: m.title,
+        positionSec: movieProgress[m.driveFileId],
+        href: `/watch/${m.driveFileId}?title=${encodeURIComponent(m.title)}`,
+      }));
+    items.push(...movieResumes);
+    return items;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [books, audiobooks, movieProgress, hiddenIds]);
+
   const STATIC_KEYS = [
     'joshbooks-meta',
     'joshbooks-hidden',
@@ -1697,6 +1762,40 @@ export default function LibraryPage() {
               </p>
             </div>
           </div>
+
+          {/* Continue panel — in-progress items across all media types */}
+          {resumeItems.length > 0 && (
+            <div className="mt-6">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Continue</p>
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {resumeItems.map((item) => (
+                  <Link
+                    key={`${item.kind}-${item.id}`}
+                    href={item.href}
+                    className="group flex w-44 shrink-0 flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900 p-3 transition hover:border-slate-500/40 hover:bg-slate-800"
+                  >
+                    <p className="text-xs text-slate-500 uppercase tracking-wide">
+                      {item.kind === 'ebook' ? '📚 Ebook' : item.kind === 'audiobook' ? '🎧 Audio' : '🎬 Movie'}
+                    </p>
+                    <p className="truncate text-sm font-semibold text-white leading-tight">{item.title}</p>
+                    {item.kind === 'ebook' && (
+                      <div>
+                        <div className="h-1 overflow-hidden rounded-full bg-white/10">
+                          <div className="h-1 rounded-full bg-sky-500" style={{ width: `${item.progress}%` }} />
+                        </div>
+                        <p className="mt-1 text-xs text-slate-400">{Math.round(item.progress)}%</p>
+                      </div>
+                    )}
+                    {(item.kind === 'audiobook' || item.kind === 'movie') && (
+                      <p className="text-xs text-slate-400">
+                        {Math.floor(item.positionSec / 60)}m in
+                      </p>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Global search — visible above tabs, triggers unified results view */}
           <div className="mt-6">
