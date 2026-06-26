@@ -7,6 +7,7 @@ import {
   dedupeAudiobooksById,
   findYoutubeMatches,
   extractYouTubeVideoId,
+  createCustomYoutubeId,
   isValidYoutubeUrl,
   mergeYoutubeCatalog,
 } from '@/lib/youtubeCatalog';
@@ -91,6 +92,17 @@ describe('YouTube catalog merge', () => {
       availabilityType: 'unknown',
     };
     expect(dedupeAudiobooksById([ab, ab])).toHaveLength(1);
+  });
+});
+
+describe('YouTube catalog helpers', () => {
+  it('creates stable custom ids from video and playlist URLs', () => {
+    expect(createCustomYoutubeId('https://www.youtube.com/watch?v=Abc123_XYZ')).toBe(
+      'custom-abc123_xyz'
+    );
+    expect(createCustomYoutubeId('https://www.youtube.com/playlist?list=PL123abc')).toBe(
+      'custom-pl-pl123abc'
+    );
   });
 });
 

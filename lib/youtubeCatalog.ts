@@ -9,6 +9,19 @@ export type YoutubeCatalogState = {
 };
 
 export const YOUTUBE_ID_PREFIX = 'youtube-';
+export const CUSTOM_YOUTUBE_ID_PREFIX = 'custom-';
+
+export function createCustomYoutubeId(url: string): string | null {
+  const playlistMatch = url.match(/youtube\.com\/playlist\?list=([^&\n?#]+)/);
+  if (playlistMatch) {
+    return `${CUSTOM_YOUTUBE_ID_PREFIX}pl-${playlistMatch[1].toLowerCase()}`;
+  }
+
+  const videoId = extractYouTubeVideoId(url);
+  if (videoId) return `${CUSTOM_YOUTUBE_ID_PREFIX}${videoId.toLowerCase()}`;
+
+  return null;
+}
 
 export function youtubeListenId(catalogId: string): string {
   return catalogId.startsWith(YOUTUBE_ID_PREFIX) ? catalogId : `${YOUTUBE_ID_PREFIX}${catalogId}`;

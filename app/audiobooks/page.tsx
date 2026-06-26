@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { AudiobookCard } from '@/components/AudiobookCard';
 import YouTubeAudiobookEditor from '@/components/YouTubeAudiobookEditor';
+import YouTubeAudiobookAddDialog from '@/components/YouTubeAudiobookAddDialog';
 import type { Audiobook } from '@/types/books';
 import { useYoutubeCatalog } from '@/lib/useYoutubeCatalog';
+import { useUserdataYoutubeSync } from '@/lib/useUserdataYoutubeSync';
 
 export default function AudiobooksPage() {
   const youtube = useYoutubeCatalog();
@@ -14,6 +16,9 @@ export default function AudiobooksPage() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'full' | 'preview'>('all');
   const [editingYoutube, setEditingYoutube] = useState<Audiobook | null>(null);
+  const [addingYoutube, setAddingYoutube] = useState(false);
+
+  useUserdataYoutubeSync(youtube.serverBlob, youtube.hydrateFromServer);
 
   useEffect(() => {
     if (youtube.hydrated) setLoading(false);
@@ -46,6 +51,7 @@ export default function AudiobooksPage() {
       total: youtube.catalog.length,
       full: youtube.catalog.filter((ab) => ab.availabilityType === 'full_public_domain').length,
       preview: youtube.catalog.filter((ab) => ab.availabilityType === 'official_preview').length,
+      custom: youtube.catalog.filter((ab) => ab.isCustom).length,
     };
   }, [youtube.catalog]);
 
@@ -61,6 +67,13 @@ export default function AudiobooksPage() {
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={() => setAddingYoutube(true)}
+                className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
+              >
+                Add audiobook
+              </button>
               <Link
                 href="/library"
                 className="inline-flex items-center justify-center rounded-full bg-slate-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
@@ -121,6 +134,11 @@ export default function AudiobooksPage() {
             >
               Previews ({stats.preview})
             </button>
+            {stats.custom > 0 && (
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-200">
+                Yours ({stats.custom})
+              </div>
+            )}
           </div>
         </section>
 
@@ -157,6 +175,17 @@ export default function AudiobooksPage() {
           </section>
         )}
       </div>
+
+      {addingYoutube && (
+        <YouTubeAudiobookAddDialog
+          existingCatalog={youtube.catalog}
+          onClose={() => setAddingYoutube(false)}
+          onSave={(ab) => {
+            youtube.addYoutubeCustom(ab);
+            setAddingYoutube(false);
+          }}
+        />
+      )}
 
       {editingYoutube && (
         <YouTubeAudiobookEditor

@@ -113,22 +113,36 @@ export function useYoutubeCatalog() {
   }, []);
 
   const saveYoutubeEdit = useCallback((audiobook: Audiobook) => {
-    const isCustom = custom.some((ab) => ab.id === audiobook.id);
+    const isCustom = audiobook.isCustom || custom.some((ab) => ab.id === audiobook.id);
     if (isCustom) {
       setCustom((prev) => {
         const idx = prev.findIndex((ab) => ab.id === audiobook.id);
         if (idx >= 0) {
           const next = [...prev];
-          next[idx] = audiobook;
+          next[idx] = { ...audiobook, isCustom: true };
           return next;
         }
-        return [...prev, audiobook];
+        return [...prev, { ...audiobook, isCustom: true }];
       });
     } else {
       setEdits((prev) => ({ ...prev, [audiobook.id]: audiobook }));
     }
     setRemovedIds((prev) => prev.filter((x) => x !== audiobook.id));
   }, [custom]);
+
+  const addYoutubeCustom = useCallback((audiobook: Audiobook) => {
+    const entry = { ...audiobook, isCustom: true };
+    setCustom((prev) => {
+      const idx = prev.findIndex((ab) => ab.id === entry.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = entry;
+        return next;
+      }
+      return [...prev, entry];
+    });
+    setRemovedIds((prev) => prev.filter((x) => x !== entry.id));
+  }, []);
 
   const setYoutubeLink = useCallback((ebookId: string, youtubeId: string | null) => {
     setYoutubeLinks((prev) => {
@@ -152,6 +166,7 @@ export function useYoutubeCatalog() {
     removeYoutube,
     restoreYoutube,
     saveYoutubeEdit,
+    addYoutubeCustom,
     setYoutubeLink,
     setYoutubeLinks,
   };

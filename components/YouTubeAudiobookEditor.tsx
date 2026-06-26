@@ -34,7 +34,7 @@ export default function YouTubeAudiobookEditor({
       return;
     }
     if (!isValidYoutubeUrl(youtubeUrl.trim())) {
-      setError('Enter a valid YouTube watch or youtu.be URL.');
+      setError('Enter a valid YouTube watch, youtu.be, or playlist URL.');
       return;
     }
     const displayLabel =

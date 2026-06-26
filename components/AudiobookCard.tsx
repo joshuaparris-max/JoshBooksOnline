@@ -55,8 +55,16 @@ export function AudiobookCard({ audiobook, onRemove, onEdit }: AudiobookCardProp
             {audiobook.title}
           </h3>
           <p className="text-sm text-slate-400 truncate">{audiobook.author}</p>
+          {audiobook.durationLabel && (
+            <p className="mt-1 text-xs text-slate-500">{audiobook.durationLabel}</p>
+          )}
 
           <div className="mt-3 flex flex-wrap gap-2">
+            {audiobook.isCustom && (
+              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-emerald-700/80 text-white">
+                Added by you
+              </span>
+            )}
             {audiobook.displayLabel && (
               <span className={`text-xs font-semibold px-2 py-1 rounded-full ${typeColor}`}>
                 {audiobook.displayLabel}

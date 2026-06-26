@@ -145,6 +145,12 @@ export interface Audiobook {
 
   /** Additional notes about the audiobook */
   notes?: string;
+
+  /** Human-readable runtime when known (e.g. "2:34:56") */
+  durationLabel?: string;
+
+  /** True for user-added catalogue entries (not bundled in the app) */
+  isCustom?: boolean;
 }
 
 export interface BookEntry {
