@@ -120,7 +120,7 @@ export default function ListenPage() {
           const group = groups.find((g) => g.id === groupId);
           if (!group) throw new Error('missing group');
 
-          const members = await Promise.all(
+          const results = await Promise.allSettled(
             group.memberIds.map(async (memberId) => {
               const response = await fetch(`/api/library/audiobook/${encodeURIComponent(memberId)}`, {
                 cache: 'no-store',
@@ -129,6 +129,10 @@ export default function ListenPage() {
               return (await response.json()) as AudiobookEntry;
             })
           );
+          const members = results
+            .filter((r): r is PromiseFulfilledResult<AudiobookEntry> => r.status === 'fulfilled')
+            .map((r) => r.value);
+          if (members.length === 0) throw new Error('no members loaded');
 
           const tracks = members.flatMap((member) =>
             (member.tracks ?? []).map((track) => ({
