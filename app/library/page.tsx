@@ -564,6 +564,13 @@ export default function LibraryPage() {
     if (storedField && SORT_OPTIONS.some((o) => o.value === storedField)) setSortField(storedField);
     if (storedDir === 'asc' || storedDir === 'desc') setSortDir(storedDir);
 
+    const storedTab = window.localStorage.getItem('joshbooks-tab');
+    if (storedTab === 'ebooks' || storedTab === 'audiobooks' || storedTab === 'movies') setTab(storedTab);
+    const storedAudioSortField = window.localStorage.getItem('joshbooks-audio-sort-field') as AudioSortField | null;
+    const storedAudioSortDir = window.localStorage.getItem('joshbooks-audio-sort-dir') as SortDir | null;
+    if (storedAudioSortField) setAudioSortField(storedAudioSortField);
+    if (storedAudioSortDir === 'asc' || storedAudioSortDir === 'desc') setAudioSortDir(storedAudioSortDir);
+
     const storedLinks = window.localStorage.getItem('joshbooks-links');
     if (storedLinks) {
       try {
@@ -658,6 +665,15 @@ export default function LibraryPage() {
   useEffect(() => {
     window.localStorage.setItem('joshbooks-columns', JSON.stringify(visibleColumns));
   }, [visibleColumns]);
+  useEffect(() => {
+    window.localStorage.setItem('joshbooks-tab', tab);
+  }, [tab]);
+  useEffect(() => {
+    window.localStorage.setItem('joshbooks-audio-sort-field', audioSortField);
+  }, [audioSortField]);
+  useEffect(() => {
+    window.localStorage.setItem('joshbooks-audio-sort-dir', audioSortDir);
+  }, [audioSortDir]);
 
   const refreshLibrary = async (forceRefresh = false) => {
     setLoading(true);
@@ -1541,6 +1557,10 @@ export default function LibraryPage() {
     'joshbooks-sort-dir',
     'joshbooks-columns',
     'joshbooks-reader-theme',
+    'joshbooks-tab',
+    'joshbooks-audio-sort-field',
+    'joshbooks-audio-sort-dir',
+    'joshbooks-audio-speed',
   ];
 
   const exportUserdata = () => {
