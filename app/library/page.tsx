@@ -2532,6 +2532,15 @@ export default function LibraryPage() {
                         >
                           📁
                         </button>
+                        {showHidden && hiddenIds.has(book.id) && (
+                          <button
+                            type="button"
+                            onClick={() => unhideItem(book.id)}
+                            className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+                          >
+                            Unhide
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => setConfirmDelete(book)}
@@ -2654,6 +2663,15 @@ export default function LibraryPage() {
                           >
                             📁
                           </button>
+                          {showHidden && hiddenIds.has(book.id) && (
+                            <button
+                              type="button"
+                              onClick={() => unhideItem(book.id)}
+                              className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 transition hover:bg-emerald-500/20"
+                            >
+                              Unhide
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => setConfirmDelete(book)}
@@ -2829,6 +2847,15 @@ export default function LibraryPage() {
                             >
                               📁
                             </button>
+                            {showHidden && hiddenIds.has(book.id) && (
+                              <button
+                                type="button"
+                                onClick={() => unhideItem(book.id)}
+                                className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+                              >
+                                Unhide
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => setConfirmDeleteAudio(book)}
@@ -2964,6 +2991,15 @@ export default function LibraryPage() {
                             >
                               📁
                             </button>
+                            {showHidden && hiddenIds.has(book.id) && (
+                              <button
+                                type="button"
+                                onClick={() => unhideItem(book.id)}
+                                className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 transition hover:bg-emerald-500/20"
+                              >
+                                Unhide
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => setConfirmDeleteAudio(book)}
