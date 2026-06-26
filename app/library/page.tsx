@@ -462,6 +462,20 @@ function newManualGroupId(): string {
   }
 }
 
+function extractBaseTitle(title: string): string {
+  const base = title
+    // "Lilith Chapter 1: The Library" → "Lilith"
+    .replace(/\s+(chapter|part|book|vol\.?|volume|episode|ep\.?)\s*\d[\s\S]*$/i, '')
+    // "THE PRINCESS AND THE GOBLIN 1 Why the Princess..." → "THE PRINCESS AND THE GOBLIN"
+    .replace(/\s+\d+[\s:–—\-][\s\S]*$/, '')
+    // "45. Romans ROM1", "transition8h", trailing alpha-numeric codes → strip last token if it contains a digit
+    .replace(/\s+\w*\d+\w*$/, '')
+    // "The Great Divorce... by CS Lewis a 1" → strip trailing single-letter suffix after number stripped
+    .replace(/\s+[a-z]$/i, '')
+    .trim();
+  return base || title;
+}
+
 export default function LibraryPage() {
   const [books, setBooks] = useState<BookEntry[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -512,6 +526,9 @@ export default function LibraryPage() {
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [mergeName, setMergeName] = useState('');
   const [mergeProgress, setMergeProgress] = useState<{ done: number; total: number; label: string } | null>(null);
+  type AutoGroupSuggestion = { id: string; name: string; memberIds: string[]; members: AudiobookEntry[]; included: boolean };
+  const [autoGroupDialogOpen, setAutoGroupDialogOpen] = useState(false);
+  const [autoGroupSuggestions, setAutoGroupSuggestions] = useState<AutoGroupSuggestion[]>([]);
   // Manual audiobook playlists — entry-level, stored in the per-user server store
   // (and localStorage), so merging works regardless of Drive write permissions.
   const [manualGroups, setManualGroups] = useState<{ id: string; title: string; memberIds: string[] }[]>([]);
@@ -1168,6 +1185,62 @@ export default function LibraryPage() {
     }
   };
 
+  const openAutoGroupDialog = () => {
+    const alreadyMergedIds = new Set(manualGroups.flatMap((g) => g.memberIds));
+    const eligible = (audiobooks ?? []).filter(
+      (b) => !b.isFolder && !isManualGroupEntryId(b.id) && !alreadyMergedIds.has(b.id)
+    );
+
+    const groups = new Map<string, AudiobookEntry[]>();
+    for (const book of eligible) {
+      const base = extractBaseTitle(book.title);
+      if (base.length < 4) continue;
+      const existing = groups.get(base) ?? [];
+      existing.push(book);
+      groups.set(base, existing);
+    }
+
+    const suggestions: AutoGroupSuggestion[] = [];
+    for (const [name, members] of groups) {
+      if (members.length < 2) continue;
+      members.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+      suggestions.push({ id: newManualGroupId(), name, memberIds: members.map((m) => m.id), members, included: true });
+    }
+    suggestions.sort((a, b) => b.members.length - a.members.length);
+
+    setAutoGroupSuggestions(suggestions);
+    setAutoGroupDialogOpen(true);
+  };
+
+  const toggleAutoGroupSuggestion = (id: string) => {
+    setAutoGroupSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, included: !s.included } : s)));
+  };
+
+  const renameAutoGroupSuggestion = (id: string, name: string) => {
+    setAutoGroupSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
+  };
+
+  const confirmAutoGroups = () => {
+    const toMerge = autoGroupSuggestions.filter((s) => s.included && s.name.trim());
+    if (toMerge.length === 0) return;
+    setManualGroups((prev) => {
+      let next = [...prev];
+      for (const suggestion of toMerge) {
+        const memberSet = new Set(suggestion.memberIds);
+        next = next
+          .map((g) => ({ ...g, memberIds: g.memberIds.filter((id) => !memberSet.has(id)) }))
+          .filter((g) => g.memberIds.length > 0);
+        next.push({ id: suggestion.id, title: suggestion.name.trim(), memberIds: suggestion.memberIds });
+      }
+      return next;
+    });
+    setAutoGroupDialogOpen(false);
+    setAudioGroupStatus({
+      loading: false,
+      message: `Created ${toMerge.length} playlist${toMerge.length === 1 ? '' : 's'}.`,
+    });
+  };
+
   const sortedBooks = useMemo(() => {
     if (!books) return [];
     const query = search.trim().toLowerCase();
@@ -1473,6 +1546,15 @@ export default function LibraryPage() {
                   className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:text-slate-500"
                 >
                   Unmerge
+                </button>
+
+                <button
+                  type="button"
+                  onClick={openAutoGroupDialog}
+                  disabled={!audiobooks || audiobooks.length === 0}
+                  className="rounded-full border border-sky-500/40 bg-sky-950/60 px-4 py-2 text-sm font-semibold text-sky-300 transition hover:bg-sky-900/60 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Auto-group
                 </button>
 
                 {selectedAudioIds.size > 0 && (
@@ -2678,6 +2760,106 @@ export default function LibraryPage() {
                   </span>
                 </button>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {autoGroupDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
+          <div className="my-8 w-full max-w-2xl rounded-3xl border border-white/10 bg-slate-900 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-white">Auto-group audiobooks</h2>
+                <p className="text-xs text-slate-500">
+                  {autoGroupSuggestions.length === 0
+                    ? 'No groups detected'
+                    : `${autoGroupSuggestions.filter((s) => s.included).length} of ${autoGroupSuggestions.length} selected`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAutoGroupDialogOpen(false)}
+                className="rounded-full bg-slate-800 px-3 py-1.5 text-sm text-slate-200 transition hover:bg-slate-700"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
+              {autoGroupSuggestions.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-500">
+                  No groups detected — all audiobooks appear to be unique or already merged.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {autoGroupSuggestions.map((s) => (
+                    <li
+                      key={s.id}
+                      className={`rounded-2xl border p-4 transition ${s.included ? 'border-sky-500/40 bg-sky-950/30' : 'border-white/5 bg-slate-950/40 opacity-50'}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={s.included}
+                          onChange={() => toggleAutoGroupSuggestion(s.id)}
+                          className="mt-1 h-4 w-4 shrink-0 accent-sky-500"
+                        />
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <input
+                            type="text"
+                            value={s.name}
+                            onChange={(e) => renameAutoGroupSuggestion(s.id, e.target.value)}
+                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-1.5 text-sm font-medium text-white outline-none focus:border-sky-500"
+                          />
+                          <details className="group">
+                            <summary className="cursor-pointer list-none text-xs text-slate-400 hover:text-slate-200">
+                              {s.members.length} tracks — click to preview
+                            </summary>
+                            <ul className="mt-2 max-h-40 space-y-0.5 overflow-y-auto rounded-xl bg-slate-950/60 p-2">
+                              {s.members.map((m) => (
+                                <li key={m.id} className="truncate px-2 py-0.5 text-xs text-slate-400">
+                                  {m.title}
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-white/10 px-6 py-4">
+              <button
+                type="button"
+                onClick={() =>
+                  setAutoGroupSuggestions((prev) => prev.map((s) => ({ ...s, included: !prev.every((x) => x.included) })))
+                }
+                className="text-sm text-slate-400 hover:text-slate-200"
+              >
+                {autoGroupSuggestions.every((s) => s.included) ? 'Deselect all' : 'Select all'}
+              </button>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAutoGroupDialogOpen(false)}
+                  className="rounded-full border border-white/10 bg-slate-950 px-5 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmAutoGroups}
+                  disabled={autoGroupSuggestions.filter((s) => s.included).length === 0}
+                  className="rounded-full bg-sky-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+                >
+                  Create {autoGroupSuggestions.filter((s) => s.included).length} playlist
+                  {autoGroupSuggestions.filter((s) => s.included).length === 1 ? '' : 's'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
