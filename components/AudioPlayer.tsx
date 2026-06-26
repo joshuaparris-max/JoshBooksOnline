@@ -126,15 +126,18 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
     }).catch(() => {});
   };
 
-  // Save on page exit so position isn't lost if user navigates away mid-track
+  // Save on page exit via sendBeacon (fire-and-forget, doesn't block navigation or affect session)
   useEffect(() => {
-    const onExit = () => save(true);
-    window.addEventListener('pagehide', onExit);
-    window.addEventListener('beforeunload', onExit);
-    return () => {
-      window.removeEventListener('pagehide', onExit);
-      window.removeEventListener('beforeunload', onExit);
+    const onExit = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      const body = JSON.stringify({ id: audiobook.id, track: index, position: Math.floor(audio.currentTime) });
+      const blob = new Blob([body], { type: 'application/json' });
+      navigator.sendBeacon('/api/audio-progress', blob);
+      navigator.sendBeacon('/api/library/audio-progress', blob);
     };
+    window.addEventListener('pagehide', onExit);
+    return () => window.removeEventListener('pagehide', onExit);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keyboard shortcuts: Space = play/pause, ←/→ = skip 30s, ,/. = prev/next track
