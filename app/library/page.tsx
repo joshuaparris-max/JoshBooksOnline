@@ -500,6 +500,7 @@ export default function LibraryPage() {
   const [confirmDelete, setConfirmDelete] = useState<BookEntry | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [showHidden, setShowHidden] = useState(false);
   const [tab, setTab] = useState<'ebooks' | 'audiobooks' | 'movies'>('ebooks');
   const [ebookSource, setEbookSource] = useState<'drive' | 'online'>('drive');
   const collectionsApi = useCollections();
@@ -1124,6 +1125,15 @@ export default function LibraryPage() {
     }).catch(() => {});
   };
 
+  const unhideItem = (id: string) => {
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      window.localStorage.setItem('joshbooks-hidden', JSON.stringify([...next]));
+      return next;
+    });
+  };
+
   /** Remove an audiobook from the library (same local-first approach as removeBook). */
   const removeAudiobook = (a: AudiobookEntry) => {
     setHiddenIds((prev) => {
@@ -1294,7 +1304,7 @@ export default function LibraryPage() {
     if (!books) return [];
     const query = search.trim().toLowerCase();
     const visible = books
-      .filter((book) => !hiddenIds.has(book.id) && passesCollection(book.id, book, 'ebook'))
+      .filter((book) => (showHidden || !hiddenIds.has(book.id)) && passesCollection(book.id, book, 'ebook'))
       .map((book) => (metaOverrides[book.id] ? { ...book, ...metaOverrides[book.id] } : book));
 
     const filtered = query
@@ -1310,7 +1320,7 @@ export default function LibraryPage() {
       : visible;
 
     return filtered.sort((a, b) => compareBooks(a, b, sortField, sortDir));
-  }, [books, search, sortField, sortDir, hiddenIds, metaOverrides, passesCollection]);
+  }, [books, search, sortField, sortDir, hiddenIds, showHidden, metaOverrides, passesCollection]);
 
   const isManualGroupEntryId = (id: string) => id.startsWith('group:');
 
@@ -1333,7 +1343,7 @@ export default function LibraryPage() {
     if (!audiobooksWithGroups) return [];
     const query = search.trim().toLowerCase();
     const visible = audiobooksWithGroups
-      .filter((a) => !hiddenIds.has(a.id) && passesCollection(a.id, a, 'audiobook'))
+      .filter((a) => (showHidden || !hiddenIds.has(a.id)) && passesCollection(a.id, a, 'audiobook'))
       .map((a) => (metaOverrides[a.id] ? { ...a, ...metaOverrides[a.id] } : a));
     const list = query
       ? visible.filter(
@@ -1344,7 +1354,7 @@ export default function LibraryPage() {
         )
       : visible;
     return [...list].sort((a, b) => compareAudiobooks(a, b, audioSortField, audioSortDir));
-  }, [audiobooksWithGroups, search, hiddenIds, audioSortField, audioSortDir, metaOverrides, passesCollection]);
+  }, [audiobooksWithGroups, search, hiddenIds, showHidden, audioSortField, audioSortDir, metaOverrides, passesCollection]);
 
   const filteredMovies = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -1357,14 +1367,14 @@ export default function LibraryPage() {
               Boolean(movie.collection?.toLowerCase().includes(query)))
           );
         })
-      : MOVIES.filter((movie) => !hiddenIds.has(movie.id));
+      : MOVIES.filter((movie) => showHidden || !hiddenIds.has(movie.id));
 
     return [...list].sort((a, b) => {
       const collectionCompare = (a.collection ?? '').localeCompare(b.collection ?? '');
       if (collectionCompare !== 0) return collectionCompare;
       return a.title.localeCompare(b.title);
     });
-  }, [search, hiddenIds]);
+  }, [search, hiddenIds, showHidden]);
 
   const bulkCandidates = useMemo(() => {
     if (tab === 'ebooks' && ebookSource === 'drive') {
@@ -1714,6 +1724,16 @@ export default function LibraryPage() {
               >
                 📁 Folders
               </button>
+              {hiddenIds.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowHidden((v) => !v)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${showHidden ? 'bg-amber-500/20 text-amber-200 hover:bg-amber-500/30' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+                  title={showHidden ? 'Click to hide hidden items' : `Show ${hiddenIds.size} hidden item${hiddenIds.size === 1 ? '' : 's'}`}
+                >
+                  {showHidden ? `Showing hidden (${hiddenIds.size})` : `Hidden (${hiddenIds.size})`}
+                </button>
+              )}
               {selectedCollectionId && (
                 <span className="inline-flex items-center gap-2 rounded-full bg-sky-600/20 px-3 py-1.5 text-sm text-sky-200">
                   {selectedCollectionId === '__unfiled__'

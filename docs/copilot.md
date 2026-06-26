@@ -58,6 +58,8 @@ Status: item 9 is implemented as canonical `/media/[kind]/[id]` detail pages for
 
 Status: item 8 is implemented as a safe bulk-edit toolbar for visible Drive ebooks, Drive audiobooks, and movies. It supports selecting the active visible set, creating/choosing a folder, adding selected items to that folder, and hiding selected items from the catalogue view.
 
+Status: item 7 is implemented as library-level offline/cache indicators. The header now shows online/offline state, local JoshBooks app-data count, browser cache support, and a warning that streamed Drive, YouTube, and online ebook media still need network access.
+
 1. **Unified media search** — one search surface across ebooks, audiobooks, online audiobooks, online ebooks, and movies, with quick filters by media type.
 2. **Movie playback page** — open Drive movies inside JoshBooks with an embedded player page, progress tracking, and a clean fallback link to Google Drive.
 3. **Resume hub** — expand Continue Reading into a Continue Watching / Continue Listening / Continue Reading panel covering all media types.

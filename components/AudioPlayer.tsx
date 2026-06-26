@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AudiobookEntry } from '@/types/books';
 
 function mimeFromName(name: string): string {
@@ -23,6 +23,16 @@ function fmt(seconds: number): string {
 }
 
 const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+const RATE_KEY = 'joshbooks-audio-speed';
+
+function getSavedRate(): number {
+  try {
+    const saved = parseFloat(window.localStorage.getItem(RATE_KEY) ?? '');
+    return SPEEDS.includes(saved) ? saved : 1;
+  } catch {
+    return 1;
+  }
+}
 
 export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }) {
   const tracks = audiobook.tracks ?? [];
@@ -87,9 +97,51 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, resumeLoaded]);
 
+  // Load persisted speed on mount
+  useEffect(() => {
+    const saved = getSavedRate();
+    if (saved !== 1) setRate(saved);
+  }, []);
+
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = rate;
+    try { window.localStorage.setItem(RATE_KEY, String(rate)); } catch { /* ignore */ }
   }, [rate]);
+
+  // Keyboard shortcuts: Space = play/pause, ←/→ = skip 30s, ,/. = prev/next track
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) { audio.play().catch(() => {}); setPlaying(true); }
+    else { audio.pause(); setPlaying(false); save(true); }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.key === ' ' || e.key === 'k' || e.key === 'K') {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const a = audioRef.current;
+        if (a) a.currentTime = Math.max(0, a.currentTime - 30);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const a = audioRef.current;
+        if (a) a.currentTime = Math.min(a.duration || 0, a.currentTime + 30);
+      } else if (e.key === ',' && tracks.length > 1) {
+        setIndex((i) => Math.max(0, i - 1));
+        setPlaying(true);
+      } else if (e.key === '.' && tracks.length > 1) {
+        setIndex((i) => Math.min(tracks.length - 1, i + 1));
+        setPlaying(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [togglePlay, tracks.length]);
 
   const save = (force = false) => {
     const audio = audioRef.current;
@@ -107,19 +159,6 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
       headers: { 'Content-Type': 'application/json' },
       body,
     }).catch(() => {});
-  };
-
-  const togglePlay = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (audio.paused) {
-      audio.play().catch(() => {});
-      setPlaying(true);
-    } else {
-      audio.pause();
-      setPlaying(false);
-      save(true);
-    }
   };
 
   const skip = (delta: number) => {
@@ -261,6 +300,9 @@ export default function AudioPlayer({ audiobook }: { audiobook: AudiobookEntry }
             ))}
           </select>
         </div>
+        <p className="mt-3 text-center text-xs text-slate-600">
+          Space / K · ←/→ skip 30s {tracks.length > 1 ? '· , / . prev/next track' : ''}
+        </p>
       </div>
 
       {/* Track list */}
