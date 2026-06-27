@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import type { AudiobookEntry } from '@/types/books';
 
 function mimeFromName(name: string): string {
@@ -13,7 +13,7 @@ function mimeFromName(name: string): string {
   return 'audio/mpeg';
 }
 
-function fmt(seconds: number): string {
+export function fmtSeconds(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -34,13 +34,35 @@ function getSavedRate(): number {
   }
 }
 
-export default function AudioPlayer({
-  audiobook,
-  initialTrack,
-}: {
+export interface PlaybackState {
+  playing: boolean;
+  index: number;
+  time: number;
+  duration: number;
+  trackName: string;
+  trackCount: number;
+}
+
+export interface AudioPlayerHandle {
+  togglePlay(): void;
+}
+
+interface AudioPlayerProps {
   audiobook: AudiobookEntry;
   initialTrack?: number;
-}) {
+  /**
+   * When true (docked reader companion mode):
+   * - Arrow keys are NOT consumed so the EPUB reader can still turn pages.
+   * - Space / K still toggles play/pause.
+   */
+  docked?: boolean;
+  onPlaybackStateChange?: (state: PlaybackState) => void;
+}
+
+const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function AudioPlayer(
+  { audiobook, initialTrack, docked, onPlaybackStateChange },
+  ref,
+) {
   const tracks = audiobook.tracks ?? [];
   const requestedTrack =
     initialTrack !== undefined && initialTrack >= 0 && initialTrack < tracks.length
@@ -51,7 +73,7 @@ export default function AudioPlayer({
     requestedTrack ??
       (audiobook.audioTrack !== undefined && audiobook.audioTrack < tracks.length
         ? audiobook.audioTrack
-        : 0)
+        : 0),
   );
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -60,6 +82,12 @@ export default function AudioPlayer({
   const resumePos = useRef(audiobook.audioPosition ?? 0);
   const lastSave = useRef(0);
   const [resumeLoaded, setResumeLoaded] = useState(false);
+
+  // Keep onPlaybackStateChange in a ref so we can call the latest version without stale closures
+  const onPlaybackChangeRef = useRef(onPlaybackStateChange);
+  useEffect(() => {
+    onPlaybackChangeRef.current = onPlaybackStateChange;
+  });
 
   const current = tracks[index];
 
@@ -124,28 +152,34 @@ export default function AudioPlayer({
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = rate;
-    try { window.localStorage.setItem(RATE_KEY, String(rate)); } catch { /* ignore */ }
+    try {
+      window.localStorage.setItem(RATE_KEY, String(rate));
+    } catch {
+      /* ignore */
+    }
   }, [rate]);
 
-  const save = useCallback((force = false) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const now = Date.now();
-    if (!force && now - lastSave.current < 8000) return;
-    lastSave.current = now;
-    // Cross-device resume (Redis); best-effort Drive sync too.
-    const body = JSON.stringify({ id: audiobook.id, track: index, position: Math.floor(audio.currentTime) });
-    fetch('/api/audio-progress', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }).catch(
-      () => {}
-    );
-    fetch('/api/library/audio-progress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    }).catch(() => {});
-  }, [audiobook.id, index]);
+  const save = useCallback(
+    (force = false) => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      const now = Date.now();
+      if (!force && now - lastSave.current < 8000) return;
+      lastSave.current = now;
+      const body = JSON.stringify({ id: audiobook.id, track: index, position: Math.floor(audio.currentTime) });
+      fetch('/api/audio-progress', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }).catch(
+        () => {},
+      );
+      fetch('/api/library/audio-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      }).catch(() => {});
+    },
+    [audiobook.id, index],
+  );
 
-  // Save on page exit via sendBeacon (fire-and-forget, doesn't block navigation or affect session)
+  // Save on page exit via sendBeacon
   useEffect(() => {
     const onExit = () => {
       const audio = audioRef.current;
@@ -159,14 +193,38 @@ export default function AudioPlayer({
     return () => window.removeEventListener('pagehide', onExit);
   }, [audiobook.id, index]);
 
-  // Keyboard shortcuts: Space = play/pause, ←/→ = skip 30s, ,/. = prev/next track
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (audio.paused) { audio.play().catch(() => {}); setPlaying(true); }
-    else { audio.pause(); setPlaying(false); save(true); }
+    if (audio.paused) {
+      audio.play().catch(() => {});
+      setPlaying(true);
+    } else {
+      audio.pause();
+      setPlaying(false);
+      save(true);
+    }
   }, [save]);
 
+  // Expose togglePlay to parent (e.g. DockedAudioPlayer's collapsed play button)
+  useImperativeHandle(ref, () => ({ togglePlay }), [togglePlay]);
+
+  // Notify parent of playback state changes
+  useEffect(() => {
+    onPlaybackChangeRef.current?.({
+      playing,
+      index,
+      time,
+      duration,
+      trackName: current?.name ?? '',
+      trackCount: tracks.length,
+    });
+  }, [playing, index, time, duration, current?.name, tracks.length]);
+
+  // Keyboard shortcuts:
+  //   Space / K = play/pause
+  //   ← / → = skip 30s  (suppressed when `docked` so EPUB page-turn keys still work)
+  //   , / . = prev/next track
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
@@ -174,11 +232,11 @@ export default function AudioPlayer({
       if (e.key === ' ' || e.key === 'k' || e.key === 'K') {
         e.preventDefault();
         togglePlay();
-      } else if (e.key === 'ArrowLeft') {
+      } else if (e.key === 'ArrowLeft' && !docked) {
         e.preventDefault();
         const a = audioRef.current;
         if (a) a.currentTime = Math.max(0, a.currentTime - 30);
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === 'ArrowRight' && !docked) {
         e.preventDefault();
         const a = audioRef.current;
         if (a) a.currentTime = Math.min(a.duration || 0, a.currentTime + 30);
@@ -192,7 +250,7 @@ export default function AudioPlayer({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [togglePlay, tracks.length]);
+  }, [togglePlay, tracks.length, docked]);
 
   const skip = (delta: number) => {
     const audio = audioRef.current;
@@ -277,8 +335,8 @@ export default function AudioPlayer({
             className="w-full accent-sky-500"
           />
           <div className="flex justify-between text-xs text-slate-400">
-            <span>{fmt(time)}</span>
-            <span>{fmt(duration)}</span>
+            <span>{fmtSeconds(time)}</span>
+            <span>{fmtSeconds(duration)}</span>
           </div>
         </div>
 
@@ -334,7 +392,7 @@ export default function AudioPlayer({
           </select>
         </div>
         <p className="mt-3 text-center text-xs text-slate-600">
-          Space / K · ←/→ skip 30s {tracks.length > 1 ? '· , / . prev/next track' : ''}
+          Space / K{docked ? '' : ' · ←/→ skip 30s'}{tracks.length > 1 ? ' · , / . prev/next track' : ''}
         </p>
       </div>
 
@@ -362,4 +420,6 @@ export default function AudioPlayer({
       )}
     </div>
   );
-}
+});
+
+export default AudioPlayer;
