@@ -44,7 +44,6 @@ export interface MovieEntry {
   driveFileId: string;
   driveUrl: string;
   collection?: string;
-  genres?: string[];
 }
 
 /** A single audio file within an audiobook. */
@@ -84,9 +83,6 @@ export interface AudiobookEntry {
 
   /** Linked text edition (Phase 4) */
   linkedTextId?: string;
-
-  /** Genre/category tags for filtering */
-  categories?: string[];
 }
 
 export type MetadataSource = 'google-books' | 'open-library' | 'manual';
@@ -155,9 +151,6 @@ export interface Audiobook {
 
   /** True for user-added catalogue entries (not bundled in the app) */
   isCustom?: boolean;
-
-  /** Genre/category tags for filtering */
-  categories?: string[];
 }
 
 export interface BookEntry {

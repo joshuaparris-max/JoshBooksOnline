@@ -17,8 +17,6 @@ import { useYoutubeCatalog } from '@/lib/useYoutubeCatalog';
 import { useSmartFolders, matchesSmartFolder } from '@/lib/useSmartFolders';
 import CollectionsManager from '@/components/CollectionsManager';
 import type { BookEntry, BookMetadata, AudiobookEntry, Audiobook, LibrarySource, MovieEntry } from '@/types/books';
-import GenreFilter from '@/components/GenreFilter';
-import { MOVIE_GENRES, AUDIOBOOK_CATEGORIES, matchesGenre } from '@/lib/genres';
 
 const SOURCE_BADGES: Record<string, string> = {
   'IT PD Ebooks': 'bg-amber-500 text-slate-950',
@@ -557,12 +555,6 @@ export default function LibraryPage() {
     message: '',
   });
   const [movieProgress, setMovieProgress] = useState<Record<string, number>>({});
-  // Genre/category filters — one per media sub-type
-  const [movieGenre, setMovieGenre] = useState<string | null>(null);
-  const [onlineEbookCategory, setOnlineEbookCategory] = useState<string | null>(null);
-  const [onlineAudioCategory, setOnlineAudioCategory] = useState<string | null>(null);
-  const [driveEbookGenre, setDriveEbookGenre] = useState<string | null>(null);
-  const [driveAudioGenre, setDriveAudioGenre] = useState<string | null>(null);
 
   // Restore persisted view + sort preferences
   useEffect(() => {
@@ -778,7 +770,6 @@ export default function LibraryPage() {
     const q = search.trim().toLowerCase();
     return youtube.catalog.filter((a) => {
       if (!passesCollection(a.id)) return false;
-      if (onlineAudioCategory && !matchesGenre(a.categories, onlineAudioCategory)) return false;
       if (!q) return true;
       return (
         a.title.toLowerCase().includes(q) ||
@@ -786,7 +777,7 @@ export default function LibraryPage() {
         a.catalogueMatches.some((m) => m.toLowerCase().includes(q))
       );
     });
-  }, [youtube.catalog, youtube.hydrated, search, passesCollection, onlineAudioCategory]);
+  }, [youtube.catalog, youtube.hydrated, search, passesCollection]);
 
   const youtubeMatchesFor = useCallback(
     (book: BookEntry) =>
@@ -821,7 +812,6 @@ export default function LibraryPage() {
     const q = search.trim().toLowerCase();
     return ONLINE_EBOOKS.filter((b) => {
       if (!passesCollection(b.id)) return false;
-      if (onlineEbookCategory && b.category !== onlineEbookCategory) return false;
       if (!q) return true;
       return (
         b.title.toLowerCase().includes(q) ||
@@ -829,7 +819,7 @@ export default function LibraryPage() {
         b.category.toLowerCase().includes(q)
       );
     });
-  }, [search, passesCollection, onlineEbookCategory]);
+  }, [search, passesCollection]);
 
   useEffect(() => {
     window.localStorage.setItem('joshbooks-links', JSON.stringify(links));
@@ -1348,8 +1338,7 @@ export default function LibraryPage() {
     const query = search.trim().toLowerCase();
     const visible = books
       .filter((book) => (showHidden || !hiddenIds.has(book.id)) && passesCollection(book.id, book, 'ebook'))
-      .map((book) => (metaOverrides[book.id] ? { ...book, ...metaOverrides[book.id] } : book))
-      .filter((book) => !driveEbookGenre || matchesGenre(book.categories, driveEbookGenre));
+      .map((book) => (metaOverrides[book.id] ? { ...book, ...metaOverrides[book.id] } : book));
 
     const filtered = query
       ? visible.filter((book) => {
@@ -1364,7 +1353,7 @@ export default function LibraryPage() {
       : visible;
 
     return filtered.sort((a, b) => compareBooks(a, b, sortField, sortDir));
-  }, [books, search, sortField, sortDir, hiddenIds, showHidden, metaOverrides, passesCollection, driveEbookGenre]);
+  }, [books, search, sortField, sortDir, hiddenIds, showHidden, metaOverrides, passesCollection]);
 
   const isManualGroupEntryId = (id: string) => id.startsWith('group:');
 
@@ -1388,8 +1377,7 @@ export default function LibraryPage() {
     const query = search.trim().toLowerCase();
     const visible = audiobooksWithGroups
       .filter((a) => (showHidden || !hiddenIds.has(a.id)) && passesCollection(a.id, a, 'audiobook'))
-      .map((a) => (metaOverrides[a.id] ? { ...a, ...metaOverrides[a.id] } : a))
-      .filter((a) => !driveAudioGenre || matchesGenre(a.categories, driveAudioGenre));
+      .map((a) => (metaOverrides[a.id] ? { ...a, ...metaOverrides[a.id] } : a));
     const list = query
       ? visible.filter(
           (a) =>
@@ -1399,7 +1387,7 @@ export default function LibraryPage() {
         )
       : visible;
     return [...list].sort((a, b) => compareAudiobooks(a, b, audioSortField, audioSortDir));
-  }, [audiobooksWithGroups, search, hiddenIds, showHidden, audioSortField, audioSortDir, metaOverrides, passesCollection, driveAudioGenre]);
+  }, [audiobooksWithGroups, search, hiddenIds, showHidden, audioSortField, audioSortDir, metaOverrides, passesCollection]);
 
   const filteredMovies = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -1407,78 +1395,19 @@ export default function LibraryPage() {
       ? MOVIES.filter((movie) => {
           return (
             !hiddenIds.has(movie.id) &&
-            (movieGenre ? matchesGenre(movie.genres, movieGenre) : true) &&
             (movie.title.toLowerCase().includes(query) ||
               movie.year?.toString().includes(query) ||
               Boolean(movie.collection?.toLowerCase().includes(query)))
           );
         })
-      : MOVIES.filter((movie) =>
-          (showHidden || !hiddenIds.has(movie.id)) &&
-          (movieGenre ? matchesGenre(movie.genres, movieGenre) : true)
-        );
+      : MOVIES.filter((movie) => showHidden || !hiddenIds.has(movie.id));
 
     return [...list].sort((a, b) => {
       const collectionCompare = (a.collection ?? '').localeCompare(b.collection ?? '');
       if (collectionCompare !== 0) return collectionCompare;
       return a.title.localeCompare(b.title);
     });
-  }, [search, hiddenIds, showHidden, movieGenre]);
-
-  // Genre counts for filter pills (computed from the pre-genre-filtered set so pill counts are always accurate)
-  const movieGenreCounts = useMemo(() => {
-    const all = MOVIES.filter((m) => showHidden || !hiddenIds.has(m.id));
-    const counts: Record<string, number> = {};
-    for (const m of all) {
-      for (const g of m.genres ?? []) {
-        counts[g] = (counts[g] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }, [hiddenIds, showHidden]);
-
-  const onlineEbookCategoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const b of ONLINE_EBOOKS) {
-      counts[b.category] = (counts[b.category] ?? 0) + 1;
-    }
-    return counts;
-  }, []);
-
-  const onlineAudioCategoryCounts = useMemo(() => {
-    if (!youtube.hydrated) return {};
-    const counts: Record<string, number> = {};
-    for (const a of youtube.catalog) {
-      for (const c of a.categories ?? []) {
-        counts[c] = (counts[c] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }, [youtube.catalog, youtube.hydrated]);
-
-  const driveEbookGenreCounts = useMemo(() => {
-    if (!books) return {};
-    const counts: Record<string, number> = {};
-    for (const b of books) {
-      const cats = (metaOverrides[b.id]?.categories ?? b.categories) ?? [];
-      for (const c of cats) {
-        counts[c] = (counts[c] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }, [books, metaOverrides]);
-
-  const driveAudioGenreCounts = useMemo(() => {
-    if (!audiobooks) return {};
-    const counts: Record<string, number> = {};
-    for (const a of audiobooks) {
-      const cats = (metaOverrides[a.id]?.categories ?? a.categories) ?? [];
-      for (const c of cats) {
-        counts[c] = (counts[c] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }, [audiobooks, metaOverrides]);
+  }, [search, hiddenIds, showHidden]);
 
   const bulkCandidates = useMemo(() => {
     if (tab === 'ebooks' && ebookSource === 'drive') {
@@ -2107,24 +2036,6 @@ export default function LibraryPage() {
                 className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
               />
 
-              {audioSource === 'drive' && Object.keys(driveAudioGenreCounts).length > 0 && (
-                <GenreFilter
-                  genres={Object.keys(driveAudioGenreCounts).sort() as readonly string[]}
-                  selected={driveAudioGenre}
-                  counts={driveAudioGenreCounts}
-                  onSelect={setDriveAudioGenre}
-                />
-              )}
-
-              {audioSource === 'online' && (
-                <GenreFilter
-                  genres={AUDIOBOOK_CATEGORIES}
-                  selected={onlineAudioCategory}
-                  counts={onlineAudioCategoryCounts}
-                  onSelect={setOnlineAudioCategory}
-                />
-              )}
-
               <div className={`flex flex-wrap items-center gap-3 ${audioSource === 'online' ? 'hidden' : ''}`}>
                 <DrivePicker
                   onImportStart={handleImportStart}
@@ -2325,30 +2236,13 @@ export default function LibraryPage() {
           )}
 
           {tab === 'ebooks' && ebookSource === 'online' && (
-            <div className="mt-4 flex flex-col gap-3">
+            <div className="mt-4">
               <input
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search free public-domain ebooks…"
                 className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
-              />
-              <GenreFilter
-                genres={['Classic literature', 'Sci-fi & fantasy', 'Philosophy & nonfiction', 'Christian & faith']}
-                selected={onlineEbookCategory}
-                counts={onlineEbookCategoryCounts}
-                onSelect={setOnlineEbookCategory}
-              />
-            </div>
-          )}
-
-          {tab === 'ebooks' && ebookSource === 'drive' && Object.keys(driveEbookGenreCounts).length > 0 && (
-            <div className="mt-4">
-              <GenreFilter
-                genres={Object.keys(driveEbookGenreCounts).sort() as readonly string[]}
-                selected={driveEbookGenre}
-                counts={driveEbookGenreCounts}
-                onSelect={setDriveEbookGenre}
               />
             </div>
           )}
@@ -2458,25 +2352,17 @@ export default function LibraryPage() {
           )}
 
           {tab === 'movies' && (
-            <div className="mt-4 flex flex-col gap-3">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search movies by title, year, or collection"
-                  className="w-full flex-1 rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
-                />
-                <div className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-400">
-                  {filteredMovies.length} movies
-                </div>
-              </div>
-              <GenreFilter
-                genres={MOVIE_GENRES}
-                selected={movieGenre}
-                counts={movieGenreCounts}
-                onSelect={setMovieGenre}
+            <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search movies by title, year, or collection"
+                className="w-full flex-1 rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
               />
+              <div className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-400">
+                {filteredMovies.length} movies
+              </div>
             </div>
           )}
         </section>

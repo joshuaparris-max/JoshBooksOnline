@@ -10,11 +10,7 @@
     ],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Classic literature"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "tale-of-tub-swift",
@@ -27,10 +23,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks",
-    "rightsNote": "Public-domain text and LibriVox recording.",
-    "categories": [
-      "Classic literature"
-    ]
+    "rightsNote": "Public-domain text and LibriVox recording."
   },
   {
     "id": "tale-two-cities-dickens",
@@ -43,10 +36,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox-sourced full audiobook",
-    "rightsNote": "Public-domain text; video description identifies LibriVox volunteers.",
-    "categories": [
-      "Classic literature"
-    ]
+    "rightsNote": "Public-domain text; video description identifies LibriVox volunteers."
   },
   {
     "id": "alls-well-shakespeare",
@@ -59,10 +49,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks",
-    "rightsNote": "Public-domain text and LibriVox recording.",
-    "categories": [
-      "Classic literature"
-    ]
+    "rightsNote": "Public-domain text and LibriVox recording."
   },
   {
     "id": "genesis-exodus-leviticus-kjv",
@@ -77,10 +64,7 @@
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks",
     "rightsNote": "Public-domain KJV text and LibriVox recording. This link covers Genesis, Exodus and Leviticus rather than the complete Bible.",
-    "notes": "Suitable for your 01-Genesis.txt record; it covers the first three books rather than the whole Bible.",
-    "categories": [
-      "Christian & faith"
-    ]
+    "notes": "Suitable for your 01-Genesis.txt record; it covers the first three books rather than the whole Bible."
   },
   {
     "id": "pride-prejudice-austen",
@@ -94,10 +78,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox recording, read by Karen Savage",
-    "rightsNote": "Public-domain text and LibriVox recording.",
-    "categories": [
-      "Classic literature"
-    ]
+    "rightsNote": "Public-domain text and LibriVox recording."
   },
   {
     "id": "romeo-juliet-shakespeare",
@@ -110,10 +91,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks",
-    "rightsNote": "Public-domain text and LibriVox recording.",
-    "categories": [
-      "Classic literature"
-    ]
+    "rightsNote": "Public-domain text and LibriVox recording."
   },
   {
     "id": "twelfth-night-shakespeare",
@@ -126,10 +104,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks",
-    "rightsNote": "Public-domain text and LibriVox recording.",
-    "categories": [
-      "Classic literature"
-    ]
+    "rightsNote": "Public-domain text and LibriVox recording."
   },
   {
     "id": "wuthering-heights-bronte",
@@ -142,10 +117,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks, read by Ruth Golding",
-    "rightsNote": "Public-domain text and LibriVox recording.",
-    "categories": [
-      "Classic literature"
-    ]
+    "rightsNote": "Public-domain text and LibriVox recording."
   },
   {
     "id": "three-men-boat-jerome",
@@ -158,10 +130,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks, read by Nick Bulka",
-    "rightsNote": "Public-domain text and LibriVox recording.",
-    "categories": [
-      "Classic literature"
-    ]
+    "rightsNote": "Public-domain text and LibriVox recording."
   },
   {
     "id": "art-of-war-sunzi",
@@ -174,10 +143,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks, read by Moira Fogarty",
-    "rightsNote": "Public-domain text and LibriVox recording.",
-    "categories": [
-      "Philosophy & nonfiction"
-    ]
+    "rightsNote": "Public-domain text and LibriVox recording."
   },
   {
     "id": "imitation-of-christ-kempis",
@@ -190,11 +156,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks, read by David Barnes",
-    "rightsNote": "Public-domain text and LibriVox recording.",
-    "categories": [
-      "Christian & faith",
-      "Philosophy & nonfiction"
-    ]
+    "rightsNote": "Public-domain text and LibriVox recording."
   },
   {
     "id": "way-to-wealth-franklin",
@@ -207,11 +169,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox recording, read by Bob Gonzalez",
-    "rightsNote": "Public-domain text and LibriVox recording.",
-    "categories": [
-      "Philosophy & nonfiction",
-      "Business & productivity"
-    ]
+    "rightsNote": "Public-domain text and LibriVox recording."
   },
   {
     "id": "complete-poems-milton",
@@ -224,11 +182,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks",
-    "rightsNote": "Probable catalogue match; manually confirm that the local item is the intended Milton collection.",
-    "categories": [
-      "Philosophy & nonfiction",
-      "Classic literature"
-    ]
+    "rightsNote": "Probable catalogue match; manually confirm that the local item is the intended Milton collection."
   },
   {
     "id": "bible-kjv-complete",
@@ -242,10 +196,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox recording on YouTube",
-    "notes": "Suitable as a complete-Bible link; the existing Genesis-specific link can remain as an additional option.",
-    "categories": [
-      "Christian & faith"
-    ]
+    "notes": "Suitable as a complete-Bible link; the existing Genesis-specific link can remain as an additional option."
   },
   {
     "id": "paradise-lost-milton",
@@ -258,11 +209,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "Public-domain audiobook on YouTube",
-    "notes": "Probable match within the Milton collection; do not overwrite a broader collection link without checking.",
-    "categories": [
-      "Philosophy & nonfiction",
-      "Classic literature"
-    ]
+    "notes": "Probable match within the Milton collection; do not overwrite a broader collection link without checking."
   },
   {
     "id": "paradise-regained-milton",
@@ -275,11 +222,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "Public-domain audiobook on YouTube",
-    "notes": "Additional work that may belong under the Milton collection rather than replacing Paradise Lost.",
-    "categories": [
-      "Philosophy & nonfiction",
-      "Classic literature"
-    ]
+    "notes": "Additional work that may belong under the Milton collection rather than replacing Paradise Lost."
   },
   {
     "id": "fahrenheit-451-bradbury",
@@ -292,11 +235,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Preview only; never show as a complete audiobook.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Classic literature"
-    ]
+    "notes": "Preview only; never show as a complete audiobook."
   },
   {
     "id": "lion-witch-wardrobe-lewis",
@@ -309,11 +248,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Preview only.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Preview only."
   },
   {
     "id": "magicians-nephew-lewis",
@@ -327,11 +262,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Abridged-edition preview.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Abridged-edition preview."
   },
   {
     "id": "prince-caspian-lewis",
@@ -344,11 +275,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Abridged-edition preview.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Abridged-edition preview."
   },
   {
     "id": "horse-boy-lewis",
@@ -361,11 +288,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Unabridged-edition preview.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Unabridged-edition preview."
   },
   {
     "id": "voyage-dawn-treader-lewis",
@@ -378,11 +301,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Unabridged-edition preview.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Unabridged-edition preview."
   },
   {
     "id": "hobbit-tolkien",
@@ -395,10 +314,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Official HarperCollins audiobook preview; abridged Martin Shaw edition.",
-    "categories": [
-      "Sci-fi & fantasy"
-    ]
+    "notes": "Official HarperCollins audiobook preview; abridged Martin Shaw edition."
   },
   {
     "id": "black-dekker",
@@ -412,11 +328,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Preview only.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Preview only."
   },
   {
     "id": "red-dekker",
@@ -429,11 +341,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Preview only.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Preview only."
   },
   {
     "id": "white-dekker",
@@ -446,11 +354,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Preview only.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Preview only."
   },
   {
     "id": "thr3e-dekker",
@@ -463,11 +367,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Preview only.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Preview only."
   },
   {
     "id": "adam-dekker",
@@ -480,11 +380,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Preview only.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Preview only."
   },
   {
     "id": "hood-lawhead",
@@ -497,10 +393,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Preview only.",
-    "categories": [
-      "Sci-fi & fantasy"
-    ]
+    "notes": "Preview only."
   },
   {
     "id": "scarlet-lawhead",
@@ -513,10 +406,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Preview only.",
-    "categories": [
-      "Sci-fi & fantasy"
-    ]
+    "notes": "Preview only."
   },
   {
     "id": "think-grow-rich-hill",
@@ -530,10 +420,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "YouTube audiobook",
-    "notes": "Self-help classic by Napoleon Hill.",
-    "categories": [
-      "Business & productivity"
-    ]
+    "notes": "Self-help classic by Napoleon Hill."
   },
   {
     "id": "magician-feist",
@@ -546,10 +433,7 @@
       "Magician-RaymondFeist"
     ],
     "availabilityType": "unknown",
-    "source": "YouTube audiobook",
-    "categories": [
-      "Sci-fi & fantasy"
-    ]
+    "source": "YouTube audiobook"
   },
   {
     "id": "treasure-island-stevenson",
@@ -561,11 +445,7 @@
     ],
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
-    "source": "YouTube audiobook",
-    "categories": [
-      "Classic literature",
-      "Adventure"
-    ]
+    "source": "YouTube audiobook"
   },
   {
     "id": "peter-pan-barrie",
@@ -577,11 +457,7 @@
     ],
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
-    "source": "YouTube audiobook",
-    "categories": [
-      "Classic literature",
-      "Family"
-    ]
+    "source": "YouTube audiobook"
   },
   {
     "id": "secret-garden-burnett",
@@ -593,11 +469,7 @@
     ],
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
-    "source": "YouTube audiobook",
-    "categories": [
-      "Classic literature",
-      "Family"
-    ]
+    "source": "YouTube audiobook"
   },
   {
     "id": "sherlock-holmes-conan-doyle",
@@ -610,11 +482,7 @@
     ],
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
-    "source": "YouTube audiobook",
-    "categories": [
-      "Classic literature",
-      "Thriller"
-    ]
+    "source": "YouTube audiobook"
   },
   {
     "id": "book-of-john-kjv",
@@ -628,10 +496,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "YouTube audiobook",
-    "notes": "Gospel of John from the King James Version Bible.",
-    "categories": [
-      "Christian & faith"
-    ]
+    "notes": "Gospel of John from the King James Version Bible."
   },
   {
     "id": "van-gogh-letters",
@@ -645,10 +510,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks",
-    "notes": "Full LibriVox audiobook of van Gogh's letters.",
-    "categories": [
-      "Philosophy & nonfiction"
-    ]
+    "notes": "Full LibriVox audiobook of van Gogh's letters."
   },
   {
     "id": "van-gogh-letters-visual",
@@ -662,10 +524,7 @@
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
     "source": "YouTube audiobook",
-    "notes": "Visual audiobook version with paintings included.",
-    "categories": [
-      "Philosophy & nonfiction"
-    ]
+    "notes": "Visual audiobook version with paintings included."
   },
   {
     "id": "space-trilogy-lewis",
@@ -681,11 +540,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Combined preview covering all three books of the Space Trilogy.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Combined preview covering all three books of the Space Trilogy."
   },
   {
     "id": "silver-chair-lewis",
@@ -699,11 +554,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Abridged-edition preview.",
-    "categories": [
-      "Sci-fi & fantasy",
-      "Christian & faith"
-    ]
+    "notes": "Abridged-edition preview."
   },
   {
     "id": "abolition-man-great-divorce-lewis",
@@ -719,11 +570,7 @@
     "availabilityType": "official_preview",
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
-    "notes": "Combined preview of two essays/works.",
-    "categories": [
-      "Christian & faith",
-      "Philosophy & nonfiction"
-    ]
+    "notes": "Combined preview of two essays/works."
   },
   {
     "id": "cybersecurity-beginners-guide",
@@ -738,10 +585,7 @@
     "displayLabel": "Full audiobook (YouTube)",
     "source": "Author-posted YouTube audiobook",
     "rightsNote": "Search result description identifies the audiobook as posted by the author.",
-    "notes": "Covers core cybersecurity concepts, threats, and defences — ideal for IT professionals entering the security field.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Covers core cybersecurity concepts, threats, and defences — ideal for IT professionals entering the security field."
   },
   {
     "id": "pragmatic-programmer-thomas-hunt",
@@ -756,10 +600,7 @@
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "Classic software craftsmanship guide for developers — covers tooling, practices, and career advice.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Classic software craftsmanship guide for developers — covers tooling, practices, and career advice."
   },
   {
     "id": "phoenix-project-gene-kim",
@@ -774,11 +615,7 @@
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "A novel about IT, DevOps, and business transformation — essential reading for IT professionals.",
-    "categories": [
-      "Tech & IT",
-      "Business & productivity"
-    ]
+    "notes": "A novel about IT, DevOps, and business transformation — essential reading for IT professionals."
   },
   {
     "id": "devops-handbook-kim",
@@ -793,10 +630,7 @@
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "2nd edition — covers DevOps principles, CI/CD, automation, and how to transform IT organisations.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "2nd edition — covers DevOps principles, CI/CD, automation, and how to transform IT organisations."
   },
   {
     "id": "zero-to-one-thiel",
@@ -811,10 +645,7 @@
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "Notes on startups and how to build the future — widely read in tech and entrepreneurship circles.",
-    "categories": [
-      "Business & productivity"
-    ]
+    "notes": "Notes on startups and how to build the future — widely read in tech and entrepreneurship circles."
   },
   {
     "id": "designing-data-intensive-applications-kleppmann",
@@ -830,10 +661,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "High-value distributed systems and data architecture title.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "High-value distributed systems and data architecture title."
   },
   {
     "id": "site-reliability-engineering-google",
@@ -849,10 +677,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "Core SRE operations, reliability, incident, and production engineering reference.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Core SRE operations, reliability, incident, and production engineering reference."
   },
   {
     "id": "software-architecture-hard-parts",
@@ -868,10 +693,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "Advanced architecture trade-offs, decomposition, data ownership, and distributed systems decisions.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Advanced architecture trade-offs, decomposition, data ownership, and distributed systems decisions."
   },
   {
     "id": "fundamentals-software-architecture",
@@ -888,10 +710,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "Practical introduction to architecture styles, quality attributes, and architecture thinking.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Practical introduction to architecture styles, quality attributes, and architecture thinking."
   },
   {
     "id": "clean-architecture-uncle-bob",
@@ -907,10 +726,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "Software structure, boundaries, dependency direction, and maintainability.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Software structure, boundaries, dependency direction, and maintainability."
   },
   {
     "id": "software-engineering-at-google",
@@ -926,10 +742,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "Engineering practices for large, long-lived software systems.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Engineering practices for large, long-lived software systems."
   },
   {
     "id": "database-internals-petrov",
@@ -945,10 +758,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "Deep dive into storage engines, distributed systems, and database implementation.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Deep dive into storage engines, distributed systems, and database implementation."
   },
   {
     "id": "building-microservices-newman",
@@ -964,10 +774,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "Designing, operating, and evolving fine-grained services.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Designing, operating, and evolving fine-grained services."
   },
   {
     "id": "monolith-to-microservices-newman",
@@ -983,10 +790,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "Practical guidance for splitting and evolving legacy systems.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Practical guidance for splitting and evolving legacy systems."
   },
   {
     "id": "kubernetes-patterns",
@@ -1002,10 +806,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "Patterns and paradigms for scalable, reliable Kubernetes systems.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Patterns and paradigms for scalable, reliable Kubernetes systems."
   },
   {
     "id": "lean-enterprise-humble",
@@ -1021,11 +822,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "Lean, DevOps, and product delivery practices for technology organizations.",
-    "categories": [
-      "Tech & IT",
-      "Business & productivity"
-    ]
+    "notes": "Lean, DevOps, and product delivery practices for technology organizations."
   },
   {
     "id": "staff-engineers-path-reilly",
@@ -1041,11 +838,7 @@
     "displayLabel": "Official audiobook preview",
     "source": "Google Play Books",
     "rightsNote": "Official Google Play Books audiobook preview on YouTube.",
-    "notes": "Engineering leadership and senior individual-contributor growth.",
-    "categories": [
-      "Tech & IT",
-      "Business & productivity"
-    ]
+    "notes": "Engineering leadership and senior individual-contributor growth."
   },
   {
     "id": "practical-help-desk-it-fundamentals",
@@ -1059,10 +852,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "active-directory-training-entry-level-help-desk",
@@ -1076,10 +866,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "crash-course-active-directory-dhcp-dns",
@@ -1094,10 +881,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "microsoft-365-certified-fundamentals-ms-900",
@@ -1111,10 +895,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "powershell-for-beginners-full-course",
@@ -1128,10 +909,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "computer-networking-fundamentals-course",
@@ -1145,10 +923,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "ibm-it-support-complete-course",
@@ -1162,10 +937,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "google-it-support-certification-full-course",
@@ -1179,10 +951,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "comptia-a-plus-full-course-31-hours",
@@ -1196,10 +965,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "comptia-a-plus-220-1201-full-course-2025",
@@ -1213,10 +979,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "comptia-a-plus-220-1202-full-course-2026",
@@ -1230,10 +993,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "az-900-azure-fundamentals-john-savill",
@@ -1247,10 +1007,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "itil-4-foundation-training-full-course",
@@ -1264,10 +1021,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "openstax-intro-computer-science",
@@ -1283,10 +1037,7 @@
     "displayLabel": "Full audiobook playlist (YouTube)",
     "source": "OpenStax audiobook playlist",
     "rightsNote": "OpenStax textbook is free; YouTube playlist availability not independently verified.",
-    "notes": "Covers computing, algorithms, programming, systems, networks, databases, software engineering, cloud/web apps and cybersecurity.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Covers computing, algorithms, programming, systems, networks, databases, software engineering, cloud/web apps and cybersecurity."
   },
   {
     "id": "openstax-workplace-software-skills",
@@ -1302,11 +1053,7 @@
     "displayLabel": "Full audiobook playlist (YouTube)",
     "source": "OpenStax audiobook playlist",
     "rightsNote": "OpenStax textbook is free; YouTube playlist availability not independently verified.",
-    "notes": "Workplace IT and admin skills: Microsoft 365, Google Workspace, spreadsheets, documents, presentations and databases.",
-    "categories": [
-      "Tech & IT",
-      "Business & productivity"
-    ]
+    "notes": "Workplace IT and admin skills: Microsoft 365, Google Workspace, spreadsheets, documents, presentations and databases."
   },
   {
     "id": "cathedral-and-bazaar-raymond",
@@ -1322,11 +1069,7 @@
     "displayLabel": "Full audiobook playlist (YouTube)",
     "source": "YouTube audiobook playlist",
     "rightsNote": "Original text available under the Open Publication License; recording rights not independently verified.",
-    "notes": "Classic essay collection on open-source, Linux and software culture.",
-    "categories": [
-      "Philosophy & nonfiction",
-      "Tech & IT"
-    ]
+    "notes": "Classic essay collection on open-source, Linux and software culture."
   },
   {
     "id": "passages-life-philosopher-babbage",
@@ -1342,11 +1085,7 @@
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks on YouTube",
     "rightsNote": "Public-domain text and LibriVox recording.",
-    "notes": "Computing history memoir covering the Difference Engine, Analytical Engine and early computer thinking. About 15 hours; this link is part 1 of 3.",
-    "categories": [
-      "Classic literature",
-      "Philosophy & nonfiction"
-    ]
+    "notes": "Computing history memoir covering the Difference Engine, Analytical Engine and early computer thinking. About 15 hours; this link is part 1 of 3."
   },
   {
     "id": "story-of-electricity-munro",
@@ -1362,11 +1101,7 @@
     "displayLabel": "Full public-domain audiobook",
     "source": "LibriVox Audiobooks on YouTube, read by Ruth Golding",
     "rightsNote": "Public-domain text and LibriVox recording.",
-    "notes": "History of electricity, communications, telegraph, telephone, power and early electrical systems. About 6 hours 27 minutes.",
-    "categories": [
-      "Philosophy & nonfiction",
-      "Tech & IT"
-    ]
+    "notes": "History of electricity, communications, telegraph, telephone, power and early electrical systems. About 6 hours 27 minutes."
   },
   {
     "id": "hacker-crackdown-sterling",
@@ -1381,11 +1116,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Full audiobook (YouTube)",
     "source": "YouTube audiobook",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Philosophy & nonfiction",
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "command-line-heroes-red-hat",
@@ -1400,10 +1131,7 @@
     "displayLabel": "Audio series playlist (YouTube)",
     "source": "Red Hat Command Line Heroes",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "Red Hat podcast/audio series on open source and computing history.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Red Hat podcast/audio series on open source and computing history."
   },
   {
     "id": "command-line-heroes-season-1",
@@ -1417,10 +1145,7 @@
     "availabilityType": "unknown",
     "displayLabel": "Audio series playlist (YouTube)",
     "source": "Red Hat Command Line Heroes",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "darknet-diaries-official",
@@ -1435,10 +1160,7 @@
     "displayLabel": "Podcast playlist (YouTube)",
     "source": "Darknet Diaries official YouTube playlist",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "True stories from the dark side of the internet — cybersecurity and hacking narratives.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "True stories from the dark side of the internet — cybersecurity and hacking narratives."
   },
   {
     "id": "practical-networking-fundamentals-playlist",
@@ -1453,10 +1175,7 @@
     "displayLabel": "Course playlist (YouTube)",
     "source": "Practical Networking",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "Structured networking fundamentals course playlist.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Structured networking fundamentals course playlist."
   },
   {
     "id": "google-it-support-foundations-playlist",
@@ -1472,10 +1191,7 @@
     "displayLabel": "Course playlist (YouTube)",
     "source": "YouTube course playlist",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "Foundations of IT Support module from the Google IT Support Certificate.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Foundations of IT Support module from the Google IT Support Certificate."
   },
   {
     "id": "professor-messer-comptia-a-plus-220-1201",
@@ -1491,332 +1207,212 @@
     "displayLabel": "Course playlist (YouTube)",
     "source": "Professor Messer",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "Professor Messer's CompTIA A+ 220-1201 training playlist.",
-    "categories": [
-      "Tech & IT"
-    ]
+    "notes": "Professor Messer's CompTIA A+ 220-1201 training playlist."
   },
   {
     "id": "strong-like-water-kolber",
     "title": "Strong Like Water",
     "author": "Aundi Kolber",
     "youtubeUrl": "https://youtu.be/5CPrjdQ5QEw",
-    "catalogueMatches": [
-      "Strong Like Water"
-    ],
+    "catalogueMatches": ["Strong Like Water"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "Faith + nervous system + gentleness. Best fit overall.",
-    "categories": [
-      "Christian & faith",
-      "Health & wellness"
-    ]
+    "notes": "Faith + nervous system + gentleness. Best fit overall."
   },
   {
     "id": "heal-your-nervous-system-passaler",
     "title": "Heal Your Nervous System",
     "author": "Dr Linnea Passaler",
     "youtubeUrl": "https://youtu.be/K6VpkYhZkUE",
-    "catalogueMatches": [
-      "Heal Your Nervous System"
-    ],
+    "catalogueMatches": ["Heal Your Nervous System"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "5-stage roadmap for anxiety, burnout, overwhelm and physical symptoms.",
-    "categories": [
-      "Health & wellness"
-    ]
+    "notes": "5-stage roadmap for anxiety, burnout, overwhelm and physical symptoms."
   },
   {
     "id": "anatomy-of-the-soul-thompson",
     "title": "Anatomy of the Soul",
     "author": "Curt Thompson",
     "youtubeUrl": "https://youtu.be/k27OhX1wkUU",
-    "catalogueMatches": [
-      "Anatomy of the Soul"
-    ],
+    "catalogueMatches": ["Anatomy of the Soul"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "Christian integration of neuroscience, attachment and spiritual formation.",
-    "categories": [
-      "Christian & faith",
-      "Health & wellness"
-    ]
+    "notes": "Christian integration of neuroscience, attachment and spiritual formation."
   },
   {
     "id": "anchored-deb-dana",
     "title": "Anchored",
     "author": "Deb Dana",
     "youtubeUrl": "https://youtu.be/ksG3sjFbokw",
-    "catalogueMatches": [
-      "Anchored"
-    ],
+    "catalogueMatches": ["Anchored"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "Polyvagal/body awareness. Practical for nervous system regulation.",
-    "categories": [
-      "Christian & faith",
-      "Health & wellness"
-    ]
+    "notes": "Polyvagal/body awareness. Practical for nervous system regulation."
   },
   {
     "id": "body-keeps-score-kolk",
     "title": "The Body Keeps the Score",
     "author": "Bessel van der Kolk",
     "youtubeUrl": "https://youtu.be/arSmHVldUyk",
-    "catalogueMatches": [
-      "The Body Keeps the Score",
-      "Body Keeps the Score"
-    ],
+    "catalogueMatches": ["The Body Keeps the Score", "Body Keeps the Score"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Health & wellness"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "widen-the-window-stanley",
     "title": "Widen the Window",
     "author": "Elizabeth Stanley",
     "youtubeUrl": "https://youtu.be/wkUdqi6oNXk",
-    "catalogueMatches": [
-      "Widen the Window"
-    ],
+    "catalogueMatches": ["Widen the Window"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "Stress physiology, body-based resilience and recovery.",
-    "categories": [
-      "Health & wellness"
-    ]
+    "notes": "Stress physiology, body-based resilience and recovery."
   },
   {
     "id": "hold-onto-your-kids-mate",
     "title": "Hold On to Your Kids",
     "author": "Gabor Maté",
     "youtubeUrl": "https://youtu.be/KDnGteZLCTU",
-    "catalogueMatches": [
-      "Hold On to Your Kids",
-      "Hold onto your Kids"
-    ],
+    "catalogueMatches": ["Hold On to Your Kids", "Hold onto your Kids"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Health & wellness"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "air-we-breathe-scrivener",
     "title": "The Air We Breathe",
     "author": "Glen Scrivener",
     "youtubeUrl": "https://youtu.be/ZQ5Ihxfy8Cg",
-    "catalogueMatches": [
-      "The Air We Breathe"
-    ],
+    "catalogueMatches": ["The Air We Breathe"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Christian & faith",
-      "Philosophy & nonfiction"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "happy-kitchen-kelly",
     "title": "The Happy Kitchen: Good Mood Food",
     "author": "Rachel Kelly & Alice Mackintosh",
     "youtubeUrl": "https://youtu.be/6b90RZ6a3nM",
-    "catalogueMatches": [
-      "The Happy Kitchen",
-      "Good Mood Food"
-    ],
+    "catalogueMatches": ["The Happy Kitchen", "Good Mood Food"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Health & wellness"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "anti-anxiety-diet-cookbook-miller",
     "title": "The Anti-Anxiety Diet Cookbook",
     "author": "Ali Miller",
     "youtubeUrl": "https://youtu.be/tyxYvMI2G-U",
-    "catalogueMatches": [
-      "The Anti-Anxiety Diet Cookbook",
-      "Anti-Anxiety Diet Cookbook"
-    ],
+    "catalogueMatches": ["The Anti-Anxiety Diet Cookbook", "Anti-Anxiety Diet Cookbook"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Health & wellness"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "unwinnable-farrell",
     "title": "Unwinnable",
     "author": "Theo Farrell",
     "youtubeUrl": "https://youtu.be/sOJQcrHZ0Jc",
-    "catalogueMatches": [
-      "Unwinnable"
-    ],
+    "catalogueMatches": ["Unwinnable"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Philosophy & nonfiction"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "anti-anxiety-food-solution-scott",
     "title": "The Anti-Anxiety Food Solution",
     "author": "Trudy Scott",
     "youtubeUrl": "https://youtu.be/dNAuEGtDQEI",
-    "catalogueMatches": [
-      "The Anti-Anxiety Food Solution",
-      "Anti-Anxiety Food Solution"
-    ],
+    "catalogueMatches": ["The Anti-Anxiety Food Solution", "Anti-Anxiety Food Solution"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Health & wellness"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "we-who-wrestle-with-god-peterson",
     "title": "We Who Wrestle with God",
     "author": "Jordan Peterson",
     "youtubeUrl": "https://youtu.be/M5Ap-Q4tBv4",
-    "catalogueMatches": [
-      "We Who Wrestle with God"
-    ],
+    "catalogueMatches": ["We Who Wrestle with God"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Philosophy & nonfiction"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "scattered-minds-mate",
     "title": "Scattered Minds",
     "author": "Gabor Maté",
     "youtubeUrl": "https://youtu.be/F0SygDGiGeA",
-    "catalogueMatches": [
-      "Scattered Minds",
-      "Scattered Minds: The Origins and Healing of Attention Deficit Disorder"
-    ],
+    "catalogueMatches": ["Scattered Minds", "Scattered Minds: The Origins and Healing of Attention Deficit Disorder"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Health & wellness"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "anxiety-phobia-workbook-bourne",
     "title": "The Anxiety and Phobia Workbook",
     "author": "Edmund J. Bourne",
     "youtubeUrl": "https://youtu.be/Y1zJde5Kj8k",
-    "catalogueMatches": [
-      "The Anxiety and Phobia Workbook",
-      "Anxiety and Phobia Workbook"
-    ],
+    "catalogueMatches": ["The Anxiety and Phobia Workbook", "Anxiety and Phobia Workbook"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Health & wellness"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "boundaries-cloud-townsend",
     "title": "Boundaries",
     "author": "Dr. Henry Cloud & Dr. John Townsend",
     "youtubeUrl": "https://youtu.be/7gZOq64hssA",
-    "catalogueMatches": [
-      "Boundaries: When to Say Yes",
-      "Boundaries"
-    ],
+    "catalogueMatches": ["Boundaries: When to Say Yes", "Boundaries"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Christian & faith",
-      "Health & wellness"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "try-softer-kolber",
     "title": "Try Softer",
     "author": "Aundi Kolber",
     "youtubeUrl": "https://youtu.be/yXYWtcXnQKs",
-    "catalogueMatches": [
-      "Try Softer"
-    ],
+    "catalogueMatches": ["Try Softer"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
     "rightsNote": "Availability and recording rights not independently verified.",
-    "notes": "Fresh approach out of anxiety, stress, survival mode into connection and joy.",
-    "categories": [
-      "Christian & faith",
-      "Health & wellness"
-    ]
+    "notes": "Fresh approach out of anxiety, stress, survival mode into connection and joy."
   },
   {
     "id": "adhd-couple-orlov",
     "title": "ADHD and the Couple",
     "author": "Melissa Orlov",
     "youtubeUrl": "https://youtu.be/_ozoKU0mZwc",
-    "catalogueMatches": [
-      "ADHD and the Couple"
-    ],
+    "catalogueMatches": ["ADHD and the Couple"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Health & wellness"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "ordering-private-world-macdonald",
     "title": "Ordering Your Private World",
     "author": "Gordon MacDonald",
     "youtubeUrl": "https://youtu.be/3NbSKrsazyg",
-    "catalogueMatches": [
-      "Ordering Your Private World"
-    ],
+    "catalogueMatches": ["Ordering Your Private World"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Christian & faith",
-      "Philosophy & nonfiction"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   },
   {
     "id": "memoirs-extraordinary-delusions-mackay",
     "title": "Memoirs of Extraordinary Popular Delusions",
     "author": "Charles Mackay",
     "youtubeUrl": "https://youtu.be/nVj3yF_TeO0",
-    "catalogueMatches": [
-      "Memoirs of Extraordinary Delusions",
-      "Memoirs of Extraordinary Popular Delusions"
-    ],
+    "catalogueMatches": ["Memoirs of Extraordinary Delusions", "Memoirs of Extraordinary Popular Delusions"],
     "availabilityType": "unknown",
     "source": "User-supplied YouTube link",
-    "rightsNote": "Availability and recording rights not independently verified.",
-    "categories": [
-      "Classic literature",
-      "Philosophy & nonfiction"
-    ]
+    "rightsNote": "Availability and recording rights not independently verified."
   }
 ]
