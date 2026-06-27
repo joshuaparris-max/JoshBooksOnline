@@ -100,7 +100,7 @@ export function AudiobookCard({ audiobook, onRemove, onEdit }: AudiobookCardProp
               YouTube
             </a>
             <Link
-              href={`/media/online-audiobook/${audiobook.id}`}
+              href={`/media/online-audiobook/${encodeURIComponent(audiobook.id)}`}
               className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10"
             >
               Details

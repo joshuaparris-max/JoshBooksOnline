@@ -42,10 +42,12 @@ function buildYtSuggestions(
   books: BookEntry[],
   driveAudiobooks: AudiobookEntry[],
   ytCatalog: Audiobook[],
+  removedIds: string[],
 ): YtSuggestion[] {
-  // IDs the user already has in their YouTube catalog
+  // IDs the user already has or explicitly removed from their YouTube catalog
   const existingIds = new Set(ytCatalog.map((a) => a.id));
-  const baseCatalog = getBaseYoutubeCatalog().filter((yt) => !existingIds.has(yt.id));
+  const removedSet = new Set(removedIds);
+  const baseCatalog = getBaseYoutubeCatalog().filter((yt) => !existingIds.has(yt.id) && !removedSet.has(yt.id));
 
   const ebookAuthors: string[] = [];
   const ebookTitles: string[] = [];
@@ -210,8 +212,8 @@ export default function SuggestionsPage() {
 
   const ytSuggestions = useMemo<YtSuggestion[]>(() => {
     if (!books || !youtube.hydrated) return [];
-    return buildYtSuggestions(books, driveAudiobooks, youtube.catalog);
-  }, [books, driveAudiobooks, youtube.catalog, youtube.hydrated]);
+    return buildYtSuggestions(books, driveAudiobooks, youtube.catalog, youtube.catalogState.removedIds);
+  }, [books, driveAudiobooks, youtube.catalog, youtube.catalogState.removedIds, youtube.hydrated]);
 
   const driveSuggestions = useMemo<DriveSuggestion[]>(() => {
     if (!books) return [];

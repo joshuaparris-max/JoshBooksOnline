@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { MOVIES } from '@/lib/movies';
 import { ONLINE_EBOOKS } from '@/lib/onlineEbooks';
-import { getBaseYoutubeCatalog, findYoutubeByCatalogId } from '@/lib/youtubeCatalog';
+import { getBaseYoutubeCatalog, findYoutubeByCatalogId, mergeYoutubeCatalog } from '@/lib/youtubeCatalog';
 import type { YoutubeCatalogState } from '@/lib/youtubeCatalog';
 import type { Audiobook, AudiobookEntry, BookEntry, MovieEntry, OnlineEbook } from '@/types/books';
 
@@ -120,10 +120,10 @@ function findRelated(detail: DetailItem) {
   }
 
   if (detail.kind === 'online-ebook') {
-    return getBaseYoutubeCatalog()
+    return mergeYoutubeCatalog(readYoutubeCatalogState())
       .filter((audio) => audio.catalogueMatches.some((match) => match.toLowerCase().includes(title)))
       .slice(0, 4)
-      .map((audio) => ({ href: `/media/online-audiobook/${audio.id}`, label: audio.title, meta: audio.author }));
+      .map((audio) => ({ href: `/media/online-audiobook/${encodeURIComponent(audio.id)}`, label: audio.title, meta: audio.author }));
   }
 
   if (detail.kind === 'online-audiobook') {
