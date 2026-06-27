@@ -1208,5 +1208,211 @@
     "source": "Professor Messer",
     "rightsNote": "Availability and recording rights not independently verified.",
     "notes": "Professor Messer's CompTIA A+ 220-1201 training playlist."
+  },
+  {
+    "id": "strong-like-water-kolber",
+    "title": "Strong Like Water",
+    "author": "Aundi Kolber",
+    "youtubeUrl": "https://youtu.be/5CPrjdQ5QEw",
+    "catalogueMatches": ["Strong Like Water"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "Faith + nervous system + gentleness. Best fit overall."
+  },
+  {
+    "id": "heal-your-nervous-system-passaler",
+    "title": "Heal Your Nervous System",
+    "author": "Dr Linnea Passaler",
+    "youtubeUrl": "https://youtu.be/K6VpkYhZkUE",
+    "catalogueMatches": ["Heal Your Nervous System"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "5-stage roadmap for anxiety, burnout, overwhelm and physical symptoms."
+  },
+  {
+    "id": "anatomy-of-the-soul-thompson",
+    "title": "Anatomy of the Soul",
+    "author": "Curt Thompson",
+    "youtubeUrl": "https://youtu.be/k27OhX1wkUU",
+    "catalogueMatches": ["Anatomy of the Soul"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "Christian integration of neuroscience, attachment and spiritual formation."
+  },
+  {
+    "id": "anchored-deb-dana",
+    "title": "Anchored",
+    "author": "Deb Dana",
+    "youtubeUrl": "https://youtu.be/ksG3sjFbokw",
+    "catalogueMatches": ["Anchored"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "Polyvagal/body awareness. Practical for nervous system regulation."
+  },
+  {
+    "id": "body-keeps-score-kolk",
+    "title": "The Body Keeps the Score",
+    "author": "Bessel van der Kolk",
+    "youtubeUrl": "https://youtu.be/arSmHVldUyk",
+    "catalogueMatches": ["The Body Keeps the Score", "Body Keeps the Score"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "widen-the-window-stanley",
+    "title": "Widen the Window",
+    "author": "Elizabeth Stanley",
+    "youtubeUrl": "https://youtu.be/wkUdqi6oNXk",
+    "catalogueMatches": ["Widen the Window"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "Stress physiology, body-based resilience and recovery."
+  },
+  {
+    "id": "hold-onto-your-kids-mate",
+    "title": "Hold On to Your Kids",
+    "author": "Gabor Maté",
+    "youtubeUrl": "https://youtu.be/KDnGteZLCTU",
+    "catalogueMatches": ["Hold On to Your Kids", "Hold onto your Kids"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "air-we-breathe-scrivener",
+    "title": "The Air We Breathe",
+    "author": "Glen Scrivener",
+    "youtubeUrl": "https://youtu.be/ZQ5Ihxfy8Cg",
+    "catalogueMatches": ["The Air We Breathe"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "happy-kitchen-kelly",
+    "title": "The Happy Kitchen: Good Mood Food",
+    "author": "Rachel Kelly & Alice Mackintosh",
+    "youtubeUrl": "https://youtu.be/6b90RZ6a3nM",
+    "catalogueMatches": ["The Happy Kitchen", "Good Mood Food"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "anti-anxiety-diet-cookbook-miller",
+    "title": "The Anti-Anxiety Diet Cookbook",
+    "author": "Ali Miller",
+    "youtubeUrl": "https://youtu.be/tyxYvMI2G-U",
+    "catalogueMatches": ["The Anti-Anxiety Diet Cookbook", "Anti-Anxiety Diet Cookbook"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "unwinnable-farrell",
+    "title": "Unwinnable",
+    "author": "Theo Farrell",
+    "youtubeUrl": "https://youtu.be/sOJQcrHZ0Jc",
+    "catalogueMatches": ["Unwinnable"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "anti-anxiety-food-solution-scott",
+    "title": "The Anti-Anxiety Food Solution",
+    "author": "Trudy Scott",
+    "youtubeUrl": "https://youtu.be/dNAuEGtDQEI",
+    "catalogueMatches": ["The Anti-Anxiety Food Solution", "Anti-Anxiety Food Solution"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "we-who-wrestle-with-god-peterson",
+    "title": "We Who Wrestle with God",
+    "author": "Jordan Peterson",
+    "youtubeUrl": "https://youtu.be/M5Ap-Q4tBv4",
+    "catalogueMatches": ["We Who Wrestle with God"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "scattered-minds-mate",
+    "title": "Scattered Minds",
+    "author": "Gabor Maté",
+    "youtubeUrl": "https://youtu.be/F0SygDGiGeA",
+    "catalogueMatches": ["Scattered Minds", "Scattered Minds: The Origins and Healing of Attention Deficit Disorder"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "anxiety-phobia-workbook-bourne",
+    "title": "The Anxiety and Phobia Workbook",
+    "author": "Edmund J. Bourne",
+    "youtubeUrl": "https://youtu.be/Y1zJde5Kj8k",
+    "catalogueMatches": ["The Anxiety and Phobia Workbook", "Anxiety and Phobia Workbook"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "boundaries-cloud-townsend",
+    "title": "Boundaries",
+    "author": "Dr. Henry Cloud & Dr. John Townsend",
+    "youtubeUrl": "https://youtu.be/7gZOq64hssA",
+    "catalogueMatches": ["Boundaries: When to Say Yes", "Boundaries"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "try-softer-kolber",
+    "title": "Try Softer",
+    "author": "Aundi Kolber",
+    "youtubeUrl": "https://youtu.be/yXYWtcXnQKs",
+    "catalogueMatches": ["Try Softer"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified.",
+    "notes": "Fresh approach out of anxiety, stress, survival mode into connection and joy."
+  },
+  {
+    "id": "adhd-couple-orlov",
+    "title": "ADHD and the Couple",
+    "author": "Melissa Orlov",
+    "youtubeUrl": "https://youtu.be/_ozoKU0mZwc",
+    "catalogueMatches": ["ADHD and the Couple"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "ordering-private-world-macdonald",
+    "title": "Ordering Your Private World",
+    "author": "Gordon MacDonald",
+    "youtubeUrl": "https://youtu.be/3NbSKrsazyg",
+    "catalogueMatches": ["Ordering Your Private World"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
+  },
+  {
+    "id": "memoirs-extraordinary-delusions-mackay",
+    "title": "Memoirs of Extraordinary Popular Delusions",
+    "author": "Charles Mackay",
+    "youtubeUrl": "https://youtu.be/nVj3yF_TeO0",
+    "catalogueMatches": ["Memoirs of Extraordinary Delusions", "Memoirs of Extraordinary Popular Delusions"],
+    "availabilityType": "unknown",
+    "source": "User-supplied YouTube link",
+    "rightsNote": "Availability and recording rights not independently verified."
   }
 ]

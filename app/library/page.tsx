@@ -1745,6 +1745,18 @@ export default function LibraryPage() {
               >
                 🎧 Audiobooks
               </Link>
+              <Link
+                href="/suggestions"
+                className="inline-flex items-center justify-center rounded-full bg-slate-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+              >
+                💡 Suggestions
+              </Link>
+              <Link
+                href="/offline"
+                className="inline-flex items-center justify-center rounded-full bg-slate-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+              >
+                📥 Offline
+              </Link>
               <button
                 type="button"
                 onClick={() => refreshLibrary(true)}
