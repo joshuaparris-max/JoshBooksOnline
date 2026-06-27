@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { MOVIES } from '@/lib/movies';
 import { ONLINE_EBOOKS } from '@/lib/onlineEbooks';
-import { getBaseYoutubeCatalog } from '@/lib/youtubeCatalog';
+import { getBaseYoutubeCatalog, findYoutubeByCatalogId } from '@/lib/youtubeCatalog';
+import type { YoutubeCatalogState } from '@/lib/youtubeCatalog';
 import type { Audiobook, AudiobookEntry, BookEntry, MovieEntry, OnlineEbook } from '@/types/books';
 
 type MediaKind = 'ebook' | 'audiobook' | 'movie' | 'online-ebook' | 'online-audiobook';
@@ -136,6 +137,18 @@ function findRelated(detail: DetailItem) {
   return [];
 }
 
+function readYoutubeCatalogState(): YoutubeCatalogState {
+  try {
+    return {
+      removedIds: JSON.parse(window.localStorage.getItem('joshbooks-youtube-removed') ?? '[]') as string[],
+      edits: JSON.parse(window.localStorage.getItem('joshbooks-youtube-edits') ?? '{}') as Record<string, Partial<Audiobook>>,
+      custom: JSON.parse(window.localStorage.getItem('joshbooks-youtube-custom') ?? '[]') as Audiobook[],
+    };
+  } catch {
+    return { removedIds: [], edits: {}, custom: [] };
+  }
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) throw new Error('Unable to load media details.');
@@ -182,7 +195,7 @@ export default function MediaDetailPage() {
         }
 
         if (kind === 'online-audiobook') {
-          const audiobook = getBaseYoutubeCatalog().find((entry) => entry.id === id);
+          const audiobook = findYoutubeByCatalogId(id, readYoutubeCatalogState());
           if (!audiobook) throw new Error('Online audiobook not found.');
           if (!cancelled) setDetail({ kind, item: audiobook });
           return;
