@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ReaderSearchBar from './ReaderSearchBar';
+import ReaderTtsBar from './ReaderTtsBar';
 import { useReaderTheme, READER_THEMES, READER_THEME_SURFACE } from '@/lib/useReaderTheme';
+import { useTts } from '@/lib/useTts';
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -14,11 +16,12 @@ interface TxtReaderProps {
   arrayBuffer: ArrayBuffer;
   initialLocation: string;
   onProgress: (progress: number, location: string) => Promise<void>;
+  hasLinkedAudio?: boolean;
 }
 
 const fontSizes = ['text-sm', 'text-base', 'text-lg', 'text-xl'] as const;
 
-export default function TxtReader({ name, arrayBuffer, initialLocation, onProgress }: TxtReaderProps) {
+export default function TxtReader({ fileId, name, arrayBuffer, initialLocation, onProgress, hasLinkedAudio }: TxtReaderProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const saveTimeout = useRef<number | null>(null);
   const onProgressRef = useRef(onProgress);
@@ -27,6 +30,8 @@ export default function TxtReader({ name, arrayBuffer, initialLocation, onProgre
   });
   const [theme, setTheme] = useReaderTheme();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [ttsOpen, setTtsOpen] = useState(false);
+  const tts = useTts(fileId);
   const [query, setQuery] = useState('');
   const [activeMatch, setActiveMatch] = useState(0);
   const markRefs = useRef<(HTMLElement | null)[]>([]);
@@ -162,6 +167,15 @@ export default function TxtReader({ name, arrayBuffer, initialLocation, onProgre
           >
             Find
           </button>
+          {tts.isSupported && (
+            <button
+              type="button"
+              onClick={() => setTtsOpen((v) => !v)}
+              className={`rounded-full px-3 py-1 text-slate-200 transition ${ttsOpen ? 'bg-sky-700 hover:bg-sky-600' : 'bg-slate-800 hover:bg-slate-700'}`}
+            >
+              Listen
+            </button>
+          )}
           <span className="text-slate-400">Theme:</span>
           {READER_THEMES.map((t) => (
             <button
@@ -188,9 +202,16 @@ export default function TxtReader({ name, arrayBuffer, initialLocation, onProgre
       </div>
 
       <div className="h-[96px] md:h-[88px]" />
+      {ttsOpen && (
+        <ReaderTtsBar
+          tts={tts}
+          onPlay={() => tts.play(() => text)}
+          hasLinkedAudio={hasLinkedAudio}
+        />
+      )}
       <div
         ref={containerRef}
-        className="mx-auto h-[calc(100vh-96px)] max-w-3xl overflow-y-auto px-4 pb-16 md:px-8"
+        className={`mx-auto h-[calc(100vh-96px)] max-w-3xl overflow-y-auto px-4 md:px-8 ${ttsOpen ? 'pb-28' : 'pb-16'}`}
       >
         <pre className={`whitespace-pre-wrap break-words rounded-3xl p-6 font-serif leading-relaxed transition-colors ${READER_THEME_SURFACE[theme]} ${fontSizes[fontSize]}`}>
           {content}

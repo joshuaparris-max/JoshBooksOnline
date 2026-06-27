@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ePub from 'epubjs';
 import ReaderSearchBar from './ReaderSearchBar';
+import ReaderTtsBar from './ReaderTtsBar';
+import { useTts } from '@/lib/useTts';
 
 interface EpubMatch {
   cfi: string;
@@ -15,6 +17,7 @@ interface EpubReaderProps {
   arrayBuffer: ArrayBuffer;
   initialLocation: string;
   onProgress: (progress: number, location: string) => Promise<void>;
+  hasLinkedAudio?: boolean;
 }
 
 const themes = {
@@ -40,7 +43,7 @@ const themes = {
 
 const fontSizes = ['90%', '100%', '110%', '120%'] as const;
 
-export default function EpubReader({ name, arrayBuffer, initialLocation, onProgress }: EpubReaderProps) {
+export default function EpubReader({ fileId, name, arrayBuffer, initialLocation, onProgress, hasLinkedAudio }: EpubReaderProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const bookRef = useRef<any>(null);
   const renditionRef = useRef<any>(null);
@@ -56,6 +59,10 @@ export default function EpubReader({ name, arrayBuffer, initialLocation, onProgr
   const [activeMatch, setActiveMatch] = useState(0);
   const [searching, setSearching] = useState(false);
   const prevHighlight = useRef<string | null>(null);
+  const [ttsOpen, setTtsOpen] = useState(false);
+  const [epubTextCache, setEpubTextCache] = useState<string | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const tts = useTts(fileId);
 
   const location = useMemo(() => initialLocation?.trim() || '', [initialLocation]);
 
@@ -263,6 +270,46 @@ export default function EpubReader({ name, arrayBuffer, initialLocation, onProgr
     prevHighlight.current = null;
   };
 
+  // Extract plain text from all spine items — same pattern as the search feature.
+  // Result is cached so subsequent Listen presses are instant.
+  const handleTtsPlay = useCallback(async () => {
+    if (tts.status === 'playing') { tts.pause(); return; }
+    if (tts.status === 'paused') { tts.resume(); return; }
+
+    if (epubTextCache) {
+      tts.play(() => epubTextCache);
+      return;
+    }
+
+    setExtracting(true);
+    try {
+      const book = bookRef.current;
+      if (!book) return;
+      await book.ready;
+      const items = (book.spine?.spineItems ?? []) as any[];
+      const parts: string[] = [];
+      for (const item of items) {
+        try {
+          await item.load(book.load.bind(book));
+          const doc = item.document as Document | undefined;
+          if (doc?.body) {
+            const t = (doc.body as HTMLElement).innerText ?? doc.body.textContent ?? '';
+            if (t.trim()) parts.push(t.trim());
+          }
+        } catch {
+          // skip sections that fail to load
+        } finally {
+          try { item.unload(); } catch {}
+        }
+      }
+      const text = parts.join('\n\n');
+      setEpubTextCache(text);
+      tts.play(() => text);
+    } finally {
+      setExtracting(false);
+    }
+  }, [epubTextCache, tts]);
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       {searchOpen && (
@@ -290,6 +337,15 @@ export default function EpubReader({ name, arrayBuffer, initialLocation, onProgr
           >
             Find
           </button>
+          {tts.isSupported && (
+            <button
+              type="button"
+              onClick={() => setTtsOpen((v) => !v)}
+              className={`rounded-full border px-4 py-2 text-sm transition ${ttsOpen ? 'border-sky-500/50 bg-sky-700/50 hover:bg-sky-700' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
+            >
+              Listen
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setShowToolbar((value) => !value)}
@@ -337,6 +393,13 @@ export default function EpubReader({ name, arrayBuffer, initialLocation, onProgr
         </div>
       )}
 
+      {ttsOpen && (
+        <ReaderTtsBar
+          tts={tts}
+          onPlay={handleTtsPlay}
+          hasLinkedAudio={hasLinkedAudio}
+        />
+      )}
       <div className="h-[5rem]" />
       <div className="h-[5rem]" />
       <div className="relative min-h-[calc(100vh-10rem)]">
@@ -357,9 +420,9 @@ export default function EpubReader({ name, arrayBuffer, initialLocation, onProgr
         >
           ›
         </button>
-        {!isReady && (
+        {(!isReady || extracting) && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-950/80">
-            <p className="text-white">Rendering EPUB...</p>
+            <p className="text-white">{extracting ? 'Preparing text for reading…' : 'Rendering EPUB...'}</p>
           </div>
         )}
       </div>

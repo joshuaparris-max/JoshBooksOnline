@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import ReaderSearchBar from './ReaderSearchBar';
+import ReaderTtsBar from './ReaderTtsBar';
 import { useReaderTheme, READER_THEMES, READER_THEME_SURFACE } from '@/lib/useReaderTheme';
+import { useTts } from '@/lib/useTts';
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -67,11 +69,12 @@ interface DocxReaderProps {
   arrayBuffer: ArrayBuffer;
   initialLocation: string;
   onProgress: (progress: number, location: string) => Promise<void>;
+  hasLinkedAudio?: boolean;
 }
 
 const fontSizes = ['text-sm', 'text-base', 'text-lg', 'text-xl'] as const;
 
-export default function DocxReader({ name, arrayBuffer, initialLocation, onProgress }: DocxReaderProps) {
+export default function DocxReader({ fileId, name, arrayBuffer, initialLocation, onProgress, hasLinkedAudio }: DocxReaderProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const saveTimeout = useRef<number | null>(null);
   const onProgressRef = useRef(onProgress);
@@ -86,6 +89,8 @@ export default function DocxReader({ name, arrayBuffer, initialLocation, onProgr
   const [query, setQuery] = useState('');
   const [activeMatch, setActiveMatch] = useState(0);
   const [matchCount, setMatchCount] = useState(0);
+  const [ttsOpen, setTtsOpen] = useState(false);
+  const tts = useTts(fileId);
 
   useEffect(() => {
     onProgressRef.current = onProgress;
@@ -207,6 +212,15 @@ export default function DocxReader({ name, arrayBuffer, initialLocation, onProgr
           >
             Find
           </button>
+          {tts.isSupported && (
+            <button
+              type="button"
+              onClick={() => setTtsOpen((v) => !v)}
+              className={`rounded-full px-3 py-1 text-slate-200 transition ${ttsOpen ? 'bg-sky-700 hover:bg-sky-600' : 'bg-slate-800 hover:bg-slate-700'}`}
+            >
+              Listen
+            </button>
+          )}
           <span className="text-slate-400">Theme:</span>
           {READER_THEMES.map((t) => (
             <button
@@ -232,10 +246,17 @@ export default function DocxReader({ name, arrayBuffer, initialLocation, onProgr
         </div>
       </div>
 
+      {ttsOpen && (
+        <ReaderTtsBar
+          tts={tts}
+          onPlay={() => tts.play(() => contentRef.current?.innerText ?? '')}
+          hasLinkedAudio={hasLinkedAudio}
+        />
+      )}
       <div className="h-[96px] md:h-[88px]" />
       <div
         ref={containerRef}
-        className="mx-auto h-[calc(100vh-96px)] max-w-3xl overflow-y-auto px-4 pb-16 md:px-8"
+        className={`mx-auto h-[calc(100vh-96px)] max-w-3xl overflow-y-auto px-4 md:px-8 ${ttsOpen ? 'pb-28' : 'pb-16'}`}
       >
         {error ? (
           <div className="rounded-3xl border border-red-500/20 bg-slate-900/80 p-8 text-center text-red-300">

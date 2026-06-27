@@ -264,7 +264,7 @@ export default function ReaderShell({ fileId, EpubReader, PdfReader, TxtReader, 
       <div className="min-h-screen bg-slate-950 text-white">
         {backBtn}
         {offlineBar}
-        <EpubReader fileId={fileId} name={metadata.name} arrayBuffer={arrayBuffer} initialLocation={initialLocation} onProgress={onProgress} />
+        <EpubReader fileId={fileId} name={metadata.name} arrayBuffer={arrayBuffer} initialLocation={initialLocation} onProgress={onProgress} hasLinkedAudio={!!linkedAudioId} />
         {linkedAudioId && <DockedAudioPlayer audiobookId={linkedAudioId} />}
       </div>
     );
@@ -290,7 +290,7 @@ export default function ReaderShell({ fileId, EpubReader, PdfReader, TxtReader, 
       <div className="min-h-screen bg-slate-950 text-white">
         {backBtn}
         {offlineBar}
-        <FlowReader fileId={fileId} name={metadata.name} arrayBuffer={arrayBuffer} initialLocation={initialLocation} onProgress={onProgress} />
+        <FlowReader fileId={fileId} name={metadata.name} arrayBuffer={arrayBuffer} initialLocation={initialLocation} onProgress={onProgress} hasLinkedAudio={!!linkedAudioId} />
         {linkedAudioId && <DockedAudioPlayer audiobookId={linkedAudioId} />}
       </div>
     );
