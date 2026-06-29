@@ -662,7 +662,7 @@ export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry
         traversalId?: string;
       };
 
-      const addLooseAudioGroups = (looseAudio: Child[]) => {
+      const groupLooseAudio = (looseAudio: Child[]) => {
         const groups = new Map<string, Child[]>();
         for (const file of looseAudio) {
           const key = manualAudioGroupKey(file.props) || deriveBookKey(file.name) || file.id;
@@ -670,6 +670,10 @@ export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry
           if (group) group.push(file);
           else groups.set(key, [file]);
         }
+        return groups;
+      };
+
+      const addLooseAudioGroups = (groups: Map<string, Child[]>) => {
         for (const group of groups.values()) {
           group.sort((a, b) => naturalCompare(a.name, b.name));
           const rep = group[0];
@@ -728,7 +732,12 @@ export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry
           pageToken = response.data.nextPageToken;
         } while (pageToken);
 
-        if (folder && looseAudio.length > 0) {
+        const looseAudioGroups = groupLooseAudio(looseAudio);
+
+        // A genuine book folder normally has one derived track group and keeps
+        // its folder identity/metadata. Category folders with tracks from several
+        // books emit one loose-file entry per group instead of one giant playlist.
+        if (folder && looseAudioGroups.size === 1) {
           if (!seen.has(folder.id)) {
             seen.add(folder.id);
             audiobooks.push({
@@ -739,12 +748,11 @@ export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry
               ...parseAudiobookProps(folder.props),
             });
           }
-          return;
+        } else {
+          addLooseAudioGroups(looseAudioGroups);
         }
 
-        // Audio files loose in a root/category remain grouped by their derived
-        // title, while container folders are searched for nested book folders.
-        addLooseAudioGroups(looseAudio);
+        // A folder may contain both loose books and nested book folders.
         await Promise.all(
           folders.map((child) => scanFolder(child.traversalId || child.id, child))
         );
