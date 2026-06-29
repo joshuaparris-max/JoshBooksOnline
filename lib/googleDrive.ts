@@ -640,9 +640,10 @@ function parseAudiobookProps(props?: Record<string, string>): Partial<AudiobookE
 }
 
 /**
- * List audiobooks: the immediate children of the permanent audiobook folders.
- * A child folder becomes a multi-track audiobook; a loose audio file becomes a
- * single-track audiobook. Track lists are NOT loaded here (see getAudiobookTracks).
+ * List audiobooks below the permanent audiobook folders. A folder containing
+ * audio directly is an audiobook; a folder containing only subfolders is a
+ * category and is traversed until real audiobook folders are found. Track lists
+ * are NOT loaded here (see getAudiobookTracks).
  */
 export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry[]> {
   const auth = getOAuthClient(accessToken);
@@ -650,55 +651,18 @@ export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry
 
   const audiobooks: AudiobookEntry[] = [];
   const seen = new Set<string>();
+  const scannedFolders = new Set<string>();
 
   await Promise.all(
     Object.entries(AUDIOBOOK_FOLDERS).map(async ([source, rootId]) => {
-      type Child = { id: string; name: string; props?: Record<string, string> };
-      const folders: Child[] = [];
-      const looseAudio: Child[] = [];
-      let pageToken: string | null | undefined;
-      try {
-        do {
-          const response = await drive.files.list({
-            q: `'${rootId}' in parents and trashed = false`,
-            fields:
-              'nextPageToken, files(id, name, mimeType, appProperties, shortcutDetails)',
-            pageSize: 200,
-            pageToken: pageToken ?? undefined,
-            supportsAllDrives: true,
-            includeItemsFromAllDrives: true,
-          });
+      type Child = {
+        id: string;
+        name: string;
+        props?: Record<string, string>;
+        traversalId?: string;
+      };
 
-          for (const file of response.data.files || []) {
-            const props = file.appProperties as Record<string, string> | undefined;
-            if (props?.m_hidden === '1') continue;
-            const child: Child = { id: file.id!, name: file.name!, props };
-            const kind = classifyAudiobookChildMime(
-              file.mimeType,
-              file.shortcutDetails?.targetMimeType
-            );
-            if (kind === 'folder') folders.push(child);
-            else if (kind === 'audio') looseAudio.push(child);
-          }
-
-          pageToken = response.data.nextPageToken;
-        } while (pageToken);
-
-        // A sub-folder is one audiobook (chapters gathered lazily as tracks)
-        for (const f of folders) {
-          if (seen.has(f.id)) continue;
-          seen.add(f.id);
-          audiobooks.push({
-            id: f.id,
-            title: f.name,
-            source: source as LibrarySource,
-            isFolder: true,
-            ...parseAudiobookProps(f.props),
-          });
-        }
-
-        // Loose audio files are grouped into one audiobook per derived book title,
-        // so individual chapter files no longer show up as separate audiobooks.
+      const addLooseAudioGroups = (looseAudio: Child[]) => {
         const groups = new Map<string, Child[]>();
         for (const file of looseAudio) {
           const key = manualAudioGroupKey(file.props) || deriveBookKey(file.name) || file.id;
@@ -719,6 +683,75 @@ export async function getAudiobooks(accessToken: string): Promise<AudiobookEntry
             ...parseAudiobookProps(rep.props),
           });
         }
+      };
+
+      const scanFolder = async (folderId: string, folder?: Child): Promise<void> => {
+        // The same target can be reachable directly and through a Drive shortcut.
+        if (scannedFolders.has(folderId)) return;
+        scannedFolders.add(folderId);
+
+        const folders: Child[] = [];
+        const looseAudio: Child[] = [];
+        let pageToken: string | null | undefined;
+
+        do {
+          const response = await drive.files.list({
+            q: `'${folderId}' in parents and trashed = false`,
+            fields:
+              'nextPageToken, files(id, name, mimeType, appProperties, shortcutDetails)',
+            pageSize: 200,
+            pageToken: pageToken ?? undefined,
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true,
+          });
+
+          for (const file of response.data.files || []) {
+            const props = file.appProperties as Record<string, string> | undefined;
+            if (props?.m_hidden === '1') continue;
+            const kind = classifyAudiobookChildMime(
+              file.mimeType,
+              file.shortcutDetails?.targetMimeType
+            );
+            const child: Child = {
+              id: file.id!,
+              name: file.name!,
+              props,
+              traversalId:
+                file.mimeType === SHORTCUT_MIME && file.shortcutDetails?.targetId
+                  ? file.shortcutDetails.targetId
+                  : file.id!,
+            };
+            if (kind === 'folder') folders.push(child);
+            else if (kind === 'audio') looseAudio.push(child);
+          }
+
+          pageToken = response.data.nextPageToken;
+        } while (pageToken);
+
+        if (folder && looseAudio.length > 0) {
+          if (!seen.has(folder.id)) {
+            seen.add(folder.id);
+            audiobooks.push({
+              id: folder.id,
+              title: folder.name,
+              source: source as LibrarySource,
+              isFolder: true,
+              ...parseAudiobookProps(folder.props),
+            });
+          }
+          return;
+        }
+
+        // Audio files loose in a root/category remain grouped by their derived
+        // title, while container folders are searched for nested book folders.
+        addLooseAudioGroups(looseAudio);
+        await Promise.all(
+          folders.map((child) => scanFolder(child.traversalId || child.id, child))
+        );
+      };
+
+      try {
+        await scanFolder(rootId);
       } catch (error) {
         console.error(`Failed to list audiobooks in ${source}:`, error);
       }
