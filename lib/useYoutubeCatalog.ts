@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Audiobook } from '@/types/books';
 import {
+  getBaseYoutubeCatalog,
   mergeYoutubeCatalog,
   type YoutubeCatalogState,
 } from '@/lib/youtubeCatalog';
@@ -106,7 +107,20 @@ export function useYoutubeCatalog() {
   );
 
   const removeYoutube = useCallback((id: string) => {
-    setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    setRemovedIds((prev) => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id];
+      // Diagnostic guard: a single removal pushing the hidden count past most
+      // of the bundled catalogue means something is mass-removing — surface it
+      // instead of silently hiding the library again.
+      const baseSize = getBaseYoutubeCatalog().length;
+      if (baseSize > 0 && next.length > baseSize * 0.8) {
+        console.warn(
+          `[youtubeCatalog] removed list now hides ${next.length}/${baseSize} audiobooks — possible mass-removal bug. Latest id: ${id}`
+        );
+      }
+      return next;
+    });
     setYoutubeLinks((prev) => {
       const next = { ...prev };
       for (const [ebookId, ytId] of Object.entries(next)) {
@@ -118,6 +132,10 @@ export function useYoutubeCatalog() {
 
   const restoreYoutube = useCallback((id: string) => {
     setRemovedIds((prev) => prev.filter((x) => x !== id));
+  }, []);
+
+  const restoreAllYoutube = useCallback(() => {
+    setRemovedIds([]);
   }, []);
 
   const saveYoutubeEdit = useCallback((audiobook: Audiobook) => {
@@ -166,6 +184,7 @@ export function useYoutubeCatalog() {
   return {
     catalog,
     catalogState,
+    removedCount: removedIds.length,
     youtubeLinks,
     hydrated,
     serverReady,
@@ -173,6 +192,7 @@ export function useYoutubeCatalog() {
     hydrateFromServer,
     removeYoutube,
     restoreYoutube,
+    restoreAllYoutube,
     saveYoutubeEdit,
     addYoutubeCustom,
     setYoutubeLink,

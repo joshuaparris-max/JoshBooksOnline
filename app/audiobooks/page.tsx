@@ -67,6 +67,16 @@ export default function AudiobooksPage() {
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              {youtube.removedCount > 0 && (
+                <button
+                  type="button"
+                  onClick={youtube.restoreAllYoutube}
+                  className="inline-flex items-center justify-center rounded-full bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-500"
+                  title="Bring back every audiobook you've removed from the catalogue"
+                >
+                  Restore removed ({youtube.removedCount})
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setAddingYoutube(true)}
