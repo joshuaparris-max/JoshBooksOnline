@@ -8,6 +8,10 @@ import {
 } from '@/lib/youtubeCatalog';
 
 const REMOVED_KEY = 'joshbooks-youtube-removed';
+// One-time flag: a removal-list bug hid most of the bundled catalogue, so we
+// clear any persisted removals once (see mount effect below) and then let the
+// remove feature work normally again.
+const REMOVED_RESET_KEY = 'joshbooks-youtube-removed-reset-v1';
 const EDITS_KEY = 'joshbooks-youtube-edits';
 const CUSTOM_KEY = 'joshbooks-youtube-custom';
 const LINKS_KEY = 'joshbooks-youtube-links';
@@ -48,7 +52,11 @@ export function useYoutubeCatalog() {
 
   // Restore from localStorage on mount
   useEffect(() => {
-    setRemovedIds(readJson<string[]>(REMOVED_KEY, []));
+    // One-time migration: drop any stale removals once so the full catalogue
+    // reappears, then honour the persisted list on every subsequent load.
+    const alreadyReset = readJson<boolean>(REMOVED_RESET_KEY, false);
+    setRemovedIds(alreadyReset ? readJson<string[]>(REMOVED_KEY, []) : []);
+    if (!alreadyReset) writeJson(REMOVED_RESET_KEY, true);
     setEdits(readJson<Record<string, Partial<Audiobook>>>(EDITS_KEY, {}));
     setCustom(readJson<Audiobook[]>(CUSTOM_KEY, []));
     setYoutubeLinks(readJson<Record<string, string>>(LINKS_KEY, {}));

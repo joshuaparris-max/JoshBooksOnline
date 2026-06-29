@@ -21,8 +21,14 @@ export function useUserdataYoutubeSync(
         const response = await fetch('/api/userdata', { cache: 'no-store' });
         const { data } = (await response.json()) as { data: Record<string, unknown> | null };
         if (!cancelled && data) {
-          userdataBase.current = data;
-          hydrateFromServer(data);
+          // One-time migration: clear a stale removal list that was hiding most
+          // of the bundled catalogue. The cleared blob (with the marker) is
+          // persisted by the debounced PUT below, so removals don't come back.
+          const blob = data.youtubeRemovedResetV1
+            ? data
+            : { ...data, youtubeRemoved: [], youtubeRemovedResetV1: true };
+          userdataBase.current = blob;
+          hydrateFromServer(blob);
         }
       } catch {
         // offline / KV not configured — localStorage still works
