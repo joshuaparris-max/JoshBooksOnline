@@ -18,7 +18,7 @@ Last reviewed: June 2026
 - Requires `KV_REST_API_URL` + `KV_REST_API_TOKEN` on Vercel for cross-device sync
 
 ### YouTube audiobooks
-- Bundled catalog in `lib/youtube-audiobooks.json` (85 entries)
+- Bundled catalog in `lib/youtube-audiobooks.json` (105 entries)
 - Catalogue alias matching to Drive ebook filenames
 - Editable / removable links (userdata + localStorage)
 - Multi-match picker when several YouTube sources apply
@@ -33,6 +33,7 @@ Last reviewed: June 2026
 
 ### Latest completion
 
+- Drive audiobook discovery recursively scans category folders. Folders containing loose tracks from multiple books are split using manual group metadata or derived book keys, so categories such as Fiction (Classics) no longer become giant playlist tiles.
 - Homepage renders its complete shell immediately while authentication resolves; recent books load after authentication.
 - Manual audiobook playlists are stored in local/userdata state and play as combined track lists without modifying Drive files.
 - Library includes a Movies tab with 48 bundled Google Drive movie links, including Harry Potter and Pirates of the Caribbean collections.
@@ -47,6 +48,12 @@ npm test
 npm run validate:catalogues
 npm run build
 ```
+
+## Known cleanup backlog
+
+- Review duplicate or legacy Drive audiobook titles and stale browser-saved manual groups (for example repeated track-code titles, duplicate Bible entries, and old mixed groups).
+- Expand `/admin` with a live Drive connectivity probe, cache status, and recent API failure history.
+- Keep documented catalogue counts synchronized through `npm run validate:catalogues`.
 
 ## Upgrade backlog
 

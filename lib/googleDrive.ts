@@ -199,7 +199,7 @@ function stripChapterSuffix(base: string): string {
     prev = s;
     // story chapters: digit OR roman numeral — "Chapter 12", "Chapter XLVII", "Part IV"
     s = s.replace(
-      /[\s\-_.]*[([]?\s*(chapter|chap|chp|ch|part|pt|section|sec|episode|ep|book|bk|vol|volume)\s*\.?\s*(?:\d+|[ivxlcdm]+)\s*[)\]]?\s*$/i,
+      /[\s\-_.]*[([]?\s*(chapter|chap|chp|ch|part|pt|section|sec|episode|ep|book|bk|vol|volume)[\s\-_.]*(?:\d+|[ivxlcdm]+)\s*[)\]]?\s*$/i,
       ''
     );
     // disc/track codes: digits only — "Track 5", "Disc 1", "L01", "T03", "CD2"

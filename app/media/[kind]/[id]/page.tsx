@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { MOVIES } from '@/lib/movies';
 import { ONLINE_EBOOKS } from '@/lib/onlineEbooks';
-import { getBaseYoutubeCatalog, findYoutubeByCatalogId, mergeYoutubeCatalog } from '@/lib/youtubeCatalog';
+import { findYoutubeByCatalogId, mergeYoutubeCatalog } from '@/lib/youtubeCatalog';
 import type { YoutubeCatalogState } from '@/lib/youtubeCatalog';
 import type { Audiobook, AudiobookEntry, BookEntry, MovieEntry, OnlineEbook } from '@/types/books';
 

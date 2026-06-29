@@ -1,14 +1,14 @@
-# BookShelf — Personal Ebook Reader
+# JoshBooks — Personal Media Library
 
-A single-user ebook reader web app for PDFs and EPUBs stored in Google Drive. Features a library view like Calibre and reading views powered by pdf.js and epubjs, with reading progress synced back to Drive via appProperties.
+A single-user library for reading ebooks, listening to Drive and YouTube audiobooks, and browsing movies. JoshBooks combines Google Drive media with local catalogue data, metadata editing, progress tracking, folders, search, and backup tools.
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 16.2.9 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Auth**: NextAuth v4 with Google OAuth
-- **Rendering**: pdfjs-dist (PDF), epubjs (EPUB)
+- **Rendering**: pdfjs-dist (PDF), epubjs (EPUB), streamed Drive audio/video
 - **Deployment**: Vercel (server features required)
 
 ## Google Cloud Setup
@@ -100,15 +100,31 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) and click **Sign in with Google**.
 
+## Current features
+
+- PDF, EPUB, TXT, and DOCX reading with progress tracking
+- Recursive Google Drive ebook and audiobook discovery
+- Multi-track Drive audiobooks, loose-track grouping, manual playlists, and listening progress
+- Curated YouTube audiobooks with matching, editing, and source selection
+- Movie catalogue and playback pages
+- Metadata search and editing
+- Virtual folders, bulk actions, unified search, and hide/remove controls
+- Drive import plus userdata export/import
+- Authenticated diagnostics at `/admin`
+
 ## Project Structure
 
 ```
 app/
   api/
     auth/[...nextauth]/    # NextAuth routes
-    library/               # GET /api/library (list books)
-    library/progress/      # POST /api/library/progress (save progress)
-  page.tsx                 # Homepage, sign-in controls, and immediate recent-books shell
+    library/               # Drive library, import, metadata, and progress APIs
+  library/                 # Unified ebooks, audiobooks, and movies library
+  media/                   # Canonical media detail pages
+  reader/                  # Ebook reader
+  listen/                  # Drive audiobook player
+  admin/                   # Authenticated diagnostics
+  page.tsx                 # Homepage and recent-media shell
   layout.tsx               # Root layout with AuthProvider
   providers.tsx            # Client SessionProvider wrapper
 lib/
@@ -118,12 +134,17 @@ types/
 proxy.ts                  # Protect /library and /reader routes
 ```
 
-## Acceptance Criteria — Phase 1
+## Quality gates
 
-✅ `npm run build` passes with no TypeScript errors
-✅ Sign in with Google works
-✅ GET `/api/library` returns real files from Drive folders
-✅ POST `/api/library/progress` writes appProperties visible in Drive
+Run the complete gate before merging:
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run validate:catalogues
+npm run build
+```
 
 ## Phase 2 — Local book sync ✅
 
@@ -144,5 +165,5 @@ The script creates the Drive folder `Local Books` if it does not already exist a
 - **Metadata editor** with Google Books / Open Library search, persisted to Drive `appProperties`, localStorage, and Vercel KV (`/api/userdata`)
 - **YouTube audiobook catalog** with catalogue alias matching, editable/removable links, and multi-source picker
 - **Drive audiobooks**, ebook↔audiobook linking, virtual collections, online public-domain reads
-- **Quality gates**: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`
+- **Admin diagnostics** for environment configuration and catalogue health
 
