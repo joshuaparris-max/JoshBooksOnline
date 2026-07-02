@@ -1,12 +1,12 @@
 [
   {
     "id": "alice-adventures-wonderland-carroll",
-    "title": "Alice's Adventures in Wonderland",
+    "title": "Alice and Through the Looking Glass",
     "author": "Lewis Carroll",
     "youtubeUrl": "https://www.youtube.com/playlist?list=PLirX_IrcsySVMpTE-E_oUMMAp_52PTFIv",
     "catalogueMatches": [
-      "Alice in Wonderland",
-      "Alice and Through the Looking Glass"
+      "Alice and Through the Looking Glass",
+      "Alice's Adventures in Wonderland"
     ],
     "availabilityType": "full_public_domain",
     "displayLabel": "Full public-domain audiobook",
