@@ -11,6 +11,7 @@ import YouTubeAudiobookEditor from '@/components/YouTubeAudiobookEditor';
 import EbookAudioLinks from '@/components/EbookAudioLinks';
 import { ONLINE_EBOOKS } from '@/lib/onlineEbooks';
 import { MOVIES } from '@/lib/movies';
+import { PODCASTS } from '@/lib/podcasts';
 import { findYoutubeMatches } from '@/lib/youtubeCatalog';
 import { useCollections } from '@/lib/useCollections';
 import { useYoutubeCatalog } from '@/lib/useYoutubeCatalog';
@@ -501,7 +502,7 @@ export default function LibraryPage() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [showHidden, setShowHidden] = useState(false);
-  const [tab, setTab] = useState<'ebooks' | 'audiobooks' | 'movies'>('ebooks');
+  const [tab, setTab] = useState<'ebooks' | 'audiobooks' | 'movies' | 'podcasts'>('ebooks');
   const [ebookSource, setEbookSource] = useState<'drive' | 'online'>('drive');
   const collectionsApi = useCollections();
   const smartFoldersApi = useSmartFolders();
@@ -1409,6 +1410,13 @@ export default function LibraryPage() {
     });
   }, [search, hiddenIds, showHidden]);
 
+  const filteredPodcasts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return PODCASTS.filter((item) =>
+      !query || [item.title, item.category, item.provider].some((value) => value.toLowerCase().includes(query))
+    ).sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
+  }, [search]);
+
   const bulkCandidates = useMemo(() => {
     if (tab === 'ebooks' && ebookSource === 'drive') {
       return sortedBooks.map((book) => ({ id: book.id, label: displayTitle(book), kind: 'ebook' as const }));
@@ -1905,8 +1913,15 @@ export default function LibraryPage() {
             >
               🎬 Movies<span className="ml-1.5 rounded-full bg-black/15 px-1.5 py-0.5 text-xs font-normal">{filteredMovies.length}</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setTab('podcasts')}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'podcasts' ? 'bg-slate-200 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+            >
+              🎙️ Podcasts<span className="ml-1.5 rounded-full bg-black/15 px-1.5 py-0.5 text-xs font-normal">{PODCASTS.length}</span>
+            </button>
 
-            <div className={`ml-auto items-center gap-2 ${tab === 'movies' ? 'hidden' : 'flex'}`}>
+            <div className={`ml-auto items-center gap-2 ${tab === 'movies' || tab === 'podcasts' ? 'hidden' : 'flex'}`}>
               <button
                 type="button"
                 onClick={() => {
@@ -2365,6 +2380,20 @@ export default function LibraryPage() {
               </div>
             </div>
           )}
+          {tab === 'podcasts' && (
+            <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search podcasts by title, category, or provider"
+                className="w-full flex-1 rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
+              />
+              <div className="rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-400">
+                {filteredPodcasts.length} podcasts
+              </div>
+            </div>
+          )}
         </section>
 
         {(importStatus.type !== 'idle' || enrich.message) && (
@@ -2390,7 +2419,7 @@ export default function LibraryPage() {
         )}
 
         {/* ── Unified search results ── shown instead of tab content when a query is active */}
-        {search.trim() && (
+        {search.trim() && tab !== 'podcasts' && (
           <section className="space-y-3">
             {unifiedResults.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-10 text-center text-slate-400">
@@ -2597,6 +2626,27 @@ export default function LibraryPage() {
               ))}
             </section>
           )
+        )}
+
+        {tab === 'podcasts' && (
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredPodcasts.map((item) => (
+              <a
+                key={item.id}
+                href={item.url}
+                target="_blank"
+                rel="noreferrer"
+                className="group flex gap-4 rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-black/10 transition hover:border-slate-500/40 hover:bg-slate-800/70"
+              >
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-violet-600/20 text-3xl">🎙️</div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="line-clamp-3 font-semibold text-white group-hover:text-violet-300">{item.title}</h2>
+                  <p className="mt-2 text-sm text-slate-400">{item.category}</p>
+                  <p className="mt-1 truncate text-xs text-slate-500">{item.provider} ↗</p>
+                </div>
+              </a>
+            ))}
+          </section>
         )}
 
         {!search.trim() && tab === 'ebooks' && ebookSource === 'drive' && (loading ? (

@@ -46,6 +46,15 @@ export interface MovieEntry {
   collection?: string;
 }
 
+/** A curated podcast show or episode hosted by an external provider. */
+export interface PodcastEntry {
+  id: string;
+  title: string;
+  url: string;
+  category: string;
+  provider: string;
+}
+
 /** A single audio file within an audiobook. */
 export interface AudioTrack {
   /** Drive file id of the audio track */
