@@ -18,7 +18,7 @@ Last reviewed: June 2026
 - Requires `KV_REST_API_URL` + `KV_REST_API_TOKEN` on Vercel for cross-device sync
 
 ### YouTube audiobooks
-- Bundled catalog in `lib/youtube-audiobooks.json` (105 entries)
+- Bundled catalog in `lib/youtube-audiobooks.json` (106 entries)
 - Catalogue alias matching to Drive ebook filenames
 - Editable / removable links (userdata + localStorage)
 - Multi-match picker when several YouTube sources apply

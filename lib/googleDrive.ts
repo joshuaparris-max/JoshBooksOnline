@@ -160,6 +160,14 @@ const LILITH_CHAPTER_TITLES = new Set(
 );
 
 const CS_LEWIS_COMBINED_AUDIOBOOK_TITLE = 'The Abolition of Man and The Great Divorce';
+const ALICE_IN_WONDERLAND_TITLE = "Alice's Adventures in Wonderland";
+
+function isAliceInWonderlandName(value: string): boolean {
+  const title = normaliseTitle(value);
+  return title.includes('alice and through the looking glass') ||
+    title.includes('alice in wonderland') ||
+    title.includes('alice s adventures in wonderland');
+}
 
 function normaliseTitle(title: string): string {
   return title
@@ -330,6 +338,7 @@ export function deriveBookTitle(filename: string): string {
   if (isActsFile(filename)) return 'Acts';
   if (isBibleFile(filename)) return 'Bible';
   const base = filename.replace(/\.[^.]+$/, '');
+  if (isAliceInWonderlandName(base)) return ALICE_IN_WONDERLAND_TITLE;
   if (isSingleLetterPart(base)) return CS_LEWIS_COMBINED_AUDIOBOOK_TITLE;
   const knownChapterBook = lilithTitleFromChapterOnlyName(base);
   if (knownChapterBook) return knownChapterBook;
@@ -348,6 +357,7 @@ export function deriveBookKey(filename: string): string {
   if (isActsFile(filename)) return 'acts';
   if (isBibleFile(filename)) return 'bible';
   const base = filename.replace(/\.[^.]+$/, '');
+  if (isAliceInWonderlandName(base)) return normaliseTitle(ALICE_IN_WONDERLAND_TITLE);
   if (isSingleLetterPart(base)) return normaliseTitle(CS_LEWIS_COMBINED_AUDIOBOOK_TITLE);
   const knownChapterBook = lilithTitleFromChapterOnlyName(base);
   if (knownChapterBook) return normaliseTitle(knownChapterBook);

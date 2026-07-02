@@ -71,7 +71,7 @@ describe('Drive audiobook scanner', () => {
 
     expect(audiobooks.map((book) => book.title)).toEqual(
       expect.arrayContaining([
-        'Alice and Through the Looking Glass',
+        "Alice's Adventures in Wonderland",
         'Winnie the Pooh Blackstone',
         'Orthodoxy',
         'Lilith',
@@ -81,7 +81,7 @@ describe('Drive audiobook scanner', () => {
     expect(audiobooks).toHaveLength(5);
     expect(audiobooks.some((book) => book.title === 'Fiction (Classics)')).toBe(false);
 
-    expect(audiobooks.find((book) => book.title === 'Alice and Through the Looking Glass')).toMatchObject({
+    expect(audiobooks.find((book) => book.title === "Alice's Adventures in Wonderland")).toMatchObject({
       id: 'alice-1',
       isFolder: false,
     });
